@@ -1,0 +1,68 @@
+# configs/train.yaml
+# Training config: optimization, modality dropout, losses. Pair with configs/model.yaml.
+
+seed: 0
+device: cuda
+amp: true                       # mixed precision
+
+optim:
+  name: adamw
+  lr: 2.0e-4                    # trunk/heads only (encoders frozen)
+  weight_decay: 0.05
+  betas: [0.9, 0.999]
+
+schedule:
+  name: cosine
+  warmup_steps: 1000
+  max_epochs: 100               # [TODO/USER] tune to dataset size
+
+batch_size: 16                  # B
+num_workers: 8
+
+# ---- Modality dropout (one shared model, three configs) ----
+modality_dropout:
+  enabled: true
+  # per-step sampling probabilities; must sum to 1.0
+  p_both: 0.5
+  p_tactile_only: 0.25
+  p_rgb_only: 0.25
+  # [TODO/USER] If RGB-only should NOT be in the dense ablation (predicting tactile-frame
+  # geometry without touch is intentionally weak), set rgb_only_supervises_dense: false to
+  # skip the dense loss on RGB-only batches while still training pose.
+  rgb_only_supervises_dense: true
+
+# ---- Losses (see CLAUDE.md §5) ----
+loss:
+  depth:
+    type: ssi                   # {ssi, l1}  scale-shift-invariant recommended for sim2real
+    grad_matching_weight: 0.0   # >0 to add edge-sharpness gradient term
+    weight: 1.0
+  normal:
+    type: cosine                # angular/cosine loss
+    weight: 1.0
+  pose:
+    rot_weight: 1.0             # 1 - cos(theta_pred - theta_gt), computed on (cos,sin)
+    trans_weight: 1.0           # L1 on (t_x, t_y)
+    weight: 1.0
+  uncertainty_weighting: false  # Kendall et al. auto task weighting (optional)
+
+# ---- Augmentation / domain randomization (sim2real workhorse) ----
+augmentation:
+  tactile:                      # port the user's existing TactileAugment
+    gain: true
+    bias: true
+    gradient: true
+    residual_noise: true
+    geometric: true
+  rgb:
+    photometric: true
+    geometric: false            # keep RGB geometry stable (it's context, not the anchor)
+
+# ---- Eval / logging ----
+eval:
+  metrics: [depth_absrel, depth_rmse, normal_mean_angle, pose_rot_deg, pose_trans_mm]
+  report_per_config: true       # report both/tactile-only/rgb-only separately for the ablation
+log_every: 50
+ckpt_every_epochs: 5
+
+# [TODO/USER] data paths live in configs/data.yaml (sim train + real eval)

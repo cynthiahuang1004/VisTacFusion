@@ -1,0 +1,27 @@
+# Core
+torch>=2.2
+torchvision>=0.17
+numpy>=1.24
+einops>=0.7            # clean attention/reshape ops (token <-> grid)
+pyyaml>=6.0            # config loading
+tqdm>=4.66
+
+# Encoders / backbones
+timm>=1.0.9            # ViT utils; DINOv3 may also be loaded via torch.hub / official repo
+# NOTE: DINOv3 weights are NOT on PyPI. Load via the official DINOv3 release / torch.hub,
+#       or reuse the user's existing notebook loader. See CLAUDE.md §3.2 [TODO/USER].
+
+# Training / logging
+tensorboard>=2.16
+# wandb>=0.17         # optional, uncomment if you prefer Weights & Biases
+
+# Metrics / geometry
+scipy>=1.11           # rotation helpers, eval metrics
+
+# Image / data IO  (adjust to your sim data format)
+pillow>=10.0
+opencv-python>=4.9
+# h5py>=3.10          # uncomment if sim data ships as HDF5
+
+# Dev / tests
+pytest>=8.0

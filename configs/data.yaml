@@ -1,0 +1,50 @@
+# configs/data.yaml
+# Data paths + loader settings. The model trains on SIM and evaluates zero-shot on REAL.
+# [TODO/USER] Fill in real paths and confirm the sim dataset layout (see vistacfusion/data/dataset.py).
+
+image_size: 224                 # square; must match model.yaml image_size (keeps 14x14=196 grid)
+
+# ---- Dataset selection ----
+# 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists
+#               (build-order step 1). Switch to 'sim' once the loader is wired.
+dataset: synthetic              # {synthetic, sim}
+
+synthetic:
+  num_samples: 256              # how many fake samples the stub serves
+  num_objects: 8                # fake object ids (used by the object-wise split)
+
+sim:
+  # [TODO/USER] root of the rendered sim dataset (gs_blender-style nested layout
+  #             <root>/<object>/session_*/sensor_*/{samples,calibration,dmaps,norms}).
+  root: null
+  # [TODO/USER] where do the *paired RGB* images live? The tactile notebook only had
+  #             tactile renders. Options: a sibling 'rgb/' dir per unit, or a separate
+  #             root keyed by the same sample index. Set the convention here.
+  rgb_subdir: rgb               # e.g. <unit>/rgb/<idx>.png  -- ADJUST to your renders
+  use_gt_norm: true             # use the *_gt normal renders if present
+  # Object-wise train/val split (held-out objects = the sim "val"). Real eval is separate.
+  val_objects: [edge, hex_key, pattern_31_rod]
+  raw_input: true               # feed raw 3-channel tactile (DINOv3 path); see CLAUDE.md 3.1
+
+# ---- Real eval set (sim2real, reported zero-shot) ----
+real:
+  root: null                    # [TODO/USER] real captures, same per-sample fields as sim
+  rgb_subdir: rgb
+
+# ---- DataLoader ----
+loader:
+  num_workers: 8
+  pin_memory: true
+  prefetch_factor: 4
+  persistent_workers: true
+
+# ---- Normalization (ported from the notebook; DINOv3 uses ImageNet stats) ----
+# RGB + tactile both go through ImageNet normalization for the DINOv3 encoder.
+norm:
+  imagenet_mean: [123.675, 116.28, 103.53]
+  imagenet_std:  [58.395, 57.12, 57.375]
+  # GT map normalization (so losses operate on standardized targets; ported from notebook)
+  dmap_mean: [8.8114]
+  dmap_std:  [30.3624]
+  normal_mean: [126.9855, 127.2061, 247.7740]
+  normal_std:  [25.1953, 25.5532, 22.1101]

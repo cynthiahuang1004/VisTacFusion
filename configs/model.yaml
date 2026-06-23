@@ -1,0 +1,55 @@
+# configs/model.yaml
+# Architecture config. All flags referenced in CLAUDE.md. Defaults are the recommended
+# first-run starting point. Sweep the ones marked "# ablation" later.
+
+image_size: 224                 # square; keeps the 14x14=196 token grid square (DPT needs square)
+trunk_dim: 768                  # D — common token dim inside the fusion trunk
+
+encoder:
+  name: dinov3_vitl16           # DINOv3 ViT-L/16, frozen
+  patch_size: 16                # 224/16 = 14 -> 14x14 = 196 patch tokens (+1 CLS)
+  embed_dim: 1024               # ViT-L native dim
+  frozen: true                  # never unfreeze without a deliberate ablation
+  share_encoder_weights: true   # RGB & tactile share the same frozen DINOv3 weights
+  keep_cls: true                # keep CLS (RGB CLS -> memory; tactile CLS -> pose query init)
+  strip_registers: true         # DINOv3 register tokens are dropped
+  # [TODO/USER] checkpoint loading — reuse the existing notebook's DINOv3 loader
+  checkpoint: null
+
+projection:
+  out_dim: 768                  # Linear 1024 -> 768 per branch
+  modality_embedding: true      # one learned vector per modality
+  rgb_positional_embedding: false   # optional; tactile PE is mandatory (set below)
+  tactile_positional_embedding: true  # REQUIRED — 2D grid PE for the spatial queries
+
+tokens:
+  num_spatial_queries: 196      # = 14x14, fixed (do not change without changing image_size)
+  num_pose_queries: 1
+  # spatial(196) + pose(1) = 197 queries; decoder input is fixed regardless of modalities
+
+fusion_trunk:
+  num_layers: 4                 # L — default 4 to match the DPT's 4 taps
+  num_bottleneck_tokens: 16     # m  # ablation: {8, 16, 32}
+  num_heads: 8                  # attention heads inside the trunk
+  ffn_mult: 4                   # FFN hidden = ffn_mult * trunk_dim
+  dropout: 0.1
+  bottleneck_continuity: carry  # {reset, carry}  # ablation A: carry condensed bottleneck across layers
+  tap_layers: [0, 1, 2, 3]      # which trunk layers feed the 4 DPT taps (len must = 4)
+  fusion_variant: asymmetric    # {asymmetric, symmetric_coattention}  # ablation B (control)
+
+heads:
+  dpt:
+    features: 256               # DPT decoder channel width
+    dropout: 0.1
+    out_depth_channels: 1
+    out_normal_channels: 3
+    output_frame: tactile       # depth/normal predicted in the tactile frame
+    tap_source: trunk           # {trunk, encoder_multiscale}  v1 / v2 — both implemented, flag-switchable (retrain to switch; not ckpt-compatible). See CLAUDE.md §3.7
+    encoder_tap_layers: [5, 11, 17, 23]  # v2 only: tactile-encoder layers tapped (ViT-L depth 24)
+    inject_gate_init: 0.0       # v2 only: ReZero-style learnable gate on per-tap RGB injection (0 = start as pure encoder taps, learn to inject)
+  pose:
+    hidden_dim: 256             # MLP: LN -> 768->256 -> GELU -> Dropout -> 256->4
+    dropout: 0.1
+    pose_mode: regression       # {regression, classification}  # ablation C (if pose unstable)
+    # regression: outputs (a, b, t_x, t_y); (a,b) L2-normalized -> (cos, sin). SE(2), 3 DoF.
+    rot_num_bins: 72            # only used if pose_mode == classification (5-degree bins)
