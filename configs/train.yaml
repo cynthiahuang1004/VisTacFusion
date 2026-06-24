@@ -31,7 +31,7 @@ modality_dropout:
   # skip the dense loss on RGB-only batches while still training pose.
   rgb_only_supervises_dense: true
 
-# ---- Losses (see CLAUDE.md §5) ----
+# ---- Losses ----
 loss:
   depth:
     type: ssi                   # {ssi, l1}  scale-shift-invariant recommended for sim2real

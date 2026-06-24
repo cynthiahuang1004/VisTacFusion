@@ -9,3 +9,4 @@ outputs/
 data/
 *.npy
 .DS_Store
+CLAUDE.md

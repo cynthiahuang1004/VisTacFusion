@@ -1,10 +1,10 @@
-"""DPT dense head (CLAUDE.md 3.6). Ported from the training notebook, generalized to D=768.
+"""DPT dense head (D=768).
 
-Input : 4 taps, each [B, 196, D]  (196 = 14x14 square grid -- Reassemble needs square).
+Input : 4 taps, each [B, 196, D]  (196 = 14x14; Reassemble needs a square grid).
 Output: depth [B, 1, H, W], normal [B, 3, H, W]  (tactile frame, upsampled to image_size).
 
-Reassemble scales {4, 2, 1, 0.5} give the spatial multi-scale pyramid; FeatureFusion blocks
-merge coarse->fine; two CNN heads predict depth and normal.
+Reassemble scales {4, 2, 1, 0.5} build the multi-scale pyramid; FeatureFusion blocks merge
+coarse->fine; two CNN heads predict depth and normal.
 """
 from __future__ import annotations
 

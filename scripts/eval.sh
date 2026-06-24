@@ -4,4 +4,4 @@
 # end of each train cycle (see vistacfusion/engine/eval.py::evaluate).
 set -euo pipefail
 echo "Per-config evaluation runs inside training (vistacfusion/engine/eval.py)."
-echo "Add a --resume/--eval-only entrypoint when checkpointing is wired (CLAUDE.md 10)."
+echo "Add a --resume/--eval-only entrypoint when checkpointing is wired."

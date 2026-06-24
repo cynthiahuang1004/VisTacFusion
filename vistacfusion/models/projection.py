@@ -1,11 +1,8 @@
-"""Projection + embeddings: encoder dim -> trunk dim D (CLAUDE.md 3.3).
+"""Projection + embeddings: encoder dim E -> trunk dim D.
 
-Per branch:
-  - Linear(E -> D) applied per token (patch tokens and CLS).
-  - Add a learned modality embedding (one vector per modality, broadcast to all tokens).
-The 2D positional embedding for the 196 spatial queries is owned by the model (not here),
-because the SAME positional emb is added to either real tactile patch tokens OR the
-learnable spatial mask tokens in RGB-only mode (CLAUDE.md 4, gotcha 6/8).
+Per branch: Linear(E -> D) per token + a learned modality embedding.
+The 2D positional embedding lives in the model (not here) so the same instance can be added
+to either tactile patch tokens or the RGB-only mask tokens.
 """
 from __future__ import annotations
 
@@ -28,11 +25,10 @@ class BranchProjection(nn.Module):
 
 
 class SpatialPosEmbedding(nn.Module):
-    """Learned 2D positional embedding for the ``num_tokens`` (=196) spatial queries.
+    """Learned positional embedding for the spatial queries (=196).
 
-    REQUIRED on the spatial queries: the DPT Reassemble reshapes 196 -> 14x14 and needs
-    positional structure (CLAUDE.md 3.3). Added to whatever fills the spatial queries
-    (tactile patch tokens or RGB-only mask tokens) so both carry identical position info.
+    Required: the DPT Reassemble reshapes 196 -> 14x14 and needs positional structure. Added
+    to whatever fills the spatial queries (tactile patches or RGB-only mask tokens).
     """
 
     def __init__(self, num_tokens=196, dim=768):

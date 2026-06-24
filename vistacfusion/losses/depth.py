@@ -1,8 +1,8 @@
-"""Depth loss (CLAUDE.md 5).
+"""Depth loss.
 
-- Scale-shift-invariant (SSI / MiDaS-style) loss on normalized depth -- robust for sim2real.
+- Scale-shift-invariant (SSI / MiDaS-style) on normalized depth -- robust for sim2real.
 - Optional gradient-matching term for sharp edges.
-- Plain L1 fallback to start.
+- Plain L1 fallback.
 """
 from __future__ import annotations
 

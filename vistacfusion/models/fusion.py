@@ -1,23 +1,20 @@
-"""Fusion trunk: bottleneck tokens + the 3-step layer, repeated L times (CLAUDE.md 3.4, 3.5).
+"""Fusion trunk: bottleneck tokens + a 3-step layer, repeated L times.
 
-Attention rule (CLAUDE.md 2): output rows = number of QUERIES; K/V count is independent.
-This is why the decoder input stays fixed at 4x(B x 196 x D) + (B x 1 x D) in every config.
+Output rows follow the query count; K/V count is independent -- so the decoder input stays
+fixed at 4x(B,196,D) + (B,1,D) in every config.
 
-Each fusion-trunk layer, in order:
-  (1) Bottleneck <- RGB : Q=bottleneck(m),  K=V=memory(197)  -> bottleneck   [cross-attn, no FFN]
-  (2) Queries   <- Bottleneck : Q=queries(197), K=V=bottleneck(m) -> queries  [cross-attn + FFN]
-  (3) Queries self-attn : Q=K=V=queries(197) -> queries                       [self-attn + FFN]
+Each layer, in order:
+  (1) Bottleneck <- RGB memory   [cross-attn, no FFN]
+  (2) Queries    <- Bottleneck   [cross-attn + FFN]
+  (3) Queries self-attention     [self-attn + FFN]
 
-Per config (CLAUDE.md 4):
-  - both / rgb-only : run (1)(2)(3)            (RGB present -> bottleneck condenses it)
-  - tactile-only    : run only (3)             (no RGB -> bottleneck idle, (1)(2) skipped)
+By config: both / rgb-only run (1)(2)(3); tactile-only runs only (3) (no RGB -> bottleneck idle).
 
-Ablation A `bottleneck_continuity` in {carry, reset}: carry the condensed bottleneck across
-layers (recurrent-style) or reset it to the learnable init each layer.
-
-Ablation B `fusion_variant` in {asymmetric, symmetric_coattention}: symmetric also lets RGB
-memory attend to the queries (RGB produces queries too) -- the control that justifies
-"tactile is the spatial anchor".
+Flags:
+  bottleneck_continuity {carry, reset} -- carry the condensed bottleneck across layers, or
+    reset it to the learnable init each layer.
+  fusion_variant {asymmetric, symmetric_coattention} -- symmetric also lets RGB memory attend
+    to the queries (the control for "tactile is the anchor").
 """
 from __future__ import annotations
 
@@ -67,7 +64,7 @@ class FusionTrunkLayer(nn.Module):
     def __init__(self, dim, num_heads, ffn_mult=4, dropout=0.0, fusion_variant="asymmetric"):
         super().__init__()
         self.fusion_variant = fusion_variant
-        # (1) bottleneck <- RGB memory (cross-attn, no FFN per CLAUDE.md 3.5)
+        # (1) bottleneck <- RGB memory (cross-attn, no FFN)
         self.bottleneck_from_rgb = AttentionBlock(
             dim, num_heads, dropout, use_ffn=False, ffn_mult=ffn_mult
         )
@@ -111,7 +108,7 @@ class FusionTrunk(nn.Module):
         self.num_bottleneck = cfg.num_bottleneck_tokens
         self.continuity = cfg.bottleneck_continuity      # {carry, reset}
         self.tap_layers = list(cfg.tap_layers)
-        assert len(self.tap_layers) == 4, "DPT needs exactly 4 taps (CLAUDE.md gotcha 4)."
+        assert len(self.tap_layers) == 4, "DPT needs exactly 4 taps."
         assert all(0 <= t < self.num_layers for t in self.tap_layers), "tap_layers out of range"
 
         self.bottleneck = nn.Parameter(torch.zeros(1, self.num_bottleneck, dim))
@@ -139,7 +136,6 @@ class FusionTrunk(nn.Module):
                 bottleneck = self.bottleneck.expand(B, -1, -1)
             queries, bottleneck, memory = layer(queries, bottleneck, memory, use_rgb)
             if i in self.tap_layers:
-                taps.append(queries[:, :-1])          # spatial queries (drop the 1 pose query)
+                taps.append(queries[:, :-1])          # spatial queries (drop the pose query)
         pose_token = queries[:, -1:]                  # [B, 1, D]
-        # order taps by tap_layers request order (already in layer order, which == sorted)
         return taps, pose_token, bottleneck

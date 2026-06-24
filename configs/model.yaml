@@ -1,6 +1,6 @@
 # configs/model.yaml
-# Architecture config. All flags referenced in CLAUDE.md. Defaults are the recommended
-# first-run starting point. Sweep the ones marked "# ablation" later.
+# Architecture config. Defaults are the recommended first-run starting point;
+# sweep the ones marked "# ablation" later.
 
 image_size: 224                 # square; keeps the 14x14=196 token grid square (DPT needs square)
 trunk_dim: 768                  # D — common token dim inside the fusion trunk
@@ -44,7 +44,7 @@ heads:
     out_depth_channels: 1
     out_normal_channels: 3
     output_frame: tactile       # depth/normal predicted in the tactile frame
-    tap_source: trunk           # {trunk, encoder_multiscale}  v1 / v2 — both implemented, flag-switchable (retrain to switch; not ckpt-compatible). See CLAUDE.md §3.7
+    tap_source: trunk           # {trunk, encoder_multiscale}  v1 / v2 — both implemented, flag-switchable (retrain to switch; not ckpt-compatible)
     encoder_tap_layers: [5, 11, 17, 23]  # v2 only: tactile-encoder layers tapped (ViT-L depth 24)
     inject_gate_init: 0.0       # v2 only: ReZero-style learnable gate on per-tap RGB injection (0 = start as pure encoder taps, learn to inject)
   pose:

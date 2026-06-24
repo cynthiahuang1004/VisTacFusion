@@ -1,8 +1,8 @@
-"""Total multi-task loss (CLAUDE.md 5).
+"""Total multi-task loss.
 
-Weighted sum of depth + normal + pose. Optional Kendall et al. uncertainty weighting
-(learned log-variances). ``supervise_dense=False`` skips the dense (depth/normal) terms --
-used for RGB-only batches when configured (rgb_only_supervises_dense: false).
+Weighted sum of depth + normal + pose, with optional Kendall uncertainty weighting (learned
+log-variances). supervise_dense=False skips the dense terms (for RGB-only batches when
+rgb_only_supervises_dense is off).
 """
 from __future__ import annotations
 

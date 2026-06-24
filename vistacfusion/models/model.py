@@ -1,17 +1,16 @@
-"""Full visuo-tactile multi-task model (CLAUDE.md 3, 4, 3.7).
+"""Full visuo-tactile multi-task model.
 
-forward(rgb, tactile, config) with config in {"both", "tactile", "rgb"} produces an
-IDENTICAL decoder input in every config: 4 x [B, 196, D] spatial taps + [B, 1, D] pose token.
-Only *what fills the queries* and *whether RGB exists* changes.
+forward(rgb, tactile, config), config in {"both", "tactile", "rgb"}, gives an identical
+decoder input in every config: 4 x [B, 196, D] spatial taps + [B, 1, D] pose token. Only what
+fills the queries (and whether RGB exists) changes.
 
-Tactile is the spatial anchor; RGB is read-only context (K/V only). RGB-only swaps real
-tactile queries for learnable mask tokens (same count, same positional emb).
+Tactile is the spatial anchor; RGB is read-only K/V context. RGB-only swaps the tactile
+queries for learnable mask tokens (same count, same positional emb).
 
-DPT tap source (CLAUDE.md 3.7):
-  - v1 `trunk`              : 4 taps are the spatial queries from 4 fusion-trunk layers.
-  - v2 `encoder_multiscale` : 4 taps come from 4 tactile-encoder layers (+ per-tap residual
-                              RGB injection through the condensed bottleneck; gate init 0).
-Both are built from day 1 and flag-switched; they are NOT checkpoint-compatible (retrain).
+DPT tap source:
+  - trunk (v1)              : 4 taps = spatial queries from 4 trunk layers.
+  - encoder_multiscale (v2) : 4 taps from 4 tactile-encoder layers + per-tap residual RGB
+                              injection (gate init 0). Not checkpoint-compatible with v1.
 """
 from __future__ import annotations
 
@@ -41,9 +40,8 @@ def _config_flags(config):
 class TapInjection(nn.Module):
     """v2 per-tap residual RGB injection: tap += gate * CrossAttn(Q=tap, K=V=bottleneck).
 
-    ReZero-style learnable gate, init 0 -> v2 starts as PURE encoder taps and learns to
-    inject. When RGB is absent the caller SKIPS this entirely (adds exactly 0), so
-    single-modality = pure encoder taps (fairness, CLAUDE.md 3.7 / gotcha 9).
+    ReZero gate init 0 -> starts as pure encoder taps, learns to inject. When RGB is absent the
+    caller skips this entirely (adds exactly 0), keeping single-modality fair.
     """
 
     def __init__(self, dim, num_heads, dropout=0.0, gate_init=0.0):
@@ -90,7 +88,7 @@ class VisuoTactileModel(nn.Module):
         if self.use_rgb_pos:
             self.rgb_spatial_pos = SpatialPosEmbedding(self.num_spatial, self.dim)
 
-        # ---- Mask tokens for RGB-only (CLAUDE.md 4, gotcha 6/8) ----
+        # ---- Mask tokens for RGB-only ----
         self.spatial_mask = nn.Parameter(torch.zeros(1, self.num_spatial, self.dim))
         self.pose_mask = nn.Parameter(torch.zeros(1, 1, self.dim))
         nn.init.trunc_normal_(self.spatial_mask, std=0.02)

@@ -1,12 +1,12 @@
-"""Training loop with modality dropout (CLAUDE.md 4, 6, 10).
+"""Training loop with modality dropout.
 
 One shared model. Each step samples a config in {both, tactile, rgb} with the configured
-probabilities; the three configs are inference-time input modes but trained jointly.
+probabilities; the three configs are inference-time input modes, trained jointly.
 
-Run:  python -m vistacfusion.engine.train --model configs/model.yaml --train configs/train.yaml \
-                                 --data configs/data.yaml
-With configs/data.yaml dataset:synthetic and encoder.checkpoint:null it runs end-to-end on
-CPU/GPU with the mock encoder (no DINOv3 weights needed) -- the build-order step-1 smoke test.
+Run:  python -m vistacfusion.engine.train --model configs/model.yaml \
+              --train configs/train.yaml --data configs/data.yaml
+With dataset:synthetic + encoder.checkpoint:null this runs end-to-end on the mock encoder
+(no DINOv3 weights needed).
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from .eval import evaluate
 
 
 def sample_config(md_cfg):
-    """Sample a modality config per CLAUDE.md modality dropout."""
+    """Sample a modality config {both, tactile, rgb} by the dropout probabilities."""
     if not md_cfg.get("enabled", True):
         return "both"
     r = random.random()

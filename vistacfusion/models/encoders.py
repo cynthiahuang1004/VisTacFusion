@@ -1,25 +1,15 @@
-"""Frozen image encoders.
+"""Frozen image encoders. DINOv3 ViT-L/16: 224x224 -> 196 patch tokens + 1 CLS, dim 1024.
 
-CLAUDE.md 1, 3.2:
-  - Both ViT encoders are FROZEN feature extractors (sim2real anchor + fairness).
-  - DINOv3 ViT-L/16: patch 16, embed_dim 1024, 224x224 -> 196 patch tokens (+1 CLS).
-  - Strip register tokens, keep CLS separately (RGB CLS -> memory, tactile CLS -> pose init).
+Two interchangeable encoders behind one interface:
+  - DINOv3Encoder : real frozen DINOv3 (torch.hub arch + local .pth). Needs the gated weights.
+  - MockEncoder   : deterministic patch-embed stand-in with identical shapes, so the pipeline
+                    runs on CPU before the weights exist.
 
-Two implementations behind a common interface:
-  - ``DINOv3Encoder`` : the real frozen DINOv3 (reuses the notebook's torch.hub +
-    local .pth loader). Requires the gated weights.
-  - ``MockEncoder``   : a tiny deterministic patch-embed stand-in with the SAME interface
-    and output shapes, so the whole pipeline runs end-to-end on CPU before the
-    DINOv3 weights exist (CLAUDE.md 10, build-order step 1).
+Interface (tokens at the encoder's native dim E):
+    forward(x)            -> (patch [B, N, E], cls [B, 1, E])
+    forward_multiscale(x) -> K patch maps [B, N, E]   (for the DPT v2 tap source)
 
-Common interface (both return tokens at the encoder's native dim):
-    forward(x)            -> (patch_tokens [B, N, E], cls_token [B, 1, E])
-    forward_multiscale(x) -> list of K patch-token maps, each [B, N, E]   (DPT v2)
-where N = (image_size / patch)^2 and E = embed_dim.
-
-Use ``build_encoder(enc_cfg, image_size)`` to construct the right one: it returns a
-MockEncoder when ``enc_cfg.checkpoint`` is null (testing / scaffolding), else the real
-DINOv3 loaded from ``enc_cfg.checkpoint``.
+build_encoder() returns the real encoder when a checkpoint is set, else the mock.
 """
 from __future__ import annotations
 
@@ -56,12 +46,10 @@ def auto_layer_indices(depth, k=4):
 
 
 class DINOv3Encoder(nn.Module):
-    """Frozen DINOv3 backbone. Returns last-layer patch tokens + CLS, and (for DPT v2)
-    multi-scale patch tokens from intermediate layers.
+    """Frozen DINOv3: last-layer patch tokens + CLS, plus intermediate layers for DPT v2.
 
-    The DINOv3 hub entrypoint's ``weights`` kwarg only accepts URLs with a specific hash
-    pattern, so we load the architecture with pretrained=False and load the local .pth
-    ourselves (exactly as in the training notebook).
+    The hub entrypoint only accepts hashed weight URLs, so we build the arch with
+    pretrained=False and load the local .pth ourselves.
     """
 
     def __init__(self, model_name="dinov3_vitl16", weights=None, multiscale_layers=None):
@@ -119,10 +107,8 @@ class DINOv3Encoder(nn.Module):
 class MockEncoder(nn.Module):
     """Deterministic frozen stand-in for DINOv3 with identical output shapes.
 
-    A single (frozen) patch-embed conv produces N=(img/patch)^2 tokens of dim ``embed_dim``;
-    a frozen linear makes the CLS token from their mean. ``forward_multiscale`` returns K
-    lightly-perturbed copies so DPT v2 has distinct taps. Parameters are frozen to mimic the
-    real encoder (the model never trains the encoder).
+    Patch-embed conv -> N tokens; CLS = linear(mean of tokens). forward_multiscale returns K
+    distinct projected copies. All params frozen, like the real encoder.
     """
 
     def __init__(self, embed_dim=1024, patch_size=16, image_size=224, multiscale_k=4):

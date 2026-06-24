@@ -8,8 +8,8 @@ tqdm>=4.66
 
 # Encoders / backbones
 timm>=1.0.9            # ViT utils; DINOv3 may also be loaded via torch.hub / official repo
-# NOTE: DINOv3 weights are NOT on PyPI. Load via the official DINOv3 release / torch.hub,
-#       or reuse the user's existing notebook loader. See CLAUDE.md §3.2 [TODO/USER].
+# NOTE: DINOv3 weights are NOT on PyPI and are gated. Load via the official DINOv3 release /
+#       torch.hub with a local .pth (set encoder.checkpoint in configs/model.yaml).
 
 # Training / logging
 tensorboard>=2.16

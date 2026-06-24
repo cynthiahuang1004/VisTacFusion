@@ -1,4 +1,4 @@
-"""Eval metrics (CLAUDE.md train.yaml eval.metrics)."""
+"""Eval metrics: depth absrel/rmse, normal mean angle, pose rotation/translation error."""
 from __future__ import annotations
 
 import math

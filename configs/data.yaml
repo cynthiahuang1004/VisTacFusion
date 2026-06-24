@@ -5,8 +5,8 @@
 image_size: 224                 # square; must match model.yaml image_size (keeps 14x14=196 grid)
 
 # ---- Dataset selection ----
-# 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists
-#               (build-order step 1). Switch to 'sim' once the loader is wired.
+# 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists.
+#               Switch to 'sim' once the loader is wired.
 dataset: synthetic              # {synthetic, sim}
 
 synthetic:
@@ -24,7 +24,7 @@ sim:
   use_gt_norm: true             # use the *_gt normal renders if present
   # Object-wise train/val split (held-out objects = the sim "val"). Real eval is separate.
   val_objects: [edge, hex_key, pattern_31_rod]
-  raw_input: true               # feed raw 3-channel tactile (DINOv3 path); see CLAUDE.md 3.1
+  raw_input: true               # feed raw 3-channel tactile (DINOv3 path)
 
 # ---- Real eval set (sim2real, reported zero-shot) ----
 real:

@@ -1,4 +1,4 @@
-"""Normal loss (CLAUDE.md 5): cosine / angular loss 1 - cos(angle), not MSE on raw vectors."""
+"""Normal loss: cosine / angular loss 1 - cos(angle), not MSE on raw vectors."""
 from __future__ import annotations
 
 import torch

@@ -1,7 +1,7 @@
-"""Shape-assertion tests (CLAUDE.md 10: get shapes right before training logic).
+"""Shape tests.
 
-The key fairness invariant: the decoder input is IDENTICAL across all three modality configs:
-    4 x [B, 196, D]  spatial taps   +   [B, 1, D]  pose token.
+Key fairness invariant: the decoder input is identical across all three modality configs --
+4 x [B, 196, D] spatial taps + [B, 1, D] pose token.
 """
 import torch
 
@@ -59,7 +59,7 @@ def test_v2_encoder_multiscale_shapes(cfg):
 
 
 def test_v2_injection_zero_without_rgb(cfg):
-    """v2 fairness (gotcha 9): with gate init 0 AND RGB absent, taps are pure encoder taps.
+    """v2 fairness: with gate init 0 and RGB absent, taps are pure encoder taps, so the
     tactile-only output must be invariant to the RGB input tensor."""
     cfg.heads.dpt.tap_source = "encoder_multiscale"
     model = build_model(cfg).eval()
@@ -76,4 +76,4 @@ def test_v2_injection_zero_without_rgb(cfg):
 def test_frozen_encoder_has_no_trainable_params(cfg):
     model = build_model(cfg)
     enc_trainable = sum(p.numel() for p in model.tactile_encoder.parameters() if p.requires_grad)
-    assert enc_trainable == 0, "encoder must be frozen (CLAUDE.md 1)"
+    assert enc_trainable == 0, "encoder must be frozen"

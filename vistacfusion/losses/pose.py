@@ -1,10 +1,10 @@
-"""Pose loss (CLAUDE.md 5, gotcha 5).
+"""Pose loss (SE(2)).
 
-SE(2): rotation 1 - cos(theta_pred - theta_gt) computed on (cos,sin) (no atan2 in the loss),
-translation L1 on (t_x, t_y). L_pose = rot_w * L_rot + trans_w * L_trans.
+Rotation = 1 - cos(theta_pred - theta_gt), computed on (cos, sin) -- no atan2 in the loss.
+Translation = L1 on (t_x, t_y). Total = rot_w * rot + trans_w * trans.
 
-GT pose is (cos, sin, t_x, t_y). Prediction (regression) is the same. For the classification
-pose mode, rotation uses cross-entropy over theta bins + L1 translation.
+GT and regression prediction are both (cos, sin, t_x, t_y). Classification mode uses
+cross-entropy over theta bins + L1 translation.
 """
 from __future__ import annotations
 

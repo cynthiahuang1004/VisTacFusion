@@ -1,5 +1,5 @@
-"""One-batch overfit test (CLAUDE.md 10, step 7): loss must drop sharply on a single
-synthetic batch -- proves the model + losses + backprop are wired correctly."""
+"""One-batch overfit test: loss must drop sharply on a single synthetic batch -- proves the
+model + losses + backprop are wired correctly."""
 import torch
 
 from vistacfusion.losses.total import MultiTaskLoss

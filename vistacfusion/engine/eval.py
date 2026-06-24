@@ -1,7 +1,7 @@
-"""Evaluation: report metrics per modality config (the fairness ablation).
+"""Evaluation: report metrics per modality config (both / tactile / rgb).
 
-CLAUDE.md train.yaml: report_per_config -> report both / tactile-only / rgb-only separately.
-The scientific claim (RGB+tactile beats either alone) is read off this table.
+This per-config table is the fairness ablation -- the claim "RGB+tactile beats either alone"
+is read directly off it.
 """
 from __future__ import annotations
 
