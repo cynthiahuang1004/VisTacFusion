@@ -1,7 +1,9 @@
 """Frozen image encoders. DINOv3 ViT-L/16: 224x224 -> 196 patch tokens + 1 CLS, dim 1024.
 
 Two interchangeable encoders behind one interface:
-  - DINOv3Encoder : real frozen DINOv3 (torch.hub arch + local .pth). Needs the gated weights.
+  - DINOv3Encoder : real frozen DINOv3, loaded via HuggingFace `transformers`. The gated
+                    weights download as an HF-format state dict (`embeddings.*`, `layer.N.*`),
+                    which this loads directly -- no architecture download needed.
   - MockEncoder   : deterministic patch-embed stand-in with identical shapes, so the pipeline
                     runs on CPU before the weights exist.
 
@@ -17,18 +19,8 @@ import torch
 import torch.nn as nn
 
 
-def _count_blocks(backbone):
-    blocks = getattr(backbone, "blocks", None)
-    if blocks is None:
-        return None
-    try:
-        return len(blocks)
-    except TypeError:
-        return sum(1 for _ in blocks)
-
-
 def auto_layer_indices(depth, k=4):
-    """k evenly-spaced block indices ending at the last layer (ported from the notebook).
+    """k evenly-spaced layer indices ending at the last layer.
 
     depth 12 (ViT-B) -> (2, 5, 8, 11); depth 24 (ViT-L) -> (5, 11, 17, 23).
     """
@@ -45,38 +37,58 @@ def auto_layer_indices(depth, k=4):
     return tuple(idx[-k:])
 
 
-class DINOv3Encoder(nn.Module):
-    """Frozen DINOv3: last-layer patch tokens + CLS, plus intermediate layers for DPT v2.
+def _infer_dinov3_config(sd):
+    """Infer a DINOv3ViTConfig from an HF-format state dict (works for any ViT size)."""
+    from transformers import DINOv3ViTConfig
 
-    The hub entrypoint only accepts hashed weight URLs, so we build the arch with
-    pretrained=False and load the local .pth ourselves.
+    pe = sd["embeddings.patch_embeddings.weight"]          # [hidden, 3, patch, patch]
+    hidden = pe.shape[0]
+    patch = pe.shape[-1]
+    num_register = sd["embeddings.register_tokens"].shape[1]
+    num_layers = 1 + max(int(k.split(".")[1]) for k in sd if k.startswith("layer."))
+    intermediate = sd["layer.0.mlp.up_proj.weight"].shape[0]
+    gated = any("gate" in k for k in sd if k.startswith("layer.0.mlp"))
+    return DINOv3ViTConfig(
+        patch_size=patch,
+        hidden_size=hidden,
+        intermediate_size=intermediate,
+        num_hidden_layers=num_layers,
+        num_attention_heads=hidden // 64,                  # DINOv3 head_dim = 64
+        num_register_tokens=num_register,
+        image_size=224,
+        use_gated_mlp=gated,
+    )
+
+
+class DINOv3Encoder(nn.Module):
+    """Frozen DINOv3 (HuggingFace `transformers`).
+
+    Loads the gated HF-format checkpoint directly. The token layout is
+    [CLS, register x R, patch x N]; we expose patches and CLS, and intermediate layers for v2.
     """
 
     def __init__(self, model_name="dinov3_vitl16", weights=None, multiscale_layers=None):
         super().__init__()
         if weights is None:
             raise ValueError(
-                "DINOv3 weights are gated. Pass a local .pth path, or use MockEncoder "
+                "DINOv3 weights are gated. Pass a local checkpoint path, or use MockEncoder "
                 "(set encoder.checkpoint: null) for scaffolding/tests."
             )
-        self.dinov3 = torch.hub.load(
-            "facebookresearch/dinov3", model_name, pretrained=False
-        )
+        from transformers import DINOv3ViTModel
+
         print(f"  [encoder] loading DINOv3 weights from {weights}")
-        state_dict = torch.load(weights, map_location="cpu", weights_only=True)
-        missing, unexpected = self.dinov3.load_state_dict(state_dict, strict=False)
-        if missing:
-            print(f"  [encoder] missing keys:    {len(missing)}")
-        if unexpected:
-            print(f"  [encoder] unexpected keys: {len(unexpected)}")
+        sd = torch.load(weights, map_location="cpu", weights_only=True)
+        cfg = _infer_dinov3_config(sd)
+        self.dinov3 = DINOv3ViTModel(cfg)
+        # HF nests the transformer layers under `model.`; embeddings/norm stay top-level.
+        remap = {(f"model.{k}" if k.startswith("layer.") else k): v for k, v in sd.items()}
+        self.dinov3.load_state_dict(remap, strict=True)
 
-        self.embed_dim = getattr(self.dinov3, "embed_dim", None)
-        if self.embed_dim is None:
-            self.embed_dim = self.dinov3.norm.normalized_shape[0]
-
-        depth = _count_blocks(self.dinov3)
+        self.embed_dim = cfg.hidden_size
+        self.num_register = cfg.num_register_tokens
+        self._patch_start = 1 + self.num_register               # skip CLS + registers
         if multiscale_layers is None:
-            multiscale_layers = auto_layer_indices(depth, k=4)
+            multiscale_layers = auto_layer_indices(cfg.num_hidden_layers, k=4)
         self.multiscale_layers = sorted(multiscale_layers)
 
         for p in self.dinov3.parameters():
@@ -90,18 +102,16 @@ class DINOv3Encoder(nn.Module):
 
     @torch.no_grad()
     def forward(self, x):
-        out = self.dinov3.get_intermediate_layers(
-            x, n=1, reshape=False, return_class_token=True
-        )
-        patch, cls = out[-1]                # [B, N, E], [B, E]
-        return patch, cls.unsqueeze(1)      # [B, N, E], [B, 1, E]
+        tokens = self.dinov3(x).last_hidden_state          # [B, 1+R+N, E]
+        patch = tokens[:, self._patch_start:]              # [B, N, E]
+        cls = tokens[:, :1]                                # [B, 1, E]
+        return patch, cls
 
     @torch.no_grad()
     def forward_multiscale(self, x):
-        outs = self.dinov3.get_intermediate_layers(
-            x, n=self.multiscale_layers, reshape=False, return_class_token=True
-        )
-        return [patch for (patch, _cls) in outs]   # list of [B, N, E]
+        # hidden_states[0] = embeddings, hidden_states[i+1] = output of layer i.
+        hs = self.dinov3(x, output_hidden_states=True).hidden_states
+        return [hs[i + 1][:, self._patch_start:] for i in self.multiscale_layers]
 
 
 class MockEncoder(nn.Module):

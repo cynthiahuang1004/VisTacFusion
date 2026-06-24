@@ -14,7 +14,7 @@ encoder:
   keep_cls: true                # keep CLS (RGB CLS -> memory; tactile CLS -> pose query init)
   strip_registers: true         # DINOv3 register tokens are dropped
   # [TODO/USER] checkpoint loading — reuse the existing notebook's DINOv3 loader
-  checkpoint: null
+  checkpoint: "weights/dinov3_vitl16_pretrain_lvd1689m.pth"
 
 projection:
   out_dim: 768                  # Linear 1024 -> 768 per branch

@@ -84,10 +84,11 @@ fairness ablation the project is built around.
 
 ## Using real DINOv3 weights and real data
 
-1. **Weights.** DINOv3 is gated. Download and convert
-   `facebook/dinov3-vitl16-pretrain-lvd1689m` to a local `.pth`, then set
-   `encoder.checkpoint` in `configs/model.yaml`. The real encoder loads the architecture via
-   `torch.hub` (`pretrained=False`) and applies the local weights.
+1. **Weights.** DINOv3 is gated. Download `facebook/dinov3-vitl16-pretrain-lvd1689m`
+   (`model.safetensors`, or a `.pth` of the same state dict) and set its local path in
+   `encoder.checkpoint` in `configs/model.yaml`. The encoder loads it through HuggingFace
+   `transformers` (`DINOv3ViTModel`); the config is inferred from the checkpoint, so any
+   DINOv3 ViT size works, and the weights load strict (no architecture download needed).
 2. **Data.** Set `dataset: sim` and fill in `configs/data.yaml` (`sim.root`, `sim.rgb_subdir`),
    then implement the two dataset-specific hooks in `vistacfusion/data/dataset.py`, both marked
    `[TODO/USER]`:

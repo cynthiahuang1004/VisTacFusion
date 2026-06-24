@@ -7,9 +7,10 @@ pyyaml>=6.0            # config loading
 tqdm>=4.66
 
 # Encoders / backbones
-timm>=1.0.9            # ViT utils; DINOv3 may also be loaded via torch.hub / official repo
-# NOTE: DINOv3 weights are NOT on PyPI and are gated. Load via the official DINOv3 release /
-#       torch.hub with a local .pth (set encoder.checkpoint in configs/model.yaml).
+transformers>=4.56     # DINOv3 ViT (DINOv3ViTModel); the frozen encoder loads through this
+# NOTE: DINOv3 weights are gated and not on PyPI. Download the HF checkpoint
+#       (facebook/dinov3-vitl16-pretrain-lvd1689m), put the local file path in
+#       configs/model.yaml -> encoder.checkpoint. The HF-format state dict loads directly.
 
 # Training / logging
 tensorboard>=2.16
