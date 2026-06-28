@@ -233,11 +233,14 @@ class SimVisuoTactileDataset(Dataset):
         if self.rgb_aug is not None:
             rgb = self.rgb_aug(rgb)
 
-        # --- Compute normals from (augmented) depth ---
+        # --- Compute normals from raw depth (before scaling) ---
         normal = depth_to_normal(depth, meta["pixel_size_x"], meta["pixel_size_y"])
 
-        # --- Contact mask ---
+        # --- Contact mask (before scaling) ---
         mask = (depth > 0).astype(np.float32)
+
+        # --- Scale depth ×1000 for numerical stability in fp16 SSI loss ---
+        depth = depth * 1000.0
 
         # --- Object ID ---
         obj_name = osp.basename(osp.dirname(osp.dirname(unit)))

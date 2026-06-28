@@ -11,6 +11,7 @@ Multi-GPU (e.g. 2 GPUs):
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import os
 import random
@@ -20,6 +21,7 @@ import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.tensorboard import SummaryWriter
 
 from ..data.dataset import build_datasets
 from ..losses.total import MultiTaskLoss
@@ -94,11 +96,12 @@ def build_scheduler(optimizer, cfg, steps_per_epoch):
 
 
 def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
-                    cfg, device, epoch):
+                    cfg, device, epoch, writer=None):
     model.train()
     md_cfg = cfg.modality_dropout
     dense_on_rgb_only = md_cfg.get("rgb_only_supervises_dense", True)
     running = {}
+    global_step_base = epoch * len(loader)
     for step, batch in enumerate(loader):
         batch = move_batch(batch, device)
         config = sample_config(md_cfg)
@@ -112,6 +115,12 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
                   "pose": batch["pose"], "mask": batch.get("mask")}
             loss, comps = criterion(out, gt, supervise_dense=supervise_dense)
 
+        if torch.isnan(loss) or torch.isinf(loss):
+            if is_main_process():
+                print(f"  [WARN] NaN/Inf loss at epoch {epoch} step {step}, skipping")
+            optimizer.zero_grad(set_to_none=True)
+            continue
+
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -121,12 +130,71 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
 
         for k, v in comps.items():
             running[k] = running.get(k, 0.0) + float(v)
+
         if is_main_process() and step % cfg.log_every == 0:
             lr_now = optimizer.param_groups[0]["lr"]
             msg = "  ".join(f"{k}={running[k] / (step + 1):.4f}" for k in sorted(running))
             print(f"[epoch {epoch:03d} | step {step:04d}/{len(loader)} | cfg={config:7s} | "
                   f"lr={lr_now:.2e}] {msg}")
+
+        if is_main_process() and writer is not None and step % cfg.log_every == 0:
+            gs = global_step_base + step
+            for k, v in comps.items():
+                writer.add_scalar(f"train_step/{k}", float(v), gs)
+            writer.add_scalar("train_step/lr", optimizer.param_groups[0]["lr"], gs)
     return {k: v / len(loader) for k, v in running.items()}
+
+
+def save_loss_plots(history, plot_dir):
+    """Save loss curve PNGs from accumulated training/val history."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    os.makedirs(plot_dir, exist_ok=True)
+    epochs = [h["epoch"] for h in history]
+
+    # --- Train losses ---
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle("Training Loss", fontsize=14)
+    for ax, key, label in [
+        (axes[0, 0], "total", "Total"),
+        (axes[0, 1], "depth", "Depth (SSI)"),
+        (axes[1, 0], "normal", "Normal (cosine)"),
+        (axes[1, 1], "pose", "Pose"),
+    ]:
+        vals = [h["train"].get(key, float("nan")) for h in history]
+        ax.plot(epochs, vals, "b-o", markersize=2)
+        ax.set_title(label)
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel("Loss")
+        ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(os.path.join(plot_dir, "train_loss.png"), dpi=150)
+    plt.close(fig)
+
+    # --- Val metrics per config ---
+    for config in ["both", "tactile", "rgb"]:
+        if config not in history[0].get("val", {}):
+            continue
+        fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+        fig.suptitle(f"Val Metrics — {config}", fontsize=14)
+        for ax, key, label in [
+            (axes[0, 0], "depth_absrel", "Depth AbsRel"),
+            (axes[0, 1], "depth_rmse", "Depth RMSE"),
+            (axes[0, 2], "normal_mean_angle", "Normal Angle (°)"),
+            (axes[1, 0], "pose_rot_deg", "Pose Rot (°)"),
+            (axes[1, 1], "pose_trans", "Pose Trans L1"),
+        ]:
+            vals = [h["val"].get(config, {}).get(key, float("nan")) for h in history]
+            ax.plot(epochs, vals, "r-o", markersize=2)
+            ax.set_title(label)
+            ax.set_xlabel("Epoch")
+            ax.grid(True, alpha=0.3)
+        axes[1, 2].axis("off")
+        fig.tight_layout()
+        fig.savefig(os.path.join(plot_dir, f"val_{config}.png"), dpi=150)
+        plt.close(fig)
 
 
 def build_optimizer(model, optim_cfg):
@@ -211,7 +279,7 @@ def main():
         print(f"Model: {param_count_str(model)}")
 
     if is_distributed():
-        model = DDP(model, device_ids=[device.index], find_unused_parameters=False)
+        model = DDP(model, device_ids=[device.index], find_unused_parameters=True)
 
     criterion = MultiTaskLoss(
         cfg.loss, pose_mode=cfg.heads.pose.pose_mode,
@@ -234,10 +302,20 @@ def main():
 
     # Pre-compute frozen encoder outputs for val (no augmentation → deterministic)
     val_enc_cache = None
+    writer = None
+    history = []
+    plot_dir = None
+    history_path = None
     if is_main_process():
         raw_model = model.module if isinstance(model, DDP) else model
         print("Pre-computing val encoder cache...")
         val_enc_cache = precompute_encoder_cache(raw_model, val_loader, device)
+        writer = SummaryWriter(log_dir=os.path.join(args.output_dir, "tb"))
+        plot_dir = os.path.join(args.output_dir, "plots")
+        history_path = os.path.join(args.output_dir, "history.json")
+        if os.path.exists(history_path):
+            with open(history_path) as f:
+                history = json.load(f)
 
     max_epochs = args.epochs if args.epochs is not None else cfg.schedule.max_epochs
     for epoch in range(start_epoch, max_epochs):
@@ -247,17 +325,29 @@ def main():
         t0 = time.time()
         train_metrics = train_one_epoch(
             model, train_loader, optimizer, scheduler, scaler, criterion,
-            cfg, device, epoch)
+            cfg, device, epoch, writer=writer)
         elapsed = time.time() - t0
 
         if is_main_process():
             print(f"[epoch {epoch:03d}] train done in {elapsed:.0f}s  "
                   f"avg_total={train_metrics.get('total', 0):.4f}")
 
+            for k, v in train_metrics.items():
+                writer.add_scalar(f"train_epoch/{k}", v, epoch)
+
             raw_model = model.module if isinstance(model, DDP) else model
             val_metrics = evaluate(raw_model, val_loader, cfg, device,
                                    encoder_cache=val_enc_cache)
             print(f"[epoch {epoch:03d}] val metrics: {val_metrics}")
+
+            for config_name, metrics in val_metrics.items():
+                for mk, mv in metrics.items():
+                    writer.add_scalar(f"val_{config_name}/{mk}", mv, epoch)
+
+            history.append({"epoch": epoch, "train": train_metrics, "val": val_metrics})
+            with open(history_path, "w") as f:
+                json.dump(history, f, indent=2)
+            save_loss_plots(history, plot_dir)
 
             score = val_metrics.get("both", {}).get("depth_absrel", float("inf"))
             if score < best_metric:
@@ -270,12 +360,15 @@ def main():
             save_checkpoint(
                 os.path.join(args.output_dir, f"epoch_{epoch:03d}.pt"),
                 model, optimizer, scheduler, scaler, epoch, best_metric)
+            writer.flush()
 
         if is_distributed():
             dist.barrier()
 
     if is_main_process():
         print("Training complete.")
+        if writer is not None:
+            writer.close()
     if is_distributed():
         dist.destroy_process_group()
 

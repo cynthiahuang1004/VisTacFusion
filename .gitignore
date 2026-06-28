@@ -8,5 +8,8 @@ outputs/
 *.pth
 *.ckpt
 /data/
+datasets/
+results/
 *.npy
+*.jpg
 .DS_Store

@@ -40,7 +40,7 @@ def gradient_matching_loss(pred, gt, scales=4):
 
 
 class DepthLoss(nn.Module):
-    def __init__(self, kind="ssi", grad_matching_weight=0.0):
+    def __init__(self, kind="mse", grad_matching_weight=0.0):
         super().__init__()
         self.kind = kind
         self.grad_w = grad_matching_weight
@@ -52,6 +52,8 @@ class DepthLoss(nn.Module):
             p = _normalize_ssi(pred, mask)
             g = _normalize_ssi(gt, mask)
             loss = (F.l1_loss(p, g, reduction="none") * mask).sum() / mask.sum().clamp_min(1)
+        elif self.kind == "mse":
+            loss = (F.mse_loss(pred, gt, reduction="none") * mask).sum() / mask.sum().clamp_min(1)
         else:  # l1
             loss = (F.l1_loss(pred, gt, reduction="none") * mask).sum() / mask.sum().clamp_min(1)
         if self.grad_w > 0:

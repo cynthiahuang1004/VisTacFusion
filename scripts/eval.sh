@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
-# Evaluate a checkpoint, reporting metrics per modality config (both / tactile / rgb).
-# [TODO/USER] wire checkpoint loading into a small eval entrypoint; for now eval runs at the
-# end of each train cycle (see vistacfusion/engine/eval.py::evaluate).
+# Inference / evaluation script.
+#
+# Single pair:
+#   bash scripts/eval.sh --checkpoint outputs/best.pt \
+#       --tactile /path/to/tactile.png --rgb /path/to/rgb.png
+#
+# Batch (full session):
+#   bash scripts/eval.sh --checkpoint outputs/best.pt \
+#       --session-dir /media/hdd2/ihsuan/gs_blender/renders/button/session_000/sensor_0000/
+#
+# Sim val set visualization:
+#   bash scripts/eval.sh --checkpoint outputs/best.pt --eval-sim --num-vis 30
 set -euo pipefail
-echo "Per-config evaluation runs inside training (vistacfusion/engine/eval.py)."
-echo "Add a --resume/--eval-only entrypoint when checkpointing is wired."
+
+python -m vistacfusion.engine.inference \
+  --model configs/model.yaml \
+  --train configs/train.yaml \
+  --data  configs/data.yaml \
+  "$@"

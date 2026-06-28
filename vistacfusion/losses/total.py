@@ -26,7 +26,7 @@ class MultiTaskLoss(nn.Module):
             kind=loss_cfg.depth.type,
             grad_matching_weight=loss_cfg.depth.get("grad_matching_weight", 0.0),
         )
-        self.normal_loss = NormalLoss()
+        self.normal_loss = NormalLoss(kind=loss_cfg.normal.type)
         self.pose_loss = PoseLoss(
             rot_weight=loss_cfg.pose.rot_weight,
             trans_weight=loss_cfg.pose.trans_weight,

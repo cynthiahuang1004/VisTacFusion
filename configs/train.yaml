@@ -14,7 +14,7 @@ optim:
 schedule:
   name: cosine
   warmup_steps: 1000
-  max_epochs: 100               # [TODO/USER] tune to dataset size
+  max_epochs: 150               # [TODO/USER] tune to dataset size
 
 batch_size: 64                  # B  (per-GPU; 2 GPUs → effective 128)
 num_workers: 8
@@ -34,17 +34,17 @@ modality_dropout:
 # ---- Losses ----
 loss:
   depth:
-    type: ssi                   # {ssi, l1}  scale-shift-invariant recommended for sim2real
+    type: mse                   # {mse, l1, ssi}  MSE matches the working notebook
     grad_matching_weight: 0.0   # >0 to add edge-sharpness gradient term
     weight: 1.0
   normal:
-    type: cosine                # angular/cosine loss
+    type: mse                   # {mse, cosine}  MSE matches the working notebook
     weight: 1.0
   pose:
     rot_weight: 1.0             # 1 - cos(theta_pred - theta_gt), computed on (cos,sin)
     trans_weight: 1.0           # L1 on (t_x, t_y)
     weight: 1.0
-  uncertainty_weighting: false  # Kendall et al. auto task weighting (optional)
+  uncertainty_weighting: true   # Kendall et al. auto task weighting — balances depth/normal/pose gradients
 
 # ---- Augmentation / domain randomization (sim2real workhorse) ----
 augmentation:
