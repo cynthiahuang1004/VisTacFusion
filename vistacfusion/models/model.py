@@ -129,19 +129,25 @@ class VisuoTactileModel(nn.Module):
         )
 
     # ------------------------------------------------------------------ helpers
-    def _build_memory(self, rgb):
+    def _build_memory(self, rgb, enc_out=None):
         """RGB -> read-only memory M = [B, 197, D] (196 patch + 1 CLS)."""
-        patch, cls = self.rgb_encoder(rgb)
+        if enc_out is not None:
+            patch, cls = enc_out
+        else:
+            patch, cls = self.rgb_encoder(rgb)
         patch = self.rgb_proj(patch)
         cls = self.rgb_proj(cls)
         if self.use_rgb_pos:
             patch = self.rgb_spatial_pos(patch)
         return torch.cat([patch, cls], dim=1)            # [B, 197, D]
 
-    def _build_queries(self, tactile, use_tactile, batch_size, device):
+    def _build_queries(self, tactile, use_tactile, batch_size, device, enc_out=None):
         """Assemble the 197 queries: 196 spatial + 1 pose."""
         if use_tactile:
-            patch, cls = self.tactile_encoder(tactile)
+            if enc_out is not None:
+                patch, cls = enc_out
+            else:
+                patch, cls = self.tactile_encoder(tactile)
             spatial = self.spatial_pos(self.tactile_proj(patch))   # [B, 196, D]
             pose_q = self.tactile_proj(cls)                        # [B, 1, D]
         else:
@@ -162,7 +168,10 @@ class VisuoTactileModel(nn.Module):
         return taps
 
     # ------------------------------------------------------------------ forward
-    def forward(self, rgb, tactile, config="both", return_decoder_inputs=False):
+    def forward(self, rgb, tactile, config="both", return_decoder_inputs=False,
+                encoder_cache=None):
+        """encoder_cache: optional dict with 'tactile'=(patch,cls) and 'rgb'=(patch,cls)
+        pre-computed frozen encoder outputs — skips the encoder forward pass."""
         if config not in VALID_CONFIGS:
             raise ValueError(f"config must be one of {VALID_CONFIGS}, got {config!r}")
         use_rgb, use_tactile = _config_flags(config)
@@ -170,8 +179,11 @@ class VisuoTactileModel(nn.Module):
         ref = tactile if use_tactile else rgb
         B, device = ref.shape[0], ref.device
 
-        memory = self._build_memory(rgb) if use_rgb else None
-        queries = self._build_queries(tactile, use_tactile, B, device)
+        tac_enc = encoder_cache.get("tactile") if encoder_cache else None
+        rgb_enc = encoder_cache.get("rgb") if encoder_cache else None
+
+        memory = self._build_memory(rgb, enc_out=rgb_enc) if use_rgb else None
+        queries = self._build_queries(tactile, use_tactile, B, device, enc_out=tac_enc)
 
         trunk_taps, pose_token, bottleneck = self.trunk(queries, memory, use_rgb)
 

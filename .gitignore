@@ -1,12 +1,12 @@
 ﻿__pycache__/
 *.pyc
+*.egg-info/
 .venv/
 venv/
 outputs/
 *.pt
 *.pth
 *.ckpt
-data/
+/data/
 *.npy
 .DS_Store
-CLAUDE.md

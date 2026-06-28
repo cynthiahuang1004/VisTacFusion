@@ -16,7 +16,7 @@ schedule:
   warmup_steps: 1000
   max_epochs: 100               # [TODO/USER] tune to dataset size
 
-batch_size: 16                  # B
+batch_size: 64                  # B  (per-GPU; 2 GPUs → effective 128)
 num_workers: 8
 
 # ---- Modality dropout (one shared model, three configs) ----

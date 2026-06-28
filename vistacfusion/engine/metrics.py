@@ -1,33 +1,46 @@
-"""Eval metrics: depth absrel/rmse, normal mean angle, pose rotation/translation error."""
+"""Eval metrics: depth absrel/rmse, normal mean angle, pose rotation/translation error.
+
+All dense metrics (depth, normal) are computed only on the contact region (mask > 0)
+to avoid inflating errors on the zero-depth background.
+"""
 from __future__ import annotations
 
 import math
 
 import torch
+import torch.nn.functional as F
 
 
 @torch.no_grad()
-def depth_absrel(pred, gt, eps=1e-6):
-    return (((pred - gt).abs()) / gt.abs().clamp_min(eps)).mean().item()
+def depth_absrel(pred, gt, mask=None, eps=1e-6):
+    if mask is None:
+        mask = (gt.abs() > eps).float()
+    valid = mask.sum().clamp_min(1)
+    return ((pred - gt).abs() * mask / gt.abs().clamp_min(eps)).sum().item() / valid.item()
 
 
 @torch.no_grad()
-def depth_rmse(pred, gt):
-    return torch.sqrt(((pred - gt) ** 2).mean()).item()
+def depth_rmse(pred, gt, mask=None, eps=1e-6):
+    if mask is None:
+        mask = (gt.abs() > eps).float()
+    valid = mask.sum().clamp_min(1)
+    return torch.sqrt(((pred - gt) ** 2 * mask).sum() / valid).item()
 
 
 @torch.no_grad()
-def normal_mean_angle_deg(pred, gt, eps=1e-6):
-    import torch.nn.functional as F
+def normal_mean_angle_deg(pred, gt, mask=None, eps=1e-6):
     p = F.normalize(pred, dim=1, eps=eps)
     g = F.normalize(gt, dim=1, eps=eps)
-    cos = (p * g).sum(dim=1).clamp(-1 + 1e-6, 1 - 1e-6)
-    return (torch.acos(cos).mean().item() * 180.0 / math.pi)
+    cos = (p * g).sum(dim=1, keepdim=True).clamp(-1 + 1e-6, 1 - 1e-6)
+    angle = torch.acos(cos)
+    if mask is not None:
+        valid = mask.sum().clamp_min(1)
+        return (angle * mask).sum().item() / valid.item() * 180.0 / math.pi
+    return angle.mean().item() * 180.0 / math.pi
 
 
 @torch.no_grad()
 def pose_rot_deg(pred_se2, gt):
-    # pred_se2, gt: [B, 4] (cos, sin, ...). angular error in degrees.
     cosp, sinp = pred_se2[:, 0], pred_se2[:, 1]
     cosg, sing = gt[:, 0], gt[:, 1]
     dcos = (cosp * cosg + sinp * sing).clamp(-1 + 1e-6, 1 - 1e-6)

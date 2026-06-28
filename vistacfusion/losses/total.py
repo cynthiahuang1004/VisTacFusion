@@ -38,14 +38,15 @@ class MultiTaskLoss(nn.Module):
             self.log_var = nn.Parameter(torch.zeros(3))
 
     def forward(self, pred, gt, supervise_dense=True):
-        """pred: model output dict. gt: dict with depth/normal/pose."""
+        """pred: model output dict. gt: dict with depth/normal/pose/mask."""
         comps = {}
         terms = []
         weights = []
+        mask = gt.get("mask")
 
         if supervise_dense:
-            l_depth = self.depth_loss(pred["depth"], gt["depth"])
-            l_normal = self.normal_loss(pred["normal"], gt["normal"])
+            l_depth = self.depth_loss(pred["depth"], gt["depth"], mask=mask)
+            l_normal = self.normal_loss(pred["normal"], gt["normal"], mask=mask)
             comps["depth"] = l_depth.detach()
             comps["normal"] = l_normal.detach()
             terms += [l_depth, l_normal]
