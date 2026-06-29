@@ -291,6 +291,7 @@ def main():
 
     start_epoch = 0
     best_metric = float("inf")
+    best_pose_metric = float("inf")
     if args.resume:
         if is_main_process():
             print(f"Resuming from {args.resume}")
@@ -349,13 +350,23 @@ def main():
                 json.dump(history, f, indent=2)
             save_loss_plots(history, plot_dir)
 
-            score = val_metrics.get("both", {}).get("depth_absrel", float("inf"))
-            if score < best_metric:
-                best_metric = score
+            both_metrics = val_metrics.get("both", {})
+            depth_score = both_metrics.get("depth_absrel", float("inf"))
+            pose_score = both_metrics.get("pose_rot_deg", float("inf"))
+
+            if depth_score < best_metric:
+                best_metric = depth_score
                 save_checkpoint(
-                    os.path.join(args.output_dir, "best.pt"),
+                    os.path.join(args.output_dir, "best_depth.pt"),
                     model, optimizer, scheduler, scaler, epoch, best_metric)
-                print(f"  ** new best: depth_absrel={best_metric:.4f}")
+                print(f"  ** new best depth: absrel={best_metric:.4f}")
+
+            if pose_score < best_pose_metric:
+                best_pose_metric = pose_score
+                save_checkpoint(
+                    os.path.join(args.output_dir, "best_pose.pt"),
+                    model, optimizer, scheduler, scaler, epoch, best_pose_metric)
+                print(f"  ** new best pose: rot_deg={best_pose_metric:.3f}")
 
             save_checkpoint(
                 os.path.join(args.output_dir, f"epoch_{epoch:03d}.pt"),

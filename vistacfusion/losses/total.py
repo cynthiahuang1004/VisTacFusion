@@ -45,8 +45,8 @@ class MultiTaskLoss(nn.Module):
         mask = gt.get("mask")
 
         if supervise_dense:
-            l_depth = self.depth_loss(pred["depth"], gt["depth"], mask=mask)
-            l_normal = self.normal_loss(pred["normal"], gt["normal"], mask=mask)
+            l_depth = self.depth_loss(pred["depth"], gt["depth"])
+            l_normal = self.normal_loss(pred["normal"], gt["normal"])
             comps["depth"] = l_depth.detach()
             comps["normal"] = l_normal.detach()
             terms += [l_depth, l_normal]

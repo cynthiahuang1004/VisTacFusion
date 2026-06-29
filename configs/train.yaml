@@ -23,9 +23,9 @@ num_workers: 8
 modality_dropout:
   enabled: true
   # per-step sampling probabilities; must sum to 1.0
-  p_both: 0.5
-  p_tactile_only: 0.25
-  p_rgb_only: 0.25
+  p_both: 0.55
+  p_tactile_only: 0.35
+  p_rgb_only: 0.10
   # [TODO/USER] If RGB-only should NOT be in the dense ablation (predicting tactile-frame
   # geometry without touch is intentionally weak), set rgb_only_supervises_dense: false to
   # skip the dense loss on RGB-only batches while still training pose.
@@ -41,7 +41,7 @@ loss:
     type: mse                   # {mse, cosine}  MSE matches the working notebook
     weight: 1.0
   pose:
-    rot_weight: 1.0             # 1 - cos(theta_pred - theta_gt), computed on (cos,sin)
+    rot_weight: 2.0             # increased from 1.0 to boost rotation gradient
     trans_weight: 1.0           # L1 on (t_x, t_y)
     weight: 1.0
   uncertainty_weighting: true   # Kendall et al. auto task weighting — balances depth/normal/pose gradients

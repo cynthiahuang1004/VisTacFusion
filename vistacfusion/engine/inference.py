@@ -80,35 +80,59 @@ def predict(model, rgb_tensor, tactile_tensor, config="both", device="cpu"):
     return depth, normal, pose, theta
 
 
-def visualize_prediction(tactile_img, rgb_img, depth, normal, pose, theta,
-                         gt_depth=None, gt_normal=None, save_path=None):
-    """Plot prediction results as a figure."""
+CONFIGS_3 = ["both", "tactile", "rgb"]
+CONFIG_LABELS = {"both": "Both (RGB+Tactile)", "tactile": "Tactile Only", "rgb": "RGB Only"}
+
+
+def center_crop_square(img):
+    """Center-crop a HxW(xC) image to a square."""
+    h, w = img.shape[:2]
+    s = min(h, w)
+    y0 = (h - s) // 2
+    x0 = (w - s) // 2
+    return img[y0:y0+s, x0:x0+s]
+
+
+def visualize_three_configs(tactile_img, rgb_img, results,
+                            gt_depth=None, gt_normal=None, save_path=None):
+    """Plot 3-config comparison: rows = [both, tactile, rgb, (GT)], cols = [input, depth, normal]."""
     has_gt = gt_depth is not None
-    ncols = 6 if has_gt else 4
-    fig, axes = plt.subplots(1, ncols, figsize=(4 * ncols, 4))
+    nrows = 4 if has_gt else 3
+    fig, axes = plt.subplots(nrows, 4, figsize=(18, 4.5 * nrows))
 
-    axes[0].imshow(tactile_img)
-    axes[0].set_title("Tactile")
+    for row, cfg_name in enumerate(CONFIGS_3):
+        depth, normal, pose, theta = results[cfg_name]
+        normal_vis = (normal * 0.5 + 0.5).clip(0, 1)
 
-    axes[1].imshow(rgb_img)
-    axes[1].set_title("RGB")
+        axes[row, 0].imshow(tactile_img if cfg_name != "rgb" else rgb_img)
+        axes[row, 0].set_ylabel(CONFIG_LABELS[cfg_name], fontsize=12, fontweight="bold")
+        axes[row, 0].set_title("Input" if row == 0 else "")
 
-    axes[2].imshow(depth, cmap="viridis")
-    axes[2].set_title(f"Pred Depth\npose: θ={theta:.1f}° tx={pose[2]:.3f} ty={pose[3]:.3f}")
+        axes[row, 1].imshow(depth, cmap="viridis")
+        axes[row, 1].set_title("Depth" if row == 0 else "")
 
-    normal_vis = (normal * 0.5 + 0.5).clip(0, 1)
-    axes[3].imshow(normal_vis)
-    axes[3].set_title("Pred Normal")
+        axes[row, 2].imshow(normal_vis)
+        axes[row, 2].set_title("Normal" if row == 0 else "")
+
+        axes[row, 3].text(0.5, 0.5,
+                          f"θ = {theta:.1f}°\ntx = {pose[2]:.3f}\nty = {pose[3]:.3f}",
+                          transform=axes[row, 3].transAxes, fontsize=14,
+                          ha="center", va="center", family="monospace")
+        axes[row, 3].set_title("Pose" if row == 0 else "")
+        axes[row, 3].axis("off")
 
     if has_gt:
-        axes[4].imshow(gt_depth, cmap="viridis")
-        axes[4].set_title("GT Depth")
+        axes[3, 0].imshow(tactile_img)
+        axes[3, 0].set_ylabel("Ground Truth", fontsize=12, fontweight="bold")
+        axes[3, 1].imshow(gt_depth, cmap="viridis")
         gt_normal_vis = (gt_normal * 0.5 + 0.5).clip(0, 1)
-        axes[5].imshow(gt_normal_vis)
-        axes[5].set_title("GT Normal")
+        axes[3, 2].imshow(gt_normal_vis)
+        axes[3, 3].axis("off")
 
-    for ax in axes:
-        ax.axis("off")
+    for ax in axes.flat:
+        if ax.images or ax.texts:
+            ax.set_xticks([])
+            ax.set_yticks([])
 
     fig.tight_layout()
     if save_path:
@@ -117,31 +141,35 @@ def visualize_prediction(tactile_img, rgb_img, depth, normal, pose, theta,
     plt.close(fig)
 
 
-def run_single(model, rgb_path, tactile_path, cfg, device, output_dir, config="both",
-               gt_depth=None, gt_normal=None, name="sample"):
-    """Run inference on a single pair."""
+def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
+               gt_depth=None, gt_normal=None, name="sample", **kwargs):
+    """Run inference on a single pair with all 3 configs."""
     image_size = cfg.image_size
     rgb_t = preprocess_image(rgb_path, image_size)
     tac_t = preprocess_image(tactile_path, image_size)
 
-    depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config, device=device)
+    results = {}
+    for config in CONFIGS_3:
+        depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config, device=device)
+        results[config] = (depth, normal, pose, theta)
+        np.save(osp.join(output_dir, f"{name}_{config}_depth.npy"), depth)
+        np.save(osp.join(output_dir, f"{name}_{config}_pose.npy"), pose)
 
-    tactile_img = np.array(Image.open(tactile_path))
-    rgb_img = np.array(Image.open(rgb_path))
+    tactile_img = center_crop_square(np.array(Image.open(tactile_path)))
+    rgb_img = center_crop_square(np.array(Image.open(rgb_path)))
 
     save_path = osp.join(output_dir, f"{name}.png")
-    visualize_prediction(tactile_img, rgb_img, depth, normal, pose, theta,
-                         gt_depth=gt_depth, gt_normal=gt_normal, save_path=save_path)
+    visualize_three_configs(tactile_img, rgb_img, results,
+                            gt_depth=gt_depth, gt_normal=gt_normal, save_path=save_path)
 
-    np.save(osp.join(output_dir, f"{name}_depth.npy"), depth)
-    np.save(osp.join(output_dir, f"{name}_normal.npy"), normal)
-    np.save(osp.join(output_dir, f"{name}_pose.npy"), pose)
+    for cfg_name in CONFIGS_3:
+        _, _, pose, theta = results[cfg_name]
+        print(f"  {name} [{cfg_name:8s}]: θ={theta:.1f}°  tx={pose[2]:.4f}  ty={pose[3]:.4f}")
 
-    print(f"  {name}: θ={theta:.1f}°  tx={pose[2]:.4f}  ty={pose[3]:.4f}")
-    return depth, normal, pose
+    return results
 
 
-def run_session(model, session_dir, cfg, device, output_dir, config="both", max_samples=None):
+def run_session(model, session_dir, cfg, device, output_dir, max_samples=None):
     """Run inference on all samples in a session directory."""
     samples_dir = osp.join(session_dir, "samples")
     rgb_dir = osp.join(session_dir, "rgb")
@@ -179,11 +207,10 @@ def run_session(model, session_dir, cfg, device, output_dir, config="both", max_
                 gt_normal = depth_to_normal(gt_depth_raw, px, py)
 
         run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
-                   config=config, gt_depth=gt_depth, gt_normal=gt_normal,
-                   name=f"{idx:04d}")
+                   gt_depth=gt_depth, gt_normal=gt_normal, name=f"{idx:04d}")
 
 
-def run_real_dir(model, real_dir, cfg, device, output_dir, config="both", max_samples=None):
+def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None):
     """Run inference on a real data directory with rgb_images/ and tactile_images/."""
     rgb_dir = osp.join(real_dir, "rgb_images")
     tac_dir = osp.join(real_dir, "tactile_images")
@@ -201,45 +228,54 @@ def run_real_dir(model, real_dir, cfg, device, output_dir, config="both", max_sa
     for name in common:
         rgb_path = osp.join(rgb_dir, rgb_files[name])
         tac_path = osp.join(tac_dir, tac_files[name])
-        run_single(model, rgb_path, tac_path, cfg, device, output_dir,
-                   config=config, name=name)
+        run_single(model, rgb_path, tac_path, cfg, device, output_dir, name=name)
 
 
 def run_eval_sim(model, cfg, device, output_dir, num_vis=20):
-    """Run inference on sim val set with GT comparison."""
+    """Run inference on sim val set with GT comparison, all 3 configs."""
     from ..data.dataset import build_datasets
     _, val_ds = build_datasets(cfg)
 
     indices = np.linspace(0, len(val_ds) - 1, num_vis, dtype=int)
     os.makedirs(output_dir, exist_ok=True)
 
-    print(f"Evaluating {num_vis} val samples...")
+    mean = np.array([123.675, 116.28, 103.53])
+    std = np.array([58.395, 57.12, 57.375])
+
+    print(f"Evaluating {num_vis} val samples (3 configs each)...")
     for i, idx in enumerate(indices):
         sample = val_ds[idx]
-
         rgb_t = sample["rgb"].unsqueeze(0)
         tac_t = sample["tactile"].unsqueeze(0)
 
-        depth, normal, pose, theta = predict(model, rgb_t, tac_t, config="both", device=device)
+        results = {}
+        for config in CONFIGS_3:
+            depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config, device=device)
+            results[config] = (depth, normal, pose, theta)
 
         gt_depth = sample["depth"][0].numpy()
         gt_normal = sample["normal"].permute(1, 2, 0).numpy()
-
-        # Unnormalize images for display
-        mean = np.array([123.675, 116.28, 103.53])
-        std = np.array([58.395, 57.12, 57.375])
         tac_img = (sample["tactile"].permute(1, 2, 0).numpy() * std + mean).clip(0, 255).astype(np.uint8)
         rgb_img = (sample["rgb"].permute(1, 2, 0).numpy() * std + mean).clip(0, 255).astype(np.uint8)
 
+        save_path = osp.join(output_dir, f"val_{i:03d}.png")
+        visualize_three_configs(tac_img, rgb_img, results,
+                                gt_depth=gt_depth, gt_normal=gt_normal, save_path=save_path)
+
         gt_pose = sample["pose"].numpy()
         gt_theta = np.degrees(np.arctan2(gt_pose[1], gt_pose[0]))
+        for cfg_name in CONFIGS_3:
+            _, _, pose, theta = results[cfg_name]
+            print(f"  val_{i:03d} [{cfg_name:8s}]: pred θ={theta:.1f}° gt θ={gt_theta:.1f}°")
 
-        save_path = osp.join(output_dir, f"val_{i:03d}.png")
-        visualize_prediction(tac_img, rgb_img, depth, normal, pose, theta,
-                             gt_depth=gt_depth, gt_normal=gt_normal, save_path=save_path)
 
-        print(f"  val_{i:03d}: pred θ={theta:.1f}° gt θ={gt_theta:.1f}°  "
-              f"pred tx={pose[2]:.3f} gt tx={gt_pose[2]:.3f}")
+def _ckpt_name(checkpoint_path):
+    """Derive a short name from checkpoint path for the output directory."""
+    ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    epoch = ckpt.get("epoch", 0)
+    parent = osp.basename(osp.dirname(checkpoint_path))
+    stem = osp.splitext(osp.basename(checkpoint_path))[0]
+    return f"{parent}_{stem}"
 
 
 def main():
@@ -248,45 +284,67 @@ def main():
     ap.add_argument("--model", default="configs/model.yaml")
     ap.add_argument("--train", default="configs/train.yaml")
     ap.add_argument("--data", default="configs/data.yaml")
-    ap.add_argument("--output-dir", default="results/")
 
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--tactile", help="Single tactile image path (pair with --rgb)")
     mode.add_argument("--session-dir", help="Session sensor directory for batch inference (sim)")
     mode.add_argument("--real-dir", help="Real data directory with rgb_images/ and tactile_images/")
     mode.add_argument("--eval-sim", action="store_true", help="Evaluate on sim val set")
+    mode.add_argument("--eval-all", action="store_true",
+                      help="Run both --eval-sim and --real-dir (requires --real-dir-path)")
 
     ap.add_argument("--rgb", help="Single RGB image path (pair with --tactile)")
-    ap.add_argument("--config", default="both", choices=["both", "tactile", "rgb"],
-                    help="Modality config for inference")
+    ap.add_argument("--real-dir-path",
+                    default="/media/hdd2/ihsuan/VisTacFusion/datasets/real_data",
+                    help="Real data path for --eval-all mode")
     ap.add_argument("--max-samples", type=int, default=None,
-                    help="Max samples for session batch mode")
+                    help="Max samples for batch mode")
     ap.add_argument("--num-vis", type=int, default=20,
-                    help="Number of val samples to visualize (--eval-sim)")
+                    help="Number of val samples to visualize")
     args = ap.parse_args()
 
     cfg = merge_configs(args.model, args.train, args.data)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    os.makedirs(args.output_dir, exist_ok=True)
+
+    ckpt_name = _ckpt_name(args.checkpoint)
+    base_dir = osp.join("eval_results", ckpt_name)
 
     model = load_model(cfg, args.checkpoint, device)
 
     if args.tactile:
         if not args.rgb:
             ap.error("--rgb is required when using --tactile")
-        run_single(model, args.rgb, args.tactile, cfg, device, args.output_dir,
-                   config=args.config, name="prediction")
+        out = osp.join(base_dir, "single")
+        os.makedirs(out, exist_ok=True)
+        run_single(model, args.rgb, args.tactile, cfg, device, out, name="prediction")
 
     elif args.session_dir:
-        run_session(model, args.session_dir, cfg, device, args.output_dir,
-                    config=args.config, max_samples=args.max_samples)
+        out = osp.join(base_dir, "session_vis")
+        os.makedirs(out, exist_ok=True)
+        run_session(model, args.session_dir, cfg, device, out,
+                    max_samples=args.max_samples)
 
     elif args.real_dir:
-        run_real_dir(model, args.real_dir, cfg, device, args.output_dir,
-                     config=args.config, max_samples=args.max_samples)
+        out = osp.join(base_dir, "real_vis")
+        os.makedirs(out, exist_ok=True)
+        run_real_dir(model, args.real_dir, cfg, device, out,
+                     max_samples=args.max_samples)
 
     elif args.eval_sim:
-        run_eval_sim(model, cfg, device, args.output_dir, num_vis=args.num_vis)
+        out = osp.join(base_dir, "sim_val_vis")
+        os.makedirs(out, exist_ok=True)
+        run_eval_sim(model, cfg, device, out, num_vis=args.num_vis)
+
+    elif args.eval_all:
+        sim_out = osp.join(base_dir, "sim_val_vis")
+        real_out = osp.join(base_dir, "real_vis")
+        os.makedirs(sim_out, exist_ok=True)
+        os.makedirs(real_out, exist_ok=True)
+        run_eval_sim(model, cfg, device, sim_out, num_vis=args.num_vis)
+        run_real_dir(model, args.real_dir_path, cfg, device, real_out,
+                     max_samples=args.max_samples)
+
+    print(f"\nResults saved to: {base_dir}/")
 
 
 if __name__ == "__main__":
