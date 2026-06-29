@@ -197,28 +197,35 @@ def save_loss_plots(history, plot_dir):
         plt.close(fig)
 
 
-def build_optimizer(model, optim_cfg):
-    params = [p for p in model.parameters() if p.requires_grad]
+def build_optimizer(model, optim_cfg, criterion=None):
+    params = list(p for p in model.parameters() if p.requires_grad)
+    if criterion is not None:
+        params += list(p for p in criterion.parameters() if p.requires_grad)
     return torch.optim.AdamW(
         params, lr=optim_cfg.lr, weight_decay=optim_cfg.weight_decay,
         betas=tuple(optim_cfg.betas),
     )
 
 
-def save_checkpoint(path, model, optimizer, scheduler, scaler, epoch, best_metric):
+def save_checkpoint(path, model, optimizer, scheduler, scaler, epoch, best_metric,
+                    criterion=None):
     raw_model = model.module if isinstance(model, DDP) else model
-    torch.save({
+    data = {
         "epoch": epoch,
         "model": raw_model.state_dict(),
         "optimizer": optimizer.state_dict(),
         "scheduler": scheduler.state_dict(),
         "scaler": scaler.state_dict(),
         "best_metric": best_metric,
-    }, path)
+    }
+    if criterion is not None:
+        data["criterion"] = criterion.state_dict()
+    torch.save(data, path)
     print(f"  -> checkpoint saved: {path}")
 
 
-def load_checkpoint(path, model, optimizer=None, scheduler=None, scaler=None, device="cpu"):
+def load_checkpoint(path, model, optimizer=None, scheduler=None, scaler=None,
+                    criterion=None, device="cpu"):
     ckpt = torch.load(path, map_location=device, weights_only=False)
     raw_model = model.module if isinstance(model, DDP) else model
     raw_model.load_state_dict(ckpt["model"])
@@ -228,6 +235,8 @@ def load_checkpoint(path, model, optimizer=None, scheduler=None, scaler=None, de
         scheduler.load_state_dict(ckpt["scheduler"])
     if scaler is not None and "scaler" in ckpt:
         scaler.load_state_dict(ckpt["scaler"])
+    if criterion is not None and "criterion" in ckpt:
+        criterion.load_state_dict(ckpt["criterion"])
     return ckpt.get("epoch", 0), ckpt.get("best_metric", float("inf"))
 
 
@@ -285,7 +294,7 @@ def main():
         cfg.loss, pose_mode=cfg.heads.pose.pose_mode,
         rot_num_bins=cfg.heads.pose.get("rot_num_bins", 72),
     ).to(device)
-    optimizer = build_optimizer(model, cfg.optim)
+    optimizer = build_optimizer(model, cfg.optim, criterion)
     scheduler = build_scheduler(optimizer, cfg, len(train_loader))
     scaler = torch.amp.GradScaler("cuda", enabled=cfg.amp and device.type == "cuda")
 
@@ -296,7 +305,8 @@ def main():
         if is_main_process():
             print(f"Resuming from {args.resume}")
         start_epoch, best_metric = load_checkpoint(
-            args.resume, model, optimizer, scheduler, scaler, device)
+            args.resume, model, optimizer, scheduler, scaler,
+            criterion=criterion, device=device)
         start_epoch += 1
         if is_main_process():
             print(f"  resumed at epoch {start_epoch}, best_metric={best_metric:.4f}")
@@ -358,19 +368,22 @@ def main():
                 best_metric = depth_score
                 save_checkpoint(
                     os.path.join(args.output_dir, "best_depth.pt"),
-                    model, optimizer, scheduler, scaler, epoch, best_metric)
+                    model, optimizer, scheduler, scaler, epoch, best_metric,
+                    criterion=criterion)
                 print(f"  ** new best depth: absrel={best_metric:.4f}")
 
             if pose_score < best_pose_metric:
                 best_pose_metric = pose_score
                 save_checkpoint(
                     os.path.join(args.output_dir, "best_pose.pt"),
-                    model, optimizer, scheduler, scaler, epoch, best_pose_metric)
+                    model, optimizer, scheduler, scaler, epoch, best_pose_metric,
+                    criterion=criterion)
                 print(f"  ** new best pose: rot_deg={best_pose_metric:.3f}")
 
             save_checkpoint(
                 os.path.join(args.output_dir, f"epoch_{epoch:03d}.pt"),
-                model, optimizer, scheduler, scaler, epoch, best_metric)
+                model, optimizer, scheduler, scaler, epoch, best_metric,
+                criterion=criterion)
             writer.flush()
 
         if is_distributed():

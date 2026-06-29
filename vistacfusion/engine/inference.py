@@ -61,23 +61,33 @@ def preprocess_image(img_path, image_size):
     return ((t - mean) / std).unsqueeze(0)
 
 
-def predict(model, rgb_tensor, tactile_tensor, config="both", device="cpu"):
-    """Run inference, return depth [H,W], normal [H,W,3], pose [4]."""
-    with torch.no_grad(), torch.autocast(device_type=device.type, enabled=device.type == "cuda"):
-        out = model(rgb_tensor.to(device), tactile_tensor.to(device), config=config)
-
+def _extract_outputs(out):
+    """Extract depth, normal, pose from model output dict."""
     depth = out["depth"][0, 0].cpu().numpy()
     normal = out["normal"][0].cpu().permute(1, 2, 0).numpy()
     normal = normal / (np.linalg.norm(normal, axis=-1, keepdims=True) + 1e-8)
-
     pose = out.get("se2", out.get("trans"))
     if pose is not None:
         pose = pose[0].cpu().numpy()
     else:
         pose = np.zeros(4)
-
     theta = np.degrees(np.arctan2(pose[1], pose[0]))
     return depth, normal, pose, theta
+
+
+def predict(model, rgb_tensor, tactile_tensor, config="both", device="cpu",
+            pose_model=None):
+    """Run inference. If pose_model is given, use it for pose and model for depth/normal."""
+    rgb = rgb_tensor.to(device)
+    tac = tactile_tensor.to(device)
+
+    with torch.no_grad(), torch.autocast(device_type=device.type, enabled=device.type == "cuda"):
+        out = model(rgb, tac, config=config)
+        if pose_model is not None:
+            pose_out = pose_model(rgb, tac, config=config)
+            out["se2"] = pose_out.get("se2", pose_out.get("trans"))
+
+    return _extract_outputs(out)
 
 
 CONFIGS_3 = ["both", "tactile", "rgb"]
@@ -142,7 +152,7 @@ def visualize_three_configs(tactile_img, rgb_img, results,
 
 
 def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
-               gt_depth=None, gt_normal=None, name="sample", **kwargs):
+               gt_depth=None, gt_normal=None, name="sample", pose_model=None, **kwargs):
     """Run inference on a single pair with all 3 configs."""
     image_size = cfg.image_size
     rgb_t = preprocess_image(rgb_path, image_size)
@@ -150,7 +160,8 @@ def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
 
     results = {}
     for config in CONFIGS_3:
-        depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config, device=device)
+        depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config,
+                                             device=device, pose_model=pose_model)
         results[config] = (depth, normal, pose, theta)
         np.save(osp.join(output_dir, f"{name}_{config}_depth.npy"), depth)
         np.save(osp.join(output_dir, f"{name}_{config}_pose.npy"), pose)
@@ -169,7 +180,8 @@ def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
     return results
 
 
-def run_session(model, session_dir, cfg, device, output_dir, max_samples=None):
+def run_session(model, session_dir, cfg, device, output_dir, max_samples=None,
+                pose_model=None):
     """Run inference on all samples in a session directory."""
     samples_dir = osp.join(session_dir, "samples")
     rgb_dir = osp.join(session_dir, "rgb")
@@ -207,10 +219,12 @@ def run_session(model, session_dir, cfg, device, output_dir, max_samples=None):
                 gt_normal = depth_to_normal(gt_depth_raw, px, py)
 
         run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
-                   gt_depth=gt_depth, gt_normal=gt_normal, name=f"{idx:04d}")
+                   gt_depth=gt_depth, gt_normal=gt_normal, name=f"{idx:04d}",
+                   pose_model=pose_model)
 
 
-def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None):
+def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None,
+                 pose_model=None):
     """Run inference on a real data directory with rgb_images/ and tactile_images/."""
     rgb_dir = osp.join(real_dir, "rgb_images")
     tac_dir = osp.join(real_dir, "tactile_images")
@@ -228,10 +242,11 @@ def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None):
     for name in common:
         rgb_path = osp.join(rgb_dir, rgb_files[name])
         tac_path = osp.join(tac_dir, tac_files[name])
-        run_single(model, rgb_path, tac_path, cfg, device, output_dir, name=name)
+        run_single(model, rgb_path, tac_path, cfg, device, output_dir, name=name,
+                   pose_model=pose_model)
 
 
-def run_eval_sim(model, cfg, device, output_dir, num_vis=20):
+def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None):
     """Run inference on sim val set with GT comparison, all 3 configs."""
     from ..data.dataset import build_datasets
     _, val_ds = build_datasets(cfg)
@@ -250,7 +265,8 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20):
 
         results = {}
         for config in CONFIGS_3:
-            depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config, device=device)
+            depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config,
+                                                 device=device, pose_model=pose_model)
             results[config] = (depth, normal, pose, theta)
 
         gt_depth = sample["depth"][0].numpy()
@@ -269,18 +285,10 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20):
             print(f"  val_{i:03d} [{cfg_name:8s}]: pred θ={theta:.1f}° gt θ={gt_theta:.1f}°")
 
 
-def _ckpt_name(checkpoint_path):
-    """Derive a short name from checkpoint path for the output directory."""
-    ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-    epoch = ckpt.get("epoch", 0)
-    parent = osp.basename(osp.dirname(checkpoint_path))
-    stem = osp.splitext(osp.basename(checkpoint_path))[0]
-    return f"{parent}_{stem}"
-
-
 def main():
     ap = argparse.ArgumentParser(description="Inference on real/sim data")
-    ap.add_argument("--checkpoint", required=True, help="Path to model checkpoint")
+    ap.add_argument("--train-dir", required=True,
+                    help="Training output directory (e.g. outputs/20260629_022120)")
     ap.add_argument("--model", default="configs/model.yaml")
     ap.add_argument("--train", default="configs/train.yaml")
     ap.add_argument("--data", default="configs/data.yaml")
@@ -291,58 +299,76 @@ def main():
     mode.add_argument("--real-dir", help="Real data directory with rgb_images/ and tactile_images/")
     mode.add_argument("--eval-sim", action="store_true", help="Evaluate on sim val set")
     mode.add_argument("--eval-all", action="store_true",
-                      help="Run both --eval-sim and --real-dir (requires --real-dir-path)")
+                      help="Run both sim val + real data")
 
     ap.add_argument("--rgb", help="Single RGB image path (pair with --tactile)")
     ap.add_argument("--real-dir-path",
                     default="/media/hdd2/ihsuan/VisTacFusion/datasets/real_data",
                     help="Real data path for --eval-all mode")
-    ap.add_argument("--max-samples", type=int, default=None,
-                    help="Max samples for batch mode")
-    ap.add_argument("--num-vis", type=int, default=20,
-                    help="Number of val samples to visualize")
+    ap.add_argument("--max-samples", type=int, default=None)
+    ap.add_argument("--num-vis", type=int, default=20)
     args = ap.parse_args()
 
     cfg = merge_configs(args.model, args.train, args.data)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    ckpt_name = _ckpt_name(args.checkpoint)
-    base_dir = osp.join("eval_results", ckpt_name)
+    train_name = osp.basename(args.train_dir.rstrip("/"))
+    base_dir = osp.join("eval_results", f"{train_name}_best")
 
-    model = load_model(cfg, args.checkpoint, device)
+    # Load best_depth for depth/normal, best_pose for pose
+    depth_ckpt = osp.join(args.train_dir, "best_depth.pt")
+    pose_ckpt = osp.join(args.train_dir, "best_pose.pt")
+
+    if not osp.exists(depth_ckpt):
+        fallback = osp.join(args.train_dir, "best.pt")
+        if osp.exists(fallback):
+            depth_ckpt = fallback
+        else:
+            raise FileNotFoundError(f"No best_depth.pt or best.pt in {args.train_dir}")
+
+    depth_model = load_model(cfg, depth_ckpt, device)
+    pose_model = None
+    if osp.exists(pose_ckpt) and pose_ckpt != depth_ckpt:
+        pose_model = load_model(cfg, pose_ckpt, device)
+        print(f"Using split checkpoints: depth={osp.basename(depth_ckpt)}, pose={osp.basename(pose_ckpt)}")
+    else:
+        print(f"Using single checkpoint: {osp.basename(depth_ckpt)}")
 
     if args.tactile:
         if not args.rgb:
             ap.error("--rgb is required when using --tactile")
         out = osp.join(base_dir, "single")
         os.makedirs(out, exist_ok=True)
-        run_single(model, args.rgb, args.tactile, cfg, device, out, name="prediction")
+        run_single(depth_model, args.rgb, args.tactile, cfg, device, out,
+                   name="prediction", pose_model=pose_model)
 
     elif args.session_dir:
         out = osp.join(base_dir, "session_vis")
         os.makedirs(out, exist_ok=True)
-        run_session(model, args.session_dir, cfg, device, out,
-                    max_samples=args.max_samples)
+        run_session(depth_model, args.session_dir, cfg, device, out,
+                    max_samples=args.max_samples, pose_model=pose_model)
 
     elif args.real_dir:
         out = osp.join(base_dir, "real_vis")
         os.makedirs(out, exist_ok=True)
-        run_real_dir(model, args.real_dir, cfg, device, out,
-                     max_samples=args.max_samples)
+        run_real_dir(depth_model, args.real_dir, cfg, device, out,
+                     max_samples=args.max_samples, pose_model=pose_model)
 
     elif args.eval_sim:
         out = osp.join(base_dir, "sim_val_vis")
         os.makedirs(out, exist_ok=True)
-        run_eval_sim(model, cfg, device, out, num_vis=args.num_vis)
+        run_eval_sim(depth_model, cfg, device, out, num_vis=args.num_vis,
+                     pose_model=pose_model)
 
     elif args.eval_all:
         sim_out = osp.join(base_dir, "sim_val_vis")
         real_out = osp.join(base_dir, "real_vis")
         os.makedirs(sim_out, exist_ok=True)
         os.makedirs(real_out, exist_ok=True)
-        run_eval_sim(model, cfg, device, sim_out, num_vis=args.num_vis)
-        run_real_dir(model, args.real_dir_path, cfg, device, real_out,
-                     max_samples=args.max_samples)
+        run_eval_sim(depth_model, cfg, device, sim_out, num_vis=args.num_vis,
+                     pose_model=pose_model)
+        run_real_dir(depth_model, args.real_dir_path, cfg, device, real_out,
+                     max_samples=args.max_samples, pose_model=pose_model)
 
     print(f"\nResults saved to: {base_dir}/")
 
