@@ -14,6 +14,7 @@ synthetic:
 
 sim:
   root: /media/hdd2/ihsuan/gs_blender/renders
+  mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb               # <unit>/rgb/<idx>.png
   use_gt_depth: true            # load *_gt.npy (clean GT) vs *.npy (with noise)
   # Object-wise train/val split (held-out objects = the sim "val"). Real eval is separate.

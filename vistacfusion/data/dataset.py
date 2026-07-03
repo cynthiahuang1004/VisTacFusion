@@ -117,8 +117,8 @@ class SimVisuoTactileDataset(Dataset):
         <root>/<object>/session_*/sensor_*/{samples, rgb, raw_data}
 
     Depth is loaded from raw_data/*.npy; normals are computed from depth via finite
-    differences; pose is loaded from raw_data/*_pose.json and converted to (cos,sin,tx,ty)
-    with tx,ty normalized to [-1,1] by the sensor extent.
+    differences; pose is computed per pose_calculation.py: relative rotation delta_rz,
+    translation in object frame normalized by target_size.
     """
 
     def __init__(self, cfg_data, image_size, augment=False, include_objects=None, seed=0):
@@ -127,6 +127,7 @@ class SimVisuoTactileDataset(Dataset):
         sim = cfg_data.sim
         norm = cfg_data.norm
         self.root = sim.root
+        self.mesh_dir = sim.get("mesh_dir", osp.join(osp.dirname(self.root), "meshes"))
         self.rgb_subdir = sim.rgb_subdir
         self.use_gt_depth = sim.get("use_gt_depth", True)
 
@@ -137,6 +138,10 @@ class SimVisuoTactileDataset(Dataset):
                                         norm.imagenet_mean, norm.imagenet_std)
         self.tactile_aug = TactileAugment() if augment else None
         self.rgb_aug = RGBPhotometricAug() if augment else None
+
+        # Pre-load per-object mesh info for pose computation
+        self._obj_pose_info = {}
+        self._load_object_pose_info()
 
         # Discover sensor units (each = one session × one sensor)
         units = sorted(_glob.glob(osp.join(self.root, "*", "session_*", "sensor_*")))
@@ -157,20 +162,30 @@ class SimVisuoTactileDataset(Dataset):
             if not pngs:
                 continue
 
-            # Read sensor geometry from session.json
             session_dir = osp.dirname(unit)
             session_json = osp.join(session_dir, "session.json")
             with open(session_json) as f:
                 sess = json.load(f)
             x_min, x_max = sess["X_MIN"], sess["X_MAX"]
             y_min, y_max = sess["Y_MIN"], sess["Y_MAX"]
+
+            obj_name = osp.basename(osp.dirname(session_dir))
+            info = self._obj_pose_info.get(obj_name)
+            if info is None:
+                continue
+
+            base_rot = sess["base_rotation"]
+            delta_rz = base_rot[2] - info["rz0"]
+            session_center = self._get_session_center(
+                info["vertices"], info["fixed_scale"], base_rot)
+
             self.unit_meta[unit] = {
                 "pixel_size_x": (x_max - x_min) / image_size,
                 "pixel_size_y": (y_max - y_min) / image_size,
-                "center_x": (x_min + x_max) / 2.0,
-                "center_y": (y_min + y_max) / 2.0,
-                "half_x": (x_max - x_min) / 2.0,
-                "half_y": (y_max - y_min) / 2.0,
+                "delta_rz": delta_rz,
+                "session_center": session_center,
+                "half": info["half"],
+                "valid_cells": {c["gx"] * 1000 + c["gy"]: c for c in sess.get("valid_cells", [])},
             }
 
             for png in pngs:
@@ -190,6 +205,45 @@ class SimVisuoTactileDataset(Dataset):
         self.objects = sorted({osp.basename(osp.dirname(osp.dirname(u)))
                                for u in valid_units})
         self._obj_to_id = {o: i for i, o in enumerate(self.objects)}
+
+    def _load_object_pose_info(self):
+        """Pre-load mesh + session_000 info for each object."""
+        try:
+            import trimesh
+            from scipy.spatial.transform import Rotation
+        except ImportError:
+            print("[WARN] trimesh/scipy not available, pose labels will be zeros")
+            return
+
+        obj_dirs = sorted(d for d in os.listdir(self.root)
+                          if osp.isdir(osp.join(self.root, d)))
+        for obj_name in obj_dirs:
+            mesh_path = osp.join(self.mesh_dir, f"{obj_name}.obj")
+            s0_path = osp.join(self.root, obj_name, "session_000", "session.json")
+            if not osp.exists(mesh_path) or not osp.exists(s0_path):
+                continue
+            mesh = __import__("trimesh").load(mesh_path, force="mesh")
+            with open(s0_path) as f:
+                d0 = json.load(f)
+            fixed_scale = d0["fixed_scale"]
+            target_size = d0.get("_target_size_mm", 82.0)
+            half = target_size / 2.0 / 1000.0
+            rz0 = d0["base_rotation"][2]
+            self._obj_pose_info[obj_name] = {
+                "vertices": mesh.vertices,
+                "fixed_scale": fixed_scale,
+                "half": half,
+                "rz0": rz0,
+            }
+
+    @staticmethod
+    def _get_session_center(vertices, fixed_scale, base_rotation):
+        from scipy.spatial.transform import Rotation
+        R_3d = Rotation.from_euler("xyz", base_rotation)
+        v = R_3d.apply(vertices) / fixed_scale
+        cx = (v[:, 0].min() + v[:, 0].max()) / 2.0
+        cy = (v[:, 1].min() + v[:, 1].max()) / 2.0
+        return np.array([cx, cy])
 
     def __len__(self):
         return len(self.samples)
@@ -261,11 +315,25 @@ class SimVisuoTactileDataset(Dataset):
         pose_path = osp.join(unit, "raw_data", f"{sample_idx:04d}_pose.json")
         with open(pose_path) as f:
             data = json.load(f)
-        theta = data["rotation_euler"][2]
-        tx = (data["sample_x"] - meta["center_x"]) / max(meta["half_x"], 1e-8)
-        ty = (data["sample_y"] - meta["center_y"]) / max(meta["half_y"], 1e-8)
+
+        delta_rz = meta["delta_rz"]
+        session_center = meta["session_center"]
+        half = meta["half"]
+
+        cx = data["sample_x"]
+        cy = data["sample_y"]
+        cos_rz = math.cos(delta_rz)
+        sin_rz = math.sin(delta_rz)
+
+        offset = np.array([cx - session_center[0], cy - session_center[1]])
+        R = np.array([[cos_rz, -sin_rz], [sin_rz, cos_rz]])
+        pt_obj = R.T @ offset
+        x_norm = -pt_obj[0] / max(half, 1e-8)
+        y_norm = pt_obj[1] / max(half, 1e-8)
+
         return torch.tensor(
-            [math.cos(theta), math.sin(theta), tx, ty], dtype=torch.float32
+            [math.cos(delta_rz), math.sin(delta_rz), x_norm, y_norm],
+            dtype=torch.float32,
         )
 
 

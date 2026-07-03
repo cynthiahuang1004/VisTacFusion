@@ -14,8 +14,8 @@ import torch.nn.functional as F
 
 DEFAULT_AUGMENT_PARAMS = {
     "gain": 0.5, "bias": 45.0, "grad": 0.7, "bright": 25.0,
-    "resid": 20.0, "noise": 6.0, "rot_deg": 15.0,
-    "hflip": True, "vflip": True,
+    "resid": 20.0, "noise": 6.0, "rot_deg": 0.0,
+    "hflip": False, "vflip": False,
 }
 
 
@@ -106,17 +106,32 @@ class TactileAugment:
 
 
 class RGBPhotometricAug:
-    """Light photometric jitter on the RGB context image (float32 HWC). No geometry."""
+    """Photometric jitter on the RGB context image (float32 HWC). No geometry.
+    All gain/bias/brightness are UNIFORM across channels to preserve marker hue."""
 
-    def __init__(self, gain=0.2, bias=15.0, noise=4.0):
-        self.gain, self.bias, self.noise = gain, bias, noise
+    def __init__(self, gain=0.3, bias=20.0, bright=15.0, grad=0.4, noise=4.0):
+        self.gain = gain
+        self.bias = bias
+        self.bright = bright
+        self.grad = grad
+        self.noise = noise
 
     def __call__(self, rgb):
+        H, W = rgb.shape[:2]
         if self.gain > 0:
-            g = np.random.uniform(1 - self.gain, 1 + self.gain, size=(1, 1, 3)).astype(np.float32)
+            g = np.float32(np.random.uniform(1 - self.gain, 1 + self.gain))
             rgb = rgb * g
         if self.bias > 0:
-            rgb = rgb + np.random.uniform(-self.bias, self.bias, size=(1, 1, 3)).astype(np.float32)
+            b = np.float32(np.random.uniform(-self.bias, self.bias))
+            rgb = rgb + b
+        if self.bright > 0:
+            rgb = rgb + np.float32(np.random.uniform(-self.bright, self.bright))
+        if self.grad > 0:
+            angle = np.random.uniform(0, 2 * np.pi)
+            ys = np.linspace(-1, 1, H, dtype=np.float32).reshape(-1, 1)
+            xs = np.linspace(-1, 1, W, dtype=np.float32).reshape(1, -1)
+            grad_map = np.float32(np.cos(angle)) * xs + np.float32(np.sin(angle)) * ys
+            rgb = rgb + grad_map[..., None] * np.float32(self.grad * 30.0)
         if self.noise > 0:
             rgb = rgb + np.random.normal(0, self.noise, rgb.shape).astype(np.float32)
         return rgb
