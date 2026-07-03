@@ -1,8 +1,7 @@
 """Total multi-task loss.
 
-Weighted sum of depth + normal + pose, with optional Kendall uncertainty weighting (learned
-log-variances). supervise_dense=False skips the dense terms (for RGB-only batches when
-rgb_only_supervises_dense is off).
+4-task Kendall uncertainty weighting: depth, normal, pose_rot, pose_trans each get
+an independent learned log-variance. supervise_dense=False skips dense terms.
 """
 from __future__ import annotations
 
@@ -19,7 +18,8 @@ class MultiTaskLoss(nn.Module):
         super().__init__()
         self.w_depth = loss_cfg.depth.weight
         self.w_normal = loss_cfg.normal.weight
-        self.w_pose = loss_cfg.pose.weight
+        self.w_rot = loss_cfg.pose.rot_weight
+        self.w_trans = loss_cfg.pose.trans_weight
         self.uncertainty = loss_cfg.get("uncertainty_weighting", False)
 
         self.depth_loss = DepthLoss(
@@ -28,21 +28,18 @@ class MultiTaskLoss(nn.Module):
         )
         self.normal_loss = NormalLoss(kind=loss_cfg.normal.type)
         self.pose_loss = PoseLoss(
-            rot_weight=loss_cfg.pose.rot_weight,
-            trans_weight=loss_cfg.pose.trans_weight,
             pose_mode=pose_mode,
             rot_num_bins=rot_num_bins,
         )
         if self.uncertainty:
-            # log(sigma^2) per task: loss_i / (2*sigma_i^2) + log(sigma_i)
-            self.log_var = nn.Parameter(torch.zeros(3))
+            # 4 independent log(sigma^2): depth, normal, rot, trans
+            self.log_var = nn.Parameter(torch.zeros(4))
 
     def forward(self, pred, gt, supervise_dense=True):
         """pred: model output dict. gt: dict with depth/normal/pose/mask."""
         comps = {}
         terms = []
         weights = []
-        mask = gt.get("mask")
 
         if supervise_dense:
             l_depth = self.depth_loss(pred["depth"], gt["depth"])
@@ -52,15 +49,15 @@ class MultiTaskLoss(nn.Module):
             terms += [l_depth, l_normal]
             weights += [self.w_depth, self.w_normal]
 
-        l_pose, pose_comps = self.pose_loss(pred, gt["pose"])
-        comps["pose"] = l_pose.detach()
-        comps.update({f"pose_{k}": v for k, v in pose_comps.items()})
-        terms.append(l_pose)
-        weights.append(self.w_pose)
+        l_rot, l_trans = self.pose_loss(pred, gt["pose"])
+        comps["pose_rot"] = l_rot.detach()
+        comps["pose_trans"] = l_trans.detach()
+        terms += [l_rot, l_trans]
+        weights += [self.w_rot, self.w_trans]
 
         if self.uncertainty:
-            # map present terms to their log_var slot: 0=depth,1=normal,2=pose
-            idx = ([0, 1] if supervise_dense else []) + [2]
+            # 0=depth, 1=normal, 2=rot, 3=trans
+            idx = ([0, 1] if supervise_dense else []) + [2, 3]
             total = 0.0
             for t, j in zip(terms, idx):
                 total = total + torch.exp(-self.log_var[j]) * t + 0.5 * self.log_var[j]
