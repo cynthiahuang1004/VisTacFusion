@@ -27,38 +27,26 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
-from .transforms import RGBPhotometricAug, TactileAugment, ToTensorResize
+from .transforms import (FIXED_CROP, RGBPhotometricAug, TactileAugment,
+                         ToTensorResize, fixed_center_crop, rotate_gel_spin)
 
 
-def transform_pose(pose, geo):
-    """Apply the same geometric augmentation to the SE(2) pose label.
+def rotate_pose_theta(pose, dtheta_rad):
+    """Shift the pose theta by dtheta_rad; (x, y) unchanged (gel spins in place).
 
-    pose: tensor [4] = (cos θ, sin θ, tx, ty)
-    geo:  dict from TactileAugment with {hflip, vflip, rot_deg}
-
-    Transforms applied in the same order as TactileAugment: hflip → vflip → rotation.
+    pose: tensor [4] = (cos θ, sin θ, x, y).
+    Sign convention: image rotated by +φ (cv2) → θ' = θ − φ (pose is sensor-relative-
+    to-object: object appearing rotated +φ ⟺ sensor rotated −φ). Verified on real
+    cross-session pairs of 5 asymmetric objects (hex_key/edge/patterns, 8/0 votes,
+    100× MSE margins) using the corrected object-frame (x,y) for pairing.
+    Caller passes dtheta_rad = −radians(φ_cv2).
     """
-    cos, sin, tx, ty = pose[0].item(), pose[1].item(), pose[2].item(), pose[3].item()
-
-    if geo["hflip"]:
-        cos, sin, tx, ty = -cos, sin, -tx, ty
-
-    if geo["vflip"]:
-        cos, sin, tx, ty = cos, -sin, tx, -ty
-
-    rot_deg = geo["rot_deg"]
-    if abs(rot_deg) > 0.5:
-        a = math.radians(rot_deg)
-        ca, sa = math.cos(a), math.sin(a)
-        # cv2 rotates image CCW by α → object heading decreases by α
-        cos_new = cos * ca + sin * sa
-        sin_new = sin * ca - cos * sa
-        # position follows the same cv2 rotation matrix
-        tx_new = tx * ca + ty * sa
-        ty_new = -tx * sa + ty * ca
-        cos, sin, tx, ty = cos_new, sin_new, tx_new, ty_new
-
-    return torch.tensor([cos, sin, tx, ty], dtype=torch.float32)
+    cos_t, sin_t = pose[0].item(), pose[1].item()
+    c, s = math.cos(dtheta_rad), math.sin(dtheta_rad)
+    cos_new = cos_t * c - sin_t * s
+    sin_new = sin_t * c + cos_t * s
+    return torch.tensor([cos_new, sin_new, pose[2].item(), pose[3].item()],
+                        dtype=torch.float32)
 
 
 def depth_to_normal(depth, pixel_size_x, pixel_size_y):
@@ -130,6 +118,17 @@ class SimVisuoTactileDataset(Dataset):
         self.mesh_dir = sim.get("mesh_dir", osp.join(osp.dirname(self.root), "meshes"))
         self.rgb_subdir = sim.rgb_subdir
         self.use_gt_depth = sim.get("use_gt_depth", True)
+        # Tactile camera view is fixed & square for ALL objects (fov=60, half-width
+        # 0.008751m -> 17.5mm). session.json X_MIN/X_MAX is the press sampling range,
+        # NOT the camera view — do not use it for pixel size.
+        # Every sample gets the fixed 1/sqrt(2) center crop -> effective view 12.37mm,
+        # constant pixel size for train/val/inference alike.
+        gel_view_m = sim.get("gel_view_m", 0.017502)
+        self.pixel_size = gel_view_m * FIXED_CROP / image_size
+        # Gel-spin rotation augmentation (train only): rotate tactile+rgb+depth by a
+        # random angle, shift GT theta by the same angle (sign verified), (x,y) unchanged.
+        self.rot_aug = augment and sim.get("rot_augment", True)
+        self.rot_aug_max_deg = sim.get("rot_augment_max_deg", 180.0)
 
         if self.root is None:
             raise ValueError("configs/data.yaml sim.root is null — set the sim data path.")
@@ -166,8 +165,6 @@ class SimVisuoTactileDataset(Dataset):
             session_json = osp.join(session_dir, "session.json")
             with open(session_json) as f:
                 sess = json.load(f)
-            x_min, x_max = sess["X_MIN"], sess["X_MAX"]
-            y_min, y_max = sess["Y_MIN"], sess["Y_MAX"]
 
             obj_name = osp.basename(osp.dirname(session_dir))
             info = self._obj_pose_info.get(obj_name)
@@ -180,8 +177,6 @@ class SimVisuoTactileDataset(Dataset):
                 info["vertices"], info["fixed_scale"], base_rot)
 
             self.unit_meta[unit] = {
-                "pixel_size_x": (x_max - x_min) / image_size,
-                "pixel_size_y": (y_max - y_min) / image_size,
                 "delta_rz": delta_rz,
                 "session_center": session_center,
                 "half": info["half"],
@@ -280,15 +275,25 @@ class SimVisuoTactileDataset(Dataset):
         # --- Pose: SE(2) = (cos θ, sin θ, tx_norm, ty_norm) ---
         pose = self._load_pose(unit, sample_idx, meta)
 
-        # --- Augmentation (tactile + depth; normals computed after) ---
+        # --- Gel-spin rotation aug: tactile+rgb+depth rotate together, θ -= φ ---
+        if self.rot_aug:
+            phi_deg = random.uniform(-self.rot_aug_max_deg, self.rot_aug_max_deg)
+            tactile, rgb, depth = rotate_gel_spin(tactile, rgb, depth, phi_deg)
+            pose = rotate_pose_theta(pose, -math.radians(phi_deg))
+
+        # --- Fixed 1/sqrt(2) center crop: EVERY sample (train/val, rotated or not) ---
+        tactile = fixed_center_crop(tactile)
+        rgb = fixed_center_crop(rgb)
+        depth = fixed_center_crop(depth)
+
+        # --- Photometric augmentation ---
         if self.tactile_aug is not None:
-            tactile, _, depth, _, geo = self.tactile_aug(tactile, [], depth, None)
-            pose = transform_pose(pose, geo)
+            tactile, _, depth, _, _ = self.tactile_aug(tactile, [], depth, None)
         if self.rgb_aug is not None:
             rgb = self.rgb_aug(rgb)
 
-        # --- Compute normals from raw depth (before scaling) ---
-        normal = depth_to_normal(depth, meta["pixel_size_x"], meta["pixel_size_y"])
+        # --- Compute normals (constant pixel size — fixed crop for all samples) ---
+        normal = depth_to_normal(depth, self.pixel_size, self.pixel_size)
 
         # --- Contact mask (before scaling) ---
         mask = (depth > 0).astype(np.float32)
@@ -317,22 +322,22 @@ class SimVisuoTactileDataset(Dataset):
             data = json.load(f)
 
         delta_rz = meta["delta_rz"]
-        session_center = meta["session_center"]
         half = meta["half"]
 
-        cx = data["sample_x"]
-        cy = data["sample_y"]
+        # pose json sample_x/sample_y = press offset from the session object center in
+        # WORLD axes with x negated: (sx, sy) = (-(cx - scx), +(cy - scy)) — verified
+        # against session.json valid_cells at 0/30/90 deg sessions.
+        # Reference label (pose_calculation.py): [x, y] = diag(-1,1) @ R(th).T @ off_cell.
+        # Substituting off_cell = diag(-1,1) @ (sx, sy) and simplifying with
+        # M R(th).T M = R(th):  label = R(+th) @ (sx, sy) / half.
         cos_rz = math.cos(delta_rz)
         sin_rz = math.sin(delta_rz)
-
-        offset = np.array([cx - session_center[0], cy - session_center[1]])
-        R = np.array([[cos_rz, -sin_rz], [sin_rz, cos_rz]])
-        pt_obj = R.T @ offset
-        x_norm = -pt_obj[0] / max(half, 1e-8)
-        y_norm = pt_obj[1] / max(half, 1e-8)
+        sx, sy = data["sample_x"], data["sample_y"]
+        x_norm = (cos_rz * sx - sin_rz * sy) / max(half, 1e-8)
+        y_norm = (sin_rz * sx + cos_rz * sy) / max(half, 1e-8)
 
         return torch.tensor(
-            [math.cos(delta_rz), math.sin(delta_rz), x_norm, y_norm],
+            [cos_rz, sin_rz, x_norm, y_norm],
             dtype=torch.float32,
         )
 

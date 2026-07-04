@@ -126,6 +126,7 @@ class VisuoTactileModel(nn.Module):
             dropout=cfg.heads.pose.dropout,
             pose_mode=cfg.heads.pose.pose_mode,
             rot_num_bins=cfg.heads.pose.get("rot_num_bins", 72),
+            use_spatial_pool=cfg.heads.pose.get("use_spatial_pool", True),
         )
 
     # ------------------------------------------------------------------ helpers
@@ -196,7 +197,8 @@ class VisuoTactileModel(nn.Module):
             return {"taps": taps, "pose_token": pose_token}
 
         depth, normal = self.dpt(taps, out_hw=(self.image_size, self.image_size))
-        pose = self.pose_head(pose_token)
+        spatial_queries = trunk_taps[-1]  # last trunk layer's spatial tokens [B, 196, D]
+        pose = self.pose_head(pose_token, spatial_queries=spatial_queries)
         out = {"depth": depth, "normal": normal}
         out.update(pose)
         return out

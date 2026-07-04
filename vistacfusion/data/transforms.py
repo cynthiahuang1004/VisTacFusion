@@ -1,16 +1,62 @@
 """Augmentation + tensorization.
 
 - TactileAugment   : sim2real domain randomization -- gain/bias/gradient/brightness/residual/
-  noise + flips & rotation, with matching normal-map corrections.
+  noise (photometric only; geometric handled by rotate_gel_spin).
+- rotate_gel_spin  : gel-spin rotation aug -- rotates tactile+rgb+depth by the same angle
+  around the image center. GT theta shifts by MINUS the image angle (pose = sensor
+  relative to object; verified against real cross-session pairs of asymmetric objects);
+  (x, y) unchanged (rotation center = press point = image center).
+- fixed_center_crop: the FIXED 1/sqrt(2) center crop applied to EVERY sample (train, val,
+  augmented or not, and real inference). Covers the 45-deg worst-case inscribed square,
+  so any rotation angle leaves no border artifacts, the scale is constant everywhere
+  (no zoom<->angle leakage, no train/val scale gap), and the pixel<->physical mapping
+  is a single constant.
 - RGBPhotometricAug: photometric jitter on the RGB context (geometry kept stable).
 - ToTensorResize   : HWC float32 -> normalized CHW tensor, resized to (H, W).
 """
 from __future__ import annotations
 
+import math
+
 import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
+
+# Fixed crop factor: worst-case (45 deg) inscribed square. Every sample lives in this
+# cropped world; effective view = gel_view * FIXED_CROP (17.5mm -> 12.37mm).
+FIXED_CROP = 1.0 / math.sqrt(2.0)
+
+
+def fixed_center_crop(img, out_size=None):
+    """Center-crop to FIXED_CROP of the side length, resize back to original (or out_size)."""
+    H, W = img.shape[:2]
+    side = int(math.floor(min(H, W) * FIXED_CROP))
+    off_y = (H - side) // 2
+    off_x = (W - side) // 2
+    crop = img[off_y:off_y + side, off_x:off_x + side]
+    out = out_size or (W, H)
+    if isinstance(out, int):
+        out = (out, out)
+    return cv2.resize(crop, out, interpolation=cv2.INTER_LINEAR)
+
+
+def rotate_gel_spin(tactile, rgb, depth, angle_deg):
+    """Rotate tactile + rgb + depth by angle_deg around the image center (no crop here —
+    the shared fixed_center_crop applied afterwards removes all border artifacts for any
+    angle).
+
+    Simulates spinning the gel in place at the same press point: image content rotates,
+    theta changes by -angle_deg (pose = sensor relative to object; verified on real
+    cross-session pairs), (x, y) unchanged.
+    """
+    H, W = tactile.shape[:2]
+    M = cv2.getRotationMatrix2D((W / 2, H / 2), angle_deg, 1.0)
+    flags, border = cv2.INTER_LINEAR, cv2.BORDER_REFLECT_101
+    tac = cv2.warpAffine(tactile, M, (W, H), flags=flags, borderMode=border)
+    rgb_r = cv2.warpAffine(rgb, M, (W, H), flags=flags, borderMode=border)
+    dep = cv2.warpAffine(depth, M, (W, H), flags=flags, borderMode=border)
+    return tac, rgb_r, dep
 
 DEFAULT_AUGMENT_PARAMS = {
     "gain": 0.5, "bias": 45.0, "grad": 0.7, "bright": 25.0,

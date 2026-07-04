@@ -161,7 +161,7 @@ def save_loss_plots(history, plot_dir):
         (axes[0, 0], "total", "Total"),
         (axes[0, 1], "depth", "Depth (MSE)"),
         (axes[0, 2], "normal", "Normal (MSE)"),
-        (axes[1, 0], "pose_rot", "Pose Rotation (CE)"),
+        (axes[1, 0], "pose_rot", "Pose Rotation (1-cos)"),
         (axes[1, 1], "pose_trans", "Pose Translation (L1)"),
     ]:
         vals = [h["train"].get(key, float("nan")) for h in history]
@@ -184,7 +184,7 @@ def save_loss_plots(history, plot_dir):
         for ax, key, label in [
             (axes[0, 0], "depth_mse", "Depth MSE"),
             (axes[0, 1], "normal_mse", "Normal MSE"),
-            (axes[0, 2], "pose_rot", "Pose Rot (CE)"),
+            (axes[0, 2], "pose_rot", "Pose Rot (1-cos)"),
             (axes[1, 0], "pose_trans", "Pose Trans (L1)"),
             (axes[1, 1], "pose_rot_deg", "Pose Rot (°)"),
         ]:

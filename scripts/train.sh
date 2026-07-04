@@ -15,7 +15,8 @@
 #   NGPUS=2 bash scripts/train.sh --resume outputs/last.pt
 set -euo pipefail
 
-OUTDIR=${OUTDIR:-outputs/$(date +%Y%m%d_%H%M%S)}
+SUFFIX=${SUFFIX:-}
+OUTDIR=${OUTDIR:-outputs/$(date +%Y%m%d_%H%M%S)${SUFFIX:+_$SUFFIX}}
 NGPUS=${NGPUS:-1}
 
 COMMON_ARGS=(

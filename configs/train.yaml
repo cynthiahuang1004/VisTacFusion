@@ -41,7 +41,7 @@ loss:
     type: mse                   # {mse, cosine}  MSE matches the working notebook
     weight: 1.0
   pose:
-    rot_weight: 2.0             # increased from 1.0 to boost rotation gradient
+    rot_weight: 1.0             # rotation classification CE loss
     trans_weight: 1.0           # L1 on (t_x, t_y)
     weight: 1.0
   uncertainty_weighting: true   # Kendall et al. auto task weighting — balances depth/normal/pose gradients

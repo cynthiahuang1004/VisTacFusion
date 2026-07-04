@@ -48,8 +48,8 @@ heads:
     encoder_tap_layers: [5, 11, 17, 23]  # v2 only: tactile-encoder layers tapped (ViT-L depth 24)
     inject_gate_init: 0.0       # v2 only: ReZero-style learnable gate on per-tap RGB injection (0 = start as pure encoder taps, learn to inject)
   pose:
-    hidden_dim: 256             # MLP: LN -> 768->256 -> GELU -> Dropout -> 256->4
+    hidden_dim: 256             # deeper MLP: 1536->512->256->128->out
     dropout: 0.1
-    pose_mode: regression       # {regression, classification}  # ablation C (if pose unstable)
-    # regression: outputs (a, b, t_x, t_y); (a,b) L2-normalized -> (cos, sin). SE(2), 3 DoF.
-    rot_num_bins: 72            # only used if pose_mode == classification (5-degree bins)
+    pose_mode: regression       # {regression, classification}  sin/cos regression, 1-cos loss
+    rot_num_bins: 72            # only used in classification mode
+    use_spatial_pool: true      # concat spatial token pool with pose token (1536 input)

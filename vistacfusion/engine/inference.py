@@ -40,22 +40,34 @@ from ..utils.config import merge_configs
 def load_model(cfg, checkpoint_path, device):
     model = build_model(cfg).to(device)
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    model.load_state_dict(ckpt["model"])
+    missing, unexpected = model.load_state_dict(ckpt["model"], strict=False)
+    if missing:
+        print(f"  [warn] missing keys: {len(missing)} (pose head architecture change?)")
     model.eval()
     print(f"Loaded checkpoint: {checkpoint_path} (epoch {ckpt.get('epoch', '?')})")
     return model
 
 
 def preprocess_image(img_path, image_size):
-    """Load PNG → ImageNet-normalized tensor [1, 3, H, W]."""
+    """Load image → same preprocessing as training: center square crop (non-square
+    inputs), the FIXED 1/sqrt(2) crop the model was trained in, then ImageNet norm."""
+    from ..data.transforms import fixed_center_crop
+
     img = np.array(Image.open(img_path), dtype=np.float32)
-    t = torch.from_numpy(np.ascontiguousarray(img)).float()
-    if t.ndim == 2:
-        t = t.unsqueeze(-1).expand(-1, -1, 3)
-    t = t.permute(2, 0, 1)
-    if t.shape[1] != image_size or t.shape[2] != image_size:
-        t = F.interpolate(t.unsqueeze(0), size=(image_size, image_size),
-                          mode="bilinear", align_corners=False).squeeze(0)
+    if img.ndim == 2:
+        img = np.stack([img] * 3, axis=-1)
+
+    # non-square (e.g. real 640x480): center square crop first, no aspect distortion
+    h, w = img.shape[:2]
+    if h != w:
+        s = min(h, w)
+        y0, x0 = (h - s) // 2, (w - s) // 2
+        img = img[y0:y0 + s, x0:x0 + s]
+
+    # the model lives in the fixed-crop world — apply the SAME crop as training
+    img = fixed_center_crop(img, out_size=image_size)
+
+    t = torch.from_numpy(np.ascontiguousarray(img)).float().permute(2, 0, 1)
     mean = torch.tensor([123.675, 116.28, 103.53]).view(3, 1, 1)
     std = torch.tensor([58.395, 57.12, 57.375]).view(3, 1, 1)
     return ((t - mean) / std).unsqueeze(0)
@@ -104,8 +116,9 @@ def center_crop_square(img):
 
 
 def visualize_three_configs(tactile_img, rgb_img, results,
-                            gt_depth=None, gt_normal=None, save_path=None):
-    """Plot 3-config comparison: rows = [both, tactile, rgb, (GT)], cols = [input, depth, normal]."""
+                            gt_depth=None, gt_normal=None, gt_pose=None,
+                            save_path=None):
+    """Plot 3-config comparison: rows = [both, tactile, rgb, (GT)], cols = [input, depth, normal, pose]."""
     has_gt = gt_depth is not None
     nrows = 4 if has_gt else 3
     fig, axes = plt.subplots(nrows, 4, figsize=(18, 4.5 * nrows))
@@ -124,9 +137,9 @@ def visualize_three_configs(tactile_img, rgb_img, results,
         axes[row, 2].imshow(normal_vis)
         axes[row, 2].set_title("Normal" if row == 0 else "")
 
-        axes[row, 3].text(0.5, 0.5,
-                          f"θ = {theta:.1f}°\ntx = {pose[2]:.3f}\nty = {pose[3]:.3f}",
-                          transform=axes[row, 3].transAxes, fontsize=14,
+        pose_text = f"θ = {theta:.1f}°\ntx = {pose[2]:.3f}\nty = {pose[3]:.3f}"
+        axes[row, 3].text(0.5, 0.5, pose_text,
+                          transform=axes[row, 3].transAxes, fontsize=18,
                           ha="center", va="center", family="monospace")
         axes[row, 3].set_title("Pose" if row == 0 else "")
         axes[row, 3].axis("off")
@@ -137,6 +150,13 @@ def visualize_three_configs(tactile_img, rgb_img, results,
         axes[3, 1].imshow(gt_depth, cmap="viridis")
         gt_normal_vis = (gt_normal * 0.5 + 0.5).clip(0, 1)
         axes[3, 2].imshow(gt_normal_vis)
+        if gt_pose is not None:
+            gt_theta = np.degrees(np.arctan2(gt_pose[1], gt_pose[0]))
+            gt_text = f"θ = {gt_theta:.1f}°\ntx = {gt_pose[2]:.3f}\nty = {gt_pose[3]:.3f}"
+            axes[3, 3].text(0.5, 0.5, gt_text,
+                            transform=axes[3, 3].transAxes, fontsize=18,
+                            ha="center", va="center", family="monospace",
+                            color="green")
         axes[3, 3].axis("off")
 
     for ax in axes.flat:
@@ -207,16 +227,13 @@ def run_session(model, session_dir, cfg, device, output_dir, max_samples=None,
         gt_depth_path = osp.join(raw_dir, f"{idx:04d}_gt.npy")
         if osp.exists(gt_depth_path):
             from ..data.dataset import depth_to_normal
-            gt_depth_raw = np.load(gt_depth_path).astype(np.float32)
+            from ..data.transforms import FIXED_CROP, fixed_center_crop
+            gt_depth_raw = fixed_center_crop(
+                np.load(gt_depth_path).astype(np.float32))
             gt_depth = gt_depth_raw * 1000.0
-            import json
-            session_json = osp.join(osp.dirname(session_dir), "session.json")
-            if osp.exists(session_json):
-                with open(session_json) as f:
-                    sess = json.load(f)
-                px = (sess["X_MAX"] - sess["X_MIN"]) / cfg.image_size
-                py = (sess["Y_MAX"] - sess["Y_MIN"]) / cfg.image_size
-                gt_normal = depth_to_normal(gt_depth_raw, px, py)
+            # fixed crop world: view = 17.5mm * (1/sqrt2), constant pixel size
+            px = cfg.sim.get("gel_view_m", 0.017502) * FIXED_CROP / cfg.image_size
+            gt_normal = depth_to_normal(gt_depth_raw, px, px)
 
         run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
                    gt_depth=gt_depth, gt_normal=gt_normal, name=f"{idx:04d}",
@@ -274,12 +291,13 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None):
         tac_img = (sample["tactile"].permute(1, 2, 0).numpy() * std + mean).clip(0, 255).astype(np.uint8)
         rgb_img = (sample["rgb"].permute(1, 2, 0).numpy() * std + mean).clip(0, 255).astype(np.uint8)
 
-        save_path = osp.join(output_dir, f"val_{i:03d}.png")
-        visualize_three_configs(tac_img, rgb_img, results,
-                                gt_depth=gt_depth, gt_normal=gt_normal, save_path=save_path)
-
         gt_pose = sample["pose"].numpy()
         gt_theta = np.degrees(np.arctan2(gt_pose[1], gt_pose[0]))
+
+        save_path = osp.join(output_dir, f"val_{i:03d}.png")
+        visualize_three_configs(tac_img, rgb_img, results,
+                                gt_depth=gt_depth, gt_normal=gt_normal,
+                                gt_pose=gt_pose, save_path=save_path)
         for cfg_name in CONFIGS_3:
             _, _, pose, theta = results[cfg_name]
             print(f"  val_{i:03d} [{cfg_name:8s}]: pred θ={theta:.1f}° gt θ={gt_theta:.1f}°")
@@ -289,6 +307,8 @@ def main():
     ap = argparse.ArgumentParser(description="Inference on real/sim data")
     ap.add_argument("--train-dir", required=True,
                     help="Training output directory (e.g. outputs/20260629_022120)")
+    ap.add_argument("--checkpoint", default=None,
+                    help="Single checkpoint file (overrides best_depth/best_pose)")
     ap.add_argument("--model", default="configs/model.yaml")
     ap.add_argument("--train", default="configs/train.yaml")
     ap.add_argument("--data", default="configs/data.yaml")
@@ -305,6 +325,8 @@ def main():
     ap.add_argument("--real-dir-path",
                     default="/media/hdd2/ihsuan/VisTacFusion/datasets/real_data",
                     help="Real data path for --eval-all mode")
+    ap.add_argument("--suffix", default="best",
+                    help="Output folder suffix (e.g. best, last, epoch050)")
     ap.add_argument("--max-samples", type=int, default=None)
     ap.add_argument("--num-vis", type=int, default=20)
     args = ap.parse_args()
@@ -313,26 +335,30 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     train_name = osp.basename(args.train_dir.rstrip("/"))
-    base_dir = osp.join("eval_results", f"{train_name}_best")
+    base_dir = osp.join("eval_results", f"{train_name}_{args.suffix}")
 
-    # Load best_depth for depth/normal, best_pose for pose
-    depth_ckpt = osp.join(args.train_dir, "best_depth.pt")
-    pose_ckpt = osp.join(args.train_dir, "best_pose.pt")
-
-    if not osp.exists(depth_ckpt):
-        fallback = osp.join(args.train_dir, "best.pt")
-        if osp.exists(fallback):
-            depth_ckpt = fallback
-        else:
-            raise FileNotFoundError(f"No best_depth.pt or best.pt in {args.train_dir}")
-
-    depth_model = load_model(cfg, depth_ckpt, device)
-    pose_model = None
-    if osp.exists(pose_ckpt) and pose_ckpt != depth_ckpt:
-        pose_model = load_model(cfg, pose_ckpt, device)
-        print(f"Using split checkpoints: depth={osp.basename(depth_ckpt)}, pose={osp.basename(pose_ckpt)}")
+    if args.checkpoint:
+        depth_model = load_model(cfg, args.checkpoint, device)
+        pose_model = None
+        print(f"Using single checkpoint: {args.checkpoint}")
     else:
-        print(f"Using single checkpoint: {osp.basename(depth_ckpt)}")
+        depth_ckpt = osp.join(args.train_dir, "best_depth.pt")
+        pose_ckpt = osp.join(args.train_dir, "best_pose.pt")
+
+        if not osp.exists(depth_ckpt):
+            fallback = osp.join(args.train_dir, "best.pt")
+            if osp.exists(fallback):
+                depth_ckpt = fallback
+            else:
+                raise FileNotFoundError(f"No best_depth.pt or best.pt in {args.train_dir}")
+
+        depth_model = load_model(cfg, depth_ckpt, device)
+        pose_model = None
+        if osp.exists(pose_ckpt) and pose_ckpt != depth_ckpt:
+            pose_model = load_model(cfg, pose_ckpt, device)
+            print(f"Using split checkpoints: depth={osp.basename(depth_ckpt)}, pose={osp.basename(pose_ckpt)}")
+        else:
+            print(f"Using single checkpoint: {osp.basename(depth_ckpt)}")
 
     if args.tactile:
         if not args.rgb:
