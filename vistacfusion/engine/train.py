@@ -155,13 +155,14 @@ def save_loss_plots(history, plot_dir):
     epochs = [h["epoch"] for h in history]
 
     # --- Train losses ---
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
     fig.suptitle("Training Loss", fontsize=14)
     for ax, key, label in [
         (axes[0, 0], "total", "Total"),
-        (axes[0, 1], "depth", "Depth (SSI)"),
-        (axes[1, 0], "normal", "Normal (cosine)"),
-        (axes[1, 1], "pose", "Pose"),
+        (axes[0, 1], "depth", "Depth (MSE)"),
+        (axes[0, 2], "normal", "Normal (MSE)"),
+        (axes[1, 0], "pose_rot", "Pose Rotation (CE)"),
+        (axes[1, 1], "pose_trans", "Pose Translation (L1)"),
     ]:
         vals = [h["train"].get(key, float("nan")) for h in history]
         ax.plot(epochs, vals, "b-o", markersize=2)
@@ -169,6 +170,7 @@ def save_loss_plots(history, plot_dir):
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Loss")
         ax.grid(True, alpha=0.3)
+    axes[1, 2].axis("off")
     fig.tight_layout()
     fig.savefig(os.path.join(plot_dir, "train_loss.png"), dpi=150)
     plt.close(fig)
@@ -180,11 +182,11 @@ def save_loss_plots(history, plot_dir):
         fig, axes = plt.subplots(2, 3, figsize=(18, 10))
         fig.suptitle(f"Val Metrics — {config}", fontsize=14)
         for ax, key, label in [
-            (axes[0, 0], "depth_absrel", "Depth AbsRel"),
-            (axes[0, 1], "depth_rmse", "Depth RMSE"),
-            (axes[0, 2], "normal_mean_angle", "Normal Angle (°)"),
-            (axes[1, 0], "pose_rot_deg", "Pose Rot (°)"),
-            (axes[1, 1], "pose_trans", "Pose Trans L1"),
+            (axes[0, 0], "depth_mse", "Depth MSE"),
+            (axes[0, 1], "normal_mse", "Normal MSE"),
+            (axes[0, 2], "pose_rot", "Pose Rot (CE)"),
+            (axes[1, 0], "pose_trans", "Pose Trans (L1)"),
+            (axes[1, 1], "pose_rot_deg", "Pose Rot (°)"),
         ]:
             vals = [h["val"].get(config, {}).get(key, float("nan")) for h in history]
             ax.plot(epochs, vals, "r-o", markersize=2)
@@ -361,8 +363,8 @@ def main():
             save_loss_plots(history, plot_dir)
 
             both_metrics = val_metrics.get("both", {})
-            depth_score = both_metrics.get("depth_absrel", float("inf"))
-            pose_score = both_metrics.get("pose_rot_deg", float("inf"))
+            depth_score = both_metrics.get("depth_mse", float("inf"))
+            pose_score = both_metrics.get("pose_rot", float("inf"))
 
             if depth_score < best_metric:
                 best_metric = depth_score
@@ -370,7 +372,7 @@ def main():
                     os.path.join(args.output_dir, "best_depth.pt"),
                     model, optimizer, scheduler, scaler, epoch, best_metric,
                     criterion=criterion)
-                print(f"  ** new best depth: absrel={best_metric:.4f}")
+                print(f"  ** new best depth: mse={best_metric:.6f}")
 
             if pose_score < best_pose_metric:
                 best_pose_metric = pose_score
@@ -378,7 +380,7 @@ def main():
                     os.path.join(args.output_dir, "best_pose.pt"),
                     model, optimizer, scheduler, scaler, epoch, best_pose_metric,
                     criterion=criterion)
-                print(f"  ** new best pose: rot_deg={best_pose_metric:.3f}")
+                print(f"  ** new best pose: rot_ce={best_pose_metric:.4f}")
 
             save_checkpoint(
                 os.path.join(args.output_dir, f"epoch_{epoch:03d}.pt"),
