@@ -30,8 +30,11 @@ sim:
   # cross-session pairs of asymmetric objects); (x,y) unchanged.
   rot_augment: true
   rot_augment_max_deg: 180.0    # phi ~ Uniform(-180, 180) fills the full theta circle
-  # Object-wise train/val split (held-out objects = the sim "val"). Real eval is separate.
-  val_objects: [edge, hex_key, pattern_31_rod]
+  # Per-session train/val split: every val_every-th sample (idx % val_every == 0) of
+  # EVERY session is val (~10/session, 5%), the rest train. Deterministic, no split
+  # file. All objects appear in both train and val (markers are object-specific, so
+  # unseen-object pose generalization is not the target; real eval is separate).
+  val_every: 20
 
 # ---- Real eval set (sim2real, reported zero-shot) ----
 real:

@@ -109,11 +109,16 @@ class SimVisuoTactileDataset(Dataset):
     translation in object frame normalized by target_size.
     """
 
-    def __init__(self, cfg_data, image_size, augment=False, include_objects=None, seed=0):
+    def __init__(self, cfg_data, image_size, augment=False, include_objects=None,
+                 split="all", seed=0):
+        """split: 'train' | 'val' | 'all'. Per-session split: every val_every-th sample
+        (idx % val_every == 0) is val, the rest train. Deterministic — no split file."""
         self.image_size = image_size
         self.augment = augment
+        self.split = split
         sim = cfg_data.sim
         norm = cfg_data.norm
+        self.val_every = sim.get("val_every", 20)
         self.root = sim.root
         self.mesh_dir = sim.get("mesh_dir", osp.join(osp.dirname(self.root), "meshes"))
         self.rgb_subdir = sim.rgb_subdir
@@ -185,6 +190,11 @@ class SimVisuoTactileDataset(Dataset):
 
             for png in pngs:
                 idx = int(osp.splitext(png)[0])
+                is_val = (idx % self.val_every == 0)
+                if self.split == "train" and is_val:
+                    continue
+                if self.split == "val" and not is_val:
+                    continue
                 suffix = "_gt" if self.use_gt_depth else ""
                 rgb_ok = osp.exists(osp.join(unit, self.rgb_subdir, f"{idx:04d}.png"))
                 depth_ok = osp.exists(osp.join(unit, "raw_data", f"{idx:04d}{suffix}.npy"))
@@ -354,12 +364,9 @@ def build_datasets(cfg):
         val = SyntheticVisuoTactileDataset(n_val, image_size, s.num_objects, seed=1)
         return train, val
     if which == "sim":
-        val_objs = list(cfg.sim.val_objects)
-        train_all = SimVisuoTactileDataset(cfg, image_size, augment=True, include_objects=None)
-        train_objs = [o for o in train_all.objects if o not in set(val_objs)]
-        train = SimVisuoTactileDataset(cfg, image_size, augment=True,
-                                       include_objects=train_objs)
-        val = SimVisuoTactileDataset(cfg, image_size, augment=False,
-                                     include_objects=val_objs)
+        # Per-session split: every val_every-th sample of every session is val
+        # (all objects appear in both train and val, different press samples).
+        train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
+        val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
         return train, val
     raise ValueError(f"Unknown dataset {which!r} (configs/data.yaml dataset:)")
