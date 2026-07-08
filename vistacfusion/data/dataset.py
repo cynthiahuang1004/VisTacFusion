@@ -134,6 +134,7 @@ class SimVisuoTactileDataset(Dataset):
         # random angle, shift GT theta by the same angle (sign verified), (x,y) unchanged.
         self.rot_aug = augment and sim.get("rot_augment", True)
         self.rot_aug_max_deg = sim.get("rot_augment_max_deg", 180.0)
+        self.use_rendered_normals = sim.get("use_rendered_normals", False)
 
         if self.root is None:
             raise ValueError("configs/data.yaml sim.root is null — set the sim data path.")
@@ -282,13 +283,13 @@ class SimVisuoTactileDataset(Dataset):
             osp.join(unit, "raw_data", f"{sample_idx:04d}{suffix}.npy")
         ).astype(np.float32)
 
-        # --- Load normal GT from Blender-rendered PNG ---
-        norm_suffix = "_gt" if self.use_gt_depth else ""
-        norm_path = osp.join(unit, "norms", f"{sample_idx:04d}{norm_suffix}.png")
-        if osp.exists(norm_path):
-            normal = np.array(Image.open(norm_path), dtype=np.float32)
-        else:
-            normal = None
+        # --- Load normal GT from Blender-rendered PNG (if enabled) ---
+        normal = None
+        if self.use_rendered_normals:
+            norm_suffix = "_gt" if self.use_gt_depth else ""
+            norm_path = osp.join(unit, "norms", f"{sample_idx:04d}{norm_suffix}.png")
+            if osp.exists(norm_path):
+                normal = np.array(Image.open(norm_path), dtype=np.float32)
 
         # --- Pose: SE(2) = (cos θ, sin θ, tx_norm, ty_norm) ---
         pose = self._load_pose(unit, sample_idx, meta)

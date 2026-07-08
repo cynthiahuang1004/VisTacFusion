@@ -274,19 +274,19 @@ def _angular_error_deg(pred_normal, gt_normal):
 
 
 def _depth_metrics(pred, gt):
-    """Compute depth metrics on contact region (gt > 0).
-    Both are (H, W) arrays. Returns dict with MAE, RMSE, MSE, delta<1.25."""
+    """Compute depth metrics. Full-image MSE (matches training eval); contact-only
+    MAE/RMSE/delta<1.25 for paper reporting. Both inputs are (H, W) arrays."""
+    mse_full = float(((pred - gt) ** 2).mean())
     mask = gt > 0
-    if mask.sum() == 0:
-        return {}
-    p, g = pred[mask], gt[mask]
-    abs_diff = np.abs(p - g)
-    mae = float(abs_diff.mean())
-    mse = float((abs_diff ** 2).mean())
-    rmse = mse ** 0.5
-    ratio = np.maximum(p / np.clip(g, 1e-6, None), g / np.clip(p, 1e-6, None))
-    d1 = float((ratio < 1.25).mean()) * 100
-    return {"MAE": mae, "RMSE": rmse, "MSE": mse, "delta<1.25": d1}
+    contact = {}
+    if mask.sum() > 0:
+        p, g = pred[mask], gt[mask]
+        abs_diff = np.abs(p - g)
+        contact["MAE"] = float(abs_diff.mean())
+        contact["RMSE"] = float((abs_diff ** 2).mean()) ** 0.5
+        ratio = np.maximum(p / np.clip(g, 1e-6, None), g / np.clip(p, 1e-6, None))
+        contact["delta<1.25"] = float((ratio < 1.25).mean()) * 100
+    return {"MSE": mse_full, **contact}
 
 
 def _rotation_error_deg(pred_pose, gt_pose):
@@ -352,8 +352,8 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
             m = metrics[cfg_name]
 
             dm = _depth_metrics(depth, gt_depth)
-            if dm:
-                m["depth_mse"].append(dm["MSE"])
+            m["depth_mse"].append(dm["MSE"])
+            if "MAE" in dm:
                 m["depth_mae"].append(dm["MAE"])
                 m["depth_rmse"].append(dm["RMSE"])
                 m["depth_d1"].append(dm["delta<1.25"])
