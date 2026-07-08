@@ -282,19 +282,33 @@ class SimVisuoTactileDataset(Dataset):
             osp.join(unit, "raw_data", f"{sample_idx:04d}{suffix}.npy")
         ).astype(np.float32)
 
+        # --- Load normal GT from Blender-rendered PNG ---
+        norm_suffix = "_gt" if self.use_gt_depth else ""
+        norm_path = osp.join(unit, "norms", f"{sample_idx:04d}{norm_suffix}.png")
+        if osp.exists(norm_path):
+            normal = np.array(Image.open(norm_path), dtype=np.float32)
+        else:
+            normal = None
+
         # --- Pose: SE(2) = (cos θ, sin θ, tx_norm, ty_norm) ---
         pose = self._load_pose(unit, sample_idx, meta)
 
-        # --- Gel-spin rotation aug: tactile+rgb+depth rotate together, θ -= φ ---
+        # --- Gel-spin rotation aug: tactile+rgb+depth+normal rotate together, θ -= φ ---
         if self.rot_aug:
             phi_deg = random.uniform(-self.rot_aug_max_deg, self.rot_aug_max_deg)
-            tactile, rgb, depth = rotate_gel_spin(tactile, rgb, depth, phi_deg)
+            if normal is not None:
+                tactile, rgb, depth, normal = rotate_gel_spin(
+                    tactile, rgb, depth, phi_deg, normal=normal)
+            else:
+                tactile, rgb, depth = rotate_gel_spin(tactile, rgb, depth, phi_deg)
             pose = rotate_pose_theta(pose, -math.radians(phi_deg))
 
         # --- Fixed 1/sqrt(2) center crop: EVERY sample (train/val, rotated or not) ---
         tactile = fixed_center_crop(tactile)
         rgb = fixed_center_crop(rgb)
         depth = fixed_center_crop(depth)
+        if normal is not None:
+            normal = fixed_center_crop(normal)
 
         # --- Photometric augmentation ---
         if self.tactile_aug is not None:
@@ -302,8 +316,11 @@ class SimVisuoTactileDataset(Dataset):
         if self.rgb_aug is not None:
             rgb = self.rgb_aug(rgb)
 
-        # --- Compute normals (constant pixel size — fixed crop for all samples) ---
-        normal = depth_to_normal(depth, self.pixel_size, self.pixel_size)
+        # --- Normal: use PNG if available, else compute from depth ---
+        if normal is not None:
+            normal = normal / 127.5 - 1.0
+        else:
+            normal = depth_to_normal(depth, self.pixel_size, self.pixel_size)
 
         # --- Contact mask (before scaling) ---
         mask = (depth > 0).astype(np.float32)

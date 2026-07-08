@@ -41,10 +41,8 @@ def fixed_center_crop(img, out_size=None):
     return cv2.resize(crop, out, interpolation=cv2.INTER_LINEAR)
 
 
-def rotate_gel_spin(tactile, rgb, depth, angle_deg):
-    """Rotate tactile + rgb + depth by angle_deg around the image center (no crop here —
-    the shared fixed_center_crop applied afterwards removes all border artifacts for any
-    angle).
+def rotate_gel_spin(tactile, rgb, depth, angle_deg, normal=None):
+    """Rotate tactile + rgb + depth (+ optional normal) by angle_deg around the image center.
 
     Simulates spinning the gel in place at the same press point: image content rotates,
     theta changes by -angle_deg (pose = sensor relative to object; verified on real
@@ -56,7 +54,16 @@ def rotate_gel_spin(tactile, rgb, depth, angle_deg):
     tac = cv2.warpAffine(tactile, M, (W, H), flags=flags, borderMode=border)
     rgb_r = cv2.warpAffine(rgb, M, (W, H), flags=flags, borderMode=border)
     dep = cv2.warpAffine(depth, M, (W, H), flags=flags, borderMode=border)
-    return tac, rgb_r, dep
+    if normal is None:
+        return tac, rgb_r, dep
+    norm_r = cv2.warpAffine(normal, M, (W, H), flags=flags, borderMode=border)
+    rad = np.radians(angle_deg)
+    cos_a, sin_a = np.float32(np.cos(rad)), np.float32(np.sin(rad))
+    nx = norm_r[:, :, 0] / 127.5 - 1.0
+    ny = norm_r[:, :, 1] / 127.5 - 1.0
+    norm_r[:, :, 0] = np.clip((cos_a * nx + sin_a * ny + 1.0) * 127.5, 0, 255)
+    norm_r[:, :, 1] = np.clip((-sin_a * nx + cos_a * ny + 1.0) * 127.5, 0, 255)
+    return tac, rgb_r, dep, norm_r
 
 DEFAULT_AUGMENT_PARAMS = {
     "gain": 0.5, "bias": 45.0, "grad": 0.7, "bright": 25.0,
