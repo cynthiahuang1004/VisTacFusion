@@ -263,44 +263,184 @@ def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None,
                    pose_model=pose_model)
 
 
-def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None):
-    """Run inference on sim val set with GT comparison, all 3 configs."""
-    from ..data.dataset import build_datasets
+def _angular_error_deg(pred_normal, gt_normal):
+    """Compute per-pixel angular error in degrees between predicted and GT normals.
+    Both are (H, W, 3) unit vectors in [-1, 1]. Returns mean and median in degrees."""
+    p = pred_normal / (np.linalg.norm(pred_normal, axis=-1, keepdims=True) + 1e-8)
+    g = gt_normal / (np.linalg.norm(gt_normal, axis=-1, keepdims=True) + 1e-8)
+    cos_sim = np.clip((p * g).sum(axis=-1), -1, 1)
+    angles = np.degrees(np.arccos(cos_sim))
+    return float(np.mean(angles)), float(np.median(angles))
+
+
+def _depth_metrics(pred, gt):
+    """Compute depth metrics on contact region (gt > 0).
+    Both are (H, W) arrays. Returns dict with MAE, RMSE, MSE, delta<1.25."""
+    mask = gt > 0
+    if mask.sum() == 0:
+        return {}
+    p, g = pred[mask], gt[mask]
+    abs_diff = np.abs(p - g)
+    mae = float(abs_diff.mean())
+    mse = float((abs_diff ** 2).mean())
+    rmse = mse ** 0.5
+    ratio = np.maximum(p / np.clip(g, 1e-6, None), g / np.clip(p, 1e-6, None))
+    d1 = float((ratio < 1.25).mean()) * 100
+    return {"MAE": mae, "RMSE": rmse, "MSE": mse, "delta<1.25": d1}
+
+
+def _rotation_error_deg(pred_pose, gt_pose):
+    """Compute rotation error in degrees between pred and gt pose (cos,sin,tx,ty)."""
+    theta_pred = np.arctan2(pred_pose[1], pred_pose[0])
+    theta_gt = np.arctan2(gt_pose[1], gt_pose[0])
+    err = abs(theta_pred - theta_gt)
+    err = min(err, 2 * np.pi - err)
+    return float(np.degrees(err))
+
+
+def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
+                 ckpt_info=None):
+    """Run full quantitative eval on sim val set + one visualization per object.
+
+    Outputs:
+      - eval_metrics.txt: quantitative metrics for all 3 configs
+      - sim_val_vis/<object_name>.png: one representative sample per object
+    """
+    from ..data.dataset import build_datasets, SimVisuoTactileDataset
     _, val_ds = build_datasets(cfg)
 
-    indices = np.linspace(0, len(val_ds) - 1, num_vis, dtype=int)
     os.makedirs(output_dir, exist_ok=True)
 
     mean = np.array([123.675, 116.28, 103.53])
     std = np.array([58.395, 57.12, 57.375])
 
-    print(f"Evaluating {num_vis} val samples (3 configs each)...")
-    for i, idx in enumerate(indices):
-        sample = val_ds[idx]
+    # --- Group samples by object, pick one representative per object for vis ---
+    obj_vis_idx = {}
+    if isinstance(val_ds, SimVisuoTactileDataset):
+        for i, (unit, _sample_idx) in enumerate(val_ds.samples):
+            obj_name = osp.basename(osp.dirname(osp.dirname(unit)))
+            if obj_name not in obj_vis_idx:
+                obj_vis_idx[obj_name] = i
+    else:
+        for i in range(min(len(val_ds), 20)):
+            obj_vis_idx[f"sample_{i:03d}"] = i
+
+    # --- Full quantitative evaluation ---
+    metrics = {cfg_name: {
+        "depth_mse": [], "depth_mae": [], "depth_rmse": [], "depth_d1": [],
+        "normal_mse": [], "normal_ang_mean": [], "normal_ang_median": [],
+        "pose_rot_deg": [], "pose_trans_l1": [],
+    } for cfg_name in CONFIGS_3}
+
+    vis_indices = set(obj_vis_idx.values())
+    vis_results = {}
+
+    print(f"Evaluating {len(val_ds)} val samples (3 configs, full metrics)...")
+    for i in range(len(val_ds)):
+        sample = val_ds[i]
         rgb_t = sample["rgb"].unsqueeze(0)
         tac_t = sample["tactile"].unsqueeze(0)
+        gt_depth = sample["depth"][0].numpy()
+        gt_normal = sample["normal"].permute(1, 2, 0).numpy()
+        gt_pose = sample["pose"].numpy()
 
-        results = {}
-        for config in CONFIGS_3:
-            depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config,
-                                                 device=device, pose_model=pose_model)
-            results[config] = (depth, normal, pose, theta)
+        for cfg_name in CONFIGS_3:
+            depth, normal, pose, theta = predict(
+                model, rgb_t, tac_t, config=cfg_name,
+                device=device, pose_model=pose_model)
+
+            m = metrics[cfg_name]
+
+            dm = _depth_metrics(depth, gt_depth)
+            if dm:
+                m["depth_mse"].append(dm["MSE"])
+                m["depth_mae"].append(dm["MAE"])
+                m["depth_rmse"].append(dm["RMSE"])
+                m["depth_d1"].append(dm["delta<1.25"])
+
+            nm = F.mse_loss(
+                torch.from_numpy(normal).float(),
+                torch.from_numpy(gt_normal).float(),
+            ).item()
+            m["normal_mse"].append(nm)
+
+            ang_mean, ang_median = _angular_error_deg(normal, gt_normal)
+            m["normal_ang_mean"].append(ang_mean)
+            m["normal_ang_median"].append(ang_median)
+
+            rot_err = _rotation_error_deg(pose, gt_pose)
+            m["pose_rot_deg"].append(rot_err)
+
+            trans_err = float(np.abs(pose[2:] - gt_pose[2:]).mean())
+            m["pose_trans_l1"].append(trans_err)
+
+            if i in vis_indices:
+                vis_results.setdefault(i, {})[cfg_name] = (depth, normal, pose, theta)
+
+        if (i + 1) % 200 == 0:
+            print(f"  {i+1}/{len(val_ds)} samples done")
+
+    # --- Aggregate metrics ---
+    summary = {}
+    for cfg_name in CONFIGS_3:
+        m = metrics[cfg_name]
+        summary[cfg_name] = {k: float(np.mean(v)) for k, v in m.items() if v}
+
+    # --- Write eval_metrics.txt ---
+    metrics_dir = osp.dirname(output_dir)
+    metrics_path = osp.join(metrics_dir, "eval_metrics.txt")
+    with open(metrics_path, "w") as f:
+        f.write("VisTacFusion Evaluation Results\n")
+        if ckpt_info:
+            f.write(f"Checkpoint: {ckpt_info}\n")
+        f.write(f"Val samples: {len(val_ds)}\n\n")
+        for cfg_name in CONFIGS_3:
+            s = summary[cfg_name]
+            f.write(f"[{cfg_name}]\n")
+            f.write(f"  Depth MSE:               {s.get('depth_mse', float('nan')):.6f}\n")
+            f.write(f"  Depth MAE:               {s.get('depth_mae', float('nan')):.6f}\n")
+            f.write(f"  Depth RMSE:              {s.get('depth_rmse', float('nan')):.6f}\n")
+            f.write(f"  Depth delta<1.25 (%):    {s.get('depth_d1', float('nan')):.2f}\n")
+            f.write(f"  Normal MSE:              {s.get('normal_mse', float('nan')):.6f}\n")
+            f.write(f"  Normal Ang Mean (deg):   {s.get('normal_ang_mean', float('nan')):.2f}\n")
+            f.write(f"  Normal Ang Median (deg): {s.get('normal_ang_median', float('nan')):.2f}\n")
+            f.write(f"  Pose Rot Error (deg):    {s.get('pose_rot_deg', float('nan')):.2f}\n")
+            f.write(f"  Pose Trans L1:           {s.get('pose_trans_l1', float('nan')):.6f}\n")
+            f.write("\n")
+
+    print(f"\nMetrics saved -> {metrics_path}")
+
+    # --- Print summary table ---
+    print("\n" + "=" * 72)
+    print(f"{'Metric':30s} {'Both':>12s} {'Tactile':>12s} {'RGB':>12s}")
+    print("=" * 72)
+    for key in ["depth_mse", "depth_mae", "depth_rmse", "depth_d1",
+                "normal_mse", "normal_ang_mean", "normal_ang_median",
+                "pose_rot_deg", "pose_trans_l1"]:
+        vals = [summary[c].get(key, float("nan")) for c in CONFIGS_3]
+        fmt = ".2f" if "deg" in key or "d1" in key else ".6f"
+        print(f"  {key:28s} {vals[0]:{fmt}} {vals[1]:{fmt}} {vals[2]:{fmt}}")
+    print("=" * 72)
+
+    # --- One visualization per object ---
+    print(f"\nSaving one visualization per object ({len(obj_vis_idx)} objects)...")
+    for obj_name, idx in sorted(obj_vis_idx.items()):
+        sample = val_ds[idx]
+        results = vis_results.get(idx, {})
+        if not results:
+            continue
 
         gt_depth = sample["depth"][0].numpy()
         gt_normal = sample["normal"].permute(1, 2, 0).numpy()
+        gt_pose = sample["pose"].numpy()
         tac_img = (sample["tactile"].permute(1, 2, 0).numpy() * std + mean).clip(0, 255).astype(np.uint8)
         rgb_img = (sample["rgb"].permute(1, 2, 0).numpy() * std + mean).clip(0, 255).astype(np.uint8)
 
-        gt_pose = sample["pose"].numpy()
-        gt_theta = np.degrees(np.arctan2(gt_pose[1], gt_pose[0]))
-
-        save_path = osp.join(output_dir, f"val_{i:03d}.png")
+        save_path = osp.join(output_dir, f"{obj_name}.png")
         visualize_three_configs(tac_img, rgb_img, results,
                                 gt_depth=gt_depth, gt_normal=gt_normal,
                                 gt_pose=gt_pose, save_path=save_path)
-        for cfg_name in CONFIGS_3:
-            _, _, pose, theta = results[cfg_name]
-            print(f"  val_{i:03d} [{cfg_name:8s}]: pred θ={theta:.1f}° gt θ={gt_theta:.1f}°")
+    print(f"Visualizations saved -> {output_dir}/")
 
 
 def main():
@@ -329,10 +469,15 @@ def main():
                     help="Output folder suffix (e.g. best, last, epoch050)")
     ap.add_argument("--max-samples", type=int, default=None)
     ap.add_argument("--num-vis", type=int, default=20)
+    ap.add_argument("--device", default=None,
+                    help="Device (e.g. cuda:2). Default: first available GPU.")
     args = ap.parse_args()
 
     cfg = merge_configs(args.model, args.train, args.data)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if args.device:
+        device = torch.device(args.device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     train_name = osp.basename(args.train_dir.rstrip("/"))
     base_dir = osp.join("eval_results", f"{train_name}_{args.suffix}")
@@ -340,6 +485,7 @@ def main():
     if args.checkpoint:
         depth_model = load_model(cfg, args.checkpoint, device)
         pose_model = None
+        ckpt_info = args.checkpoint
         print(f"Using single checkpoint: {args.checkpoint}")
     else:
         depth_ckpt = osp.join(args.train_dir, "best_depth.pt")
@@ -356,8 +502,10 @@ def main():
         pose_model = None
         if osp.exists(pose_ckpt) and pose_ckpt != depth_ckpt:
             pose_model = load_model(cfg, pose_ckpt, device)
+            ckpt_info = f"depth={depth_ckpt}, pose={pose_ckpt}"
             print(f"Using split checkpoints: depth={osp.basename(depth_ckpt)}, pose={osp.basename(pose_ckpt)}")
         else:
+            ckpt_info = depth_ckpt
             print(f"Using single checkpoint: {osp.basename(depth_ckpt)}")
 
     if args.tactile:
@@ -384,7 +532,7 @@ def main():
         out = osp.join(base_dir, "sim_val_vis")
         os.makedirs(out, exist_ok=True)
         run_eval_sim(depth_model, cfg, device, out, num_vis=args.num_vis,
-                     pose_model=pose_model)
+                     pose_model=pose_model, ckpt_info=ckpt_info)
 
     elif args.eval_all:
         sim_out = osp.join(base_dir, "sim_val_vis")
@@ -392,7 +540,7 @@ def main():
         os.makedirs(sim_out, exist_ok=True)
         os.makedirs(real_out, exist_ok=True)
         run_eval_sim(depth_model, cfg, device, sim_out, num_vis=args.num_vis,
-                     pose_model=pose_model)
+                     pose_model=pose_model, ckpt_info=ckpt_info)
         run_real_dir(depth_model, args.real_dir_path, cfg, device, real_out,
                      max_samples=args.max_samples, pose_model=pose_model)
 
