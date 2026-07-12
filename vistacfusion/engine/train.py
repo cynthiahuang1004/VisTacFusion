@@ -28,7 +28,7 @@ from ..losses.total import MultiTaskLoss
 from ..models.model import build_model
 from ..utils.config import merge_configs
 from ..utils.misc import param_count_str, set_seed
-from .eval import evaluate
+from .eval import evaluate, precompute_encoder_cache
 
 
 def is_distributed():
@@ -330,11 +330,15 @@ def main():
         if is_main_process():
             print(f"  resumed at epoch {start_epoch}, best_metric={best_metric:.4f}")
 
+    val_enc_cache = None
     writer = None
     history = []
     plot_dir = None
     history_path = None
     if is_main_process():
+        raw_model = model.module if isinstance(model, DDP) else model
+        print("Pre-computing val encoder cache...")
+        val_enc_cache = precompute_encoder_cache(raw_model, val_loader, device)
         writer = SummaryWriter(log_dir=os.path.join(args.output_dir, "tb"))
         plot_dir = os.path.join(args.output_dir, "plots")
         history_path = os.path.join(args.output_dir, "history.json")
@@ -361,7 +365,8 @@ def main():
                 writer.add_scalar(f"train_epoch/{k}", v, epoch)
 
             raw_model = model.module if isinstance(model, DDP) else model
-            val_metrics = evaluate(raw_model, val_loader, cfg, device)
+            val_metrics = evaluate(raw_model, val_loader, cfg, device,
+                                   encoder_cache=val_enc_cache)
             print(f"[epoch {epoch:03d}] val metrics: {val_metrics}")
 
             for config_name, metrics in val_metrics.items():

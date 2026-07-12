@@ -3,6 +3,9 @@
 Uses the SAME loss functions as training (MSE depth, MSE normal, 1-cos rot, L1 trans)
 so train vs val numbers are directly comparable. Also reports pose_rot_deg for
 interpretability.
+
+v3: encoder cache includes multiscale taps (for the DPT path) in addition to patch/cls
+(for the pose path). Encoder runs once, reused across 3 configs.
 """
 from __future__ import annotations
 
@@ -14,6 +17,60 @@ import torch.nn.functional as F
 CONFIGS = ("both", "tactile", "rgb")
 
 
+@torch.no_grad()
+def precompute_encoder_cache(model, loader, device):
+    """Run the frozen encoder once on the full val set, cache patch/cls + multiscale (fp16, CPU)."""
+    model.eval()
+    tac_p, tac_c, rgb_p, rgb_c = [], [], [], []
+    tac_ms = [[] for _ in range(4)]
+    rgb_ms = [[] for _ in range(4)]
+    for batch in loader:
+        rgb = batch["rgb"].to(device, non_blocking=True)
+        tactile = batch["tactile"].to(device, non_blocking=True)
+        tp, tc = model.tactile_encoder(tactile)
+        rp, rc = model.rgb_encoder(rgb)
+        tac_p.append(tp.half().cpu())
+        tac_c.append(tc.half().cpu())
+        rgb_p.append(rp.half().cpu())
+        rgb_c.append(rc.half().cpu())
+        t_ms = model.tactile_encoder.forward_multiscale(tactile)
+        r_ms = model.rgb_encoder.forward_multiscale(rgb)
+        for i in range(4):
+            tac_ms[i].append(t_ms[i].half().cpu())
+            rgb_ms[i].append(r_ms[i].half().cpu())
+    cache = {
+        "tactile_patch": torch.cat(tac_p),
+        "tactile_cls": torch.cat(tac_c),
+        "rgb_patch": torch.cat(rgb_p),
+        "rgb_cls": torch.cat(rgb_c),
+        "tactile_ms": [torch.cat(ms) for ms in tac_ms],
+        "rgb_ms": [torch.cat(ms) for ms in rgb_ms],
+    }
+    n = cache["tactile_patch"].shape[0]
+    mb = sum(v.nbytes for v in cache.values() if isinstance(v, torch.Tensor))
+    mb += sum(v.nbytes for ms in [cache["tactile_ms"], cache["rgb_ms"]] for v in ms)
+    mb /= 1024 ** 2
+    print(f"  encoder cache: {n} samples, {mb:.0f} MB (fp16, CPU)")
+    return cache
+
+
+def _slice_cache(cache, start, end, device):
+    return {
+        "tactile": (
+            cache["tactile_patch"][start:end].to(device, dtype=torch.float32),
+            cache["tactile_cls"][start:end].to(device, dtype=torch.float32),
+        ),
+        "rgb": (
+            cache["rgb_patch"][start:end].to(device, dtype=torch.float32),
+            cache["rgb_cls"][start:end].to(device, dtype=torch.float32),
+        ),
+        "tactile_ms": [ms[start:end].to(device, dtype=torch.float32)
+                       for ms in cache["tactile_ms"]],
+        "rgb_ms": [ms[start:end].to(device, dtype=torch.float32)
+                   for ms in cache["rgb_ms"]],
+    }
+
+
 def _theta_to_bin(theta, num_bins=72):
     bin_size = 2 * math.pi / num_bins
     bins = ((theta + math.pi) / bin_size).long()
@@ -21,7 +78,7 @@ def _theta_to_bin(theta, num_bins=72):
 
 
 @torch.no_grad()
-def evaluate(model, loader, cfg, device, configs=CONFIGS):
+def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
     model.eval()
     report_per_config = cfg.eval.get("report_per_config", True)
     configs = configs if report_per_config else ("both",)
@@ -32,16 +89,23 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS):
                "pose_rot": 0.0, "pose_trans": 0.0,
                "rot_deg": 0.0, "n": 0} for c in configs}
 
+    sample_idx = 0
     for batch in loader:
         batch = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in batch.items()}
         bs = batch["rgb"].shape[0]
+
+        batch_enc = None
+        if encoder_cache is not None:
+            batch_enc = _slice_cache(encoder_cache, sample_idx, sample_idx + bs, device)
+        sample_idx += bs
 
         gt_pose = batch["pose"]
         cos_gt, sin_gt = gt_pose[:, 0], gt_pose[:, 1]
         txy_gt = gt_pose[:, 2:]
 
         for c in configs:
-            out = model(batch["rgb"], batch["tactile"], config=c)
+            out = model(batch["rgb"], batch["tactile"], config=c,
+                        encoder_cache=batch_enc)
             a = acc[c]
 
             a["depth_mse"] += F.mse_loss(out["depth"], batch["depth"]).item() * bs

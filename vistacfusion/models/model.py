@@ -205,10 +205,12 @@ class VisuoTactileModel(nn.Module):
         pose = self.pose_head(pose_token, spatial_queries=spatial_queries)
 
         # ---- DPT path: encoder multiscale taps (1024) ----
+        tac_ms = encoder_cache.get("tactile_ms") if encoder_cache else None
+        rgb_ms = encoder_cache.get("rgb_ms") if encoder_cache else None
         if use_tactile:
-            ms = self.tactile_encoder.forward_multiscale(tactile)
+            ms = tac_ms if tac_ms is not None else self.tactile_encoder.forward_multiscale(tactile)
         else:
-            ms = self.rgb_encoder.forward_multiscale(rgb)
+            ms = rgb_ms if rgb_ms is not None else self.rgb_encoder.forward_multiscale(rgb)
         dpt_taps = [self.dpt_pos(t) for t in ms]
 
         if inject_rgb_to_dpt and use_rgb:
