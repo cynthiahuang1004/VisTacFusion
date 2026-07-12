@@ -1,6 +1,7 @@
-"""DPT dense head (D=768).
+"""DPT dense head.
 
-Input : 4 taps, each [B, 196, D]  (196 = 14x14; Reassemble needs a square grid).
+Input : 4 taps, each [B, 196, E]  (196 = 14x14; Reassemble needs a square grid).
+        E = encoder dim (1024 for direct encoder taps) or trunk dim (768 for v1).
 Output: depth [B, 1, H, W], normal [B, 3, H, W]  (tactile frame, upsampled to image_size).
 
 Reassemble scales {4, 2, 1, 0.5} build the multi-scale pyramid; FeatureFusion blocks merge

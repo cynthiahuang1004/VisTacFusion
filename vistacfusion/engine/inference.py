@@ -302,11 +302,16 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
                  ckpt_info=None):
     """Run full quantitative eval on sim val set + one visualization per object.
 
+    Uses batched DataLoader + encoder cache for speed (~3 min vs ~30 min).
+
     Outputs:
       - eval_metrics.txt: quantitative metrics for all 3 configs
       - sim_val_vis/<object_name>.png: one representative sample per object
     """
+    import math as _math
+    from torch.utils.data import DataLoader
     from ..data.dataset import build_datasets, SimVisuoTactileDataset
+    from .eval import precompute_encoder_cache, _slice_cache
     _, val_ds = build_datasets(cfg)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -325,66 +330,127 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
         for i in range(min(len(val_ds), 20)):
             obj_vis_idx[f"sample_{i:03d}"] = i
 
-    # --- Full quantitative evaluation ---
+    vis_indices = set(obj_vis_idx.values())
+
+    # --- Pre-compute encoder cache (run frozen encoder once) ---
+    eval_model = pose_model if pose_model is not None else model
+    batch_size = 32
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False,
+                            num_workers=4, pin_memory=True)
+
+    print("Pre-computing encoder cache for val set...")
+    encoder_cache = precompute_encoder_cache(eval_model, val_loader, device)
+
+    # --- Batched evaluation with cache ---
     metrics = {cfg_name: {
-        "depth_mse": [], "depth_mae": [], "depth_rmse": [], "depth_d1": [],
-        "normal_mse": [], "normal_ang_mean": [], "normal_ang_median": [],
-        "pose_rot_deg": [], "pose_trans_l1": [],
+        "depth_mse": 0.0, "normal_mse": 0.0,
+        "depth_mae": [], "depth_rmse": [], "depth_d1": [],
+        "normal_ang_mean": 0.0, "normal_ang_median": 0.0,
+        "pose_rot_deg": 0.0, "pose_trans_l1": 0.0, "n": 0,
     } for cfg_name in CONFIGS_3}
 
-    vis_indices = set(obj_vis_idx.values())
     vis_results = {}
 
-    print(f"Evaluating {len(val_ds)} val samples (3 configs, full metrics)...")
-    for i in range(len(val_ds)):
-        sample = val_ds[i]
-        rgb_t = sample["rgb"].unsqueeze(0)
-        tac_t = sample["tactile"].unsqueeze(0)
-        gt_depth = sample["depth"][0].numpy()
-        gt_normal = sample["normal"].permute(1, 2, 0).numpy()
-        gt_pose = sample["pose"].numpy()
+    print(f"Evaluating {len(val_ds)} val samples (3 configs, batched)...")
+    sample_idx = 0
+    for batch in val_loader:
+        bs = batch["rgb"].shape[0]
+        batch_dev = {k: (v.to(device) if torch.is_tensor(v) else v)
+                     for k, v in batch.items()}
+        batch_enc = _slice_cache(encoder_cache, sample_idx, sample_idx + bs, device)
 
         for cfg_name in CONFIGS_3:
-            depth, normal, pose, theta = predict(
-                model, rgb_t, tac_t, config=cfg_name,
-                device=device, pose_model=pose_model)
+            with torch.no_grad(), torch.autocast(device_type=device.type,
+                                                  enabled=device.type == "cuda"):
+                out = model(batch_dev["rgb"], batch_dev["tactile"],
+                            config=cfg_name, encoder_cache=batch_enc)
+                if pose_model is not None:
+                    pose_out = pose_model(batch_dev["rgb"], batch_dev["tactile"],
+                                         config=cfg_name, encoder_cache=batch_enc)
+                    out["se2"] = pose_out.get("se2", pose_out.get("trans"))
 
             m = metrics[cfg_name]
+            m["depth_mse"] += F.mse_loss(out["depth"], batch_dev["depth"]).item() * bs
+            m["normal_mse"] += F.mse_loss(out["normal"], batch_dev["normal"]).item() * bs
 
-            dm = _depth_metrics(depth, gt_depth)
-            m["depth_mse"].append(dm["MSE"])
-            if "MAE" in dm:
-                m["depth_mae"].append(dm["MAE"])
-                m["depth_rmse"].append(dm["RMSE"])
-                m["depth_d1"].append(dm["delta<1.25"])
+            # Per-sample metrics for angular error and pose
+            pred_depth = out["depth"].cpu()
+            pred_normal = out["normal"].cpu()
+            gt_normal = batch["normal"]
 
-            nm = F.mse_loss(
-                torch.from_numpy(normal).float(),
-                torch.from_numpy(gt_normal).float(),
-            ).item()
-            m["normal_mse"].append(nm)
+            # Angular error (batched)
+            p_n = F.normalize(pred_normal.float(), dim=1)
+            g_n = F.normalize(gt_normal.float(), dim=1)
+            cos_sim = (p_n * g_n).sum(dim=1).clamp(-1, 1)
+            angles = torch.acos(cos_sim) * (180.0 / _math.pi)
+            m["normal_ang_mean"] += angles.mean().item() * bs
+            m["normal_ang_median"] += angles.median().item() * bs
 
-            ang_mean, ang_median = _angular_error_deg(normal, gt_normal)
-            m["normal_ang_mean"].append(ang_mean)
-            m["normal_ang_median"].append(ang_median)
+            # Pose rotation error
+            if "se2" in out:
+                se2 = out["se2"].float().cpu()
+                gt_pose = batch["pose"]
+                cos_p, sin_p = se2[:, 0], se2[:, 1]
+                cos_g, sin_g = gt_pose[:, 0], gt_pose[:, 1]
+                theta_pred = torch.atan2(sin_p, cos_p)
+                theta_gt = torch.atan2(sin_g, cos_g)
+                rot_err = (theta_pred - theta_gt).abs()
+                rot_err = torch.min(rot_err, 2 * _math.pi - rot_err)
+                m["pose_rot_deg"] += (rot_err * 180.0 / _math.pi).mean().item() * bs
+                m["pose_trans_l1"] += F.l1_loss(se2[:, 2:], gt_pose[:, 2:]).item() * bs
 
-            rot_err = _rotation_error_deg(pose, gt_pose)
-            m["pose_rot_deg"].append(rot_err)
+            # Contact-only depth metrics (per-sample)
+            for j in range(bs):
+                pd = pred_depth[j, 0].numpy()
+                gd = batch["depth"][j, 0].numpy()
+                mask = gd > 0
+                if mask.sum() > 0:
+                    p, g = pd[mask], gd[mask]
+                    abs_diff = np.abs(p - g)
+                    m["depth_mae"].append(float(abs_diff.mean()))
+                    m["depth_rmse"].append(float((abs_diff ** 2).mean()) ** 0.5)
+                    ratio = np.maximum(p / np.clip(g, 1e-6, None),
+                                       g / np.clip(p, 1e-6, None))
+                    m["depth_d1"].append(float((ratio < 1.25).mean()) * 100)
 
-            trans_err = float(np.abs(pose[2:] - gt_pose[2:]).mean())
-            m["pose_trans_l1"].append(trans_err)
+            # Save vis data for representative samples
+            for j in range(bs):
+                global_idx = sample_idx + j
+                if global_idx in vis_indices:
+                    d = out["depth"][j, 0].cpu().numpy()
+                    n = out["normal"][j].cpu().permute(1, 2, 0).numpy()
+                    n = n / (np.linalg.norm(n, axis=-1, keepdims=True) + 1e-8)
+                    if "se2" in out:
+                        p = out["se2"][j].float().cpu().numpy()
+                    else:
+                        p = np.zeros(4)
+                    th = float(np.degrees(np.arctan2(p[1], p[0])))
+                    vis_results.setdefault(global_idx, {})[cfg_name] = (d, n, p, th)
 
-            if i in vis_indices:
-                vis_results.setdefault(i, {})[cfg_name] = (depth, normal, pose, theta)
+            m["n"] += bs
 
-        if (i + 1) % 200 == 0:
-            print(f"  {i+1}/{len(val_ds)} samples done")
+        sample_idx += bs
+        if sample_idx % (batch_size * 10) == 0:
+            print(f"  {sample_idx}/{len(val_ds)} samples done")
+
+    print(f"  {len(val_ds)}/{len(val_ds)} samples done")
 
     # --- Aggregate metrics ---
     summary = {}
     for cfg_name in CONFIGS_3:
         m = metrics[cfg_name]
-        summary[cfg_name] = {k: float(np.mean(v)) for k, v in m.items() if v}
+        n = max(1, m["n"])
+        summary[cfg_name] = {
+            "depth_mse": m["depth_mse"] / n,
+            "normal_mse": m["normal_mse"] / n,
+            "depth_mae": float(np.mean(m["depth_mae"])) if m["depth_mae"] else float("nan"),
+            "depth_rmse": float(np.mean(m["depth_rmse"])) if m["depth_rmse"] else float("nan"),
+            "depth_d1": float(np.mean(m["depth_d1"])) if m["depth_d1"] else float("nan"),
+            "normal_ang_mean": m["normal_ang_mean"] / n,
+            "normal_ang_median": m["normal_ang_median"] / n,
+            "pose_rot_deg": m["pose_rot_deg"] / n,
+            "pose_trans_l1": m["pose_trans_l1"] / n,
+        }
 
     # --- Write eval_metrics.txt ---
     metrics_dir = osp.dirname(output_dir)
@@ -397,15 +463,15 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
         for cfg_name in CONFIGS_3:
             s = summary[cfg_name]
             f.write(f"[{cfg_name}]\n")
-            f.write(f"  Depth MSE:               {s.get('depth_mse', float('nan')):.6f}\n")
-            f.write(f"  Depth MAE:               {s.get('depth_mae', float('nan')):.6f}\n")
-            f.write(f"  Depth RMSE:              {s.get('depth_rmse', float('nan')):.6f}\n")
-            f.write(f"  Depth delta<1.25 (%):    {s.get('depth_d1', float('nan')):.2f}\n")
-            f.write(f"  Normal MSE:              {s.get('normal_mse', float('nan')):.6f}\n")
-            f.write(f"  Normal Ang Mean (deg):   {s.get('normal_ang_mean', float('nan')):.2f}\n")
-            f.write(f"  Normal Ang Median (deg): {s.get('normal_ang_median', float('nan')):.2f}\n")
-            f.write(f"  Pose Rot Error (deg):    {s.get('pose_rot_deg', float('nan')):.2f}\n")
-            f.write(f"  Pose Trans L1:           {s.get('pose_trans_l1', float('nan')):.6f}\n")
+            f.write(f"  Depth MSE:               {s['depth_mse']:.6f}\n")
+            f.write(f"  Depth MAE:               {s['depth_mae']:.6f}\n")
+            f.write(f"  Depth RMSE:              {s['depth_rmse']:.6f}\n")
+            f.write(f"  Depth delta<1.25 (%):    {s['depth_d1']:.2f}\n")
+            f.write(f"  Normal MSE:              {s['normal_mse']:.6f}\n")
+            f.write(f"  Normal Ang Mean (deg):   {s['normal_ang_mean']:.2f}\n")
+            f.write(f"  Normal Ang Median (deg): {s['normal_ang_median']:.2f}\n")
+            f.write(f"  Pose Rot Error (deg):    {s['pose_rot_deg']:.2f}\n")
+            f.write(f"  Pose Trans L1:           {s['pose_trans_l1']:.6f}\n")
             f.write("\n")
 
     print(f"\nMetrics saved -> {metrics_path}")

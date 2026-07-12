@@ -44,9 +44,10 @@ heads:
     out_depth_channels: 1
     out_normal_channels: 3
     output_frame: tactile       # depth/normal predicted in the tactile frame
-    tap_source: trunk           # {trunk, encoder_multiscale}  v1 / v2 — both implemented, flag-switchable (retrain to switch; not ckpt-compatible)
-    encoder_tap_layers: [5, 11, 17, 23]  # v2 only: tactile-encoder layers tapped (ViT-L depth 24)
-    inject_gate_init: 0.0       # v2 only: ReZero-style learnable gate on per-tap RGB injection (0 = start as pure encoder taps, learn to inject)
+    # v3: DPT always taps encoder directly at native 1024 dim (no projection).
+    # tap_source is no longer a flag — always encoder_multiscale.
+    encoder_tap_layers: [5, 11, 17, 23]  # tactile-encoder layers tapped (ViT-L depth 24)
+    inject_gate_init: 0.0       # ReZero-style learnable gate on per-tap RGB injection (0 = start as pure encoder taps, learn to inject)
   pose:
     hidden_dim: 256             # deeper MLP: 1536->512->256->128->out
     dropout: 0.1

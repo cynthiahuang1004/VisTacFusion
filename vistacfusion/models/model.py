@@ -1,16 +1,19 @@
-"""Full visuo-tactile multi-task model.
+"""Full visuo-tactile multi-task model — v3 (decoupled dense/pose paths).
 
-forward(rgb, tactile, config), config in {"both", "tactile", "rgb"}, gives an identical
-decoder input in every config: 4 x [B, 196, D] spatial taps + [B, 1, D] pose token. Only what
-fills the queries (and whether RGB exists) changes.
+Dense (DPT) and Pose paths are decoupled:
 
-Tactile is the spatial anchor; RGB is read-only K/V context. RGB-only swaps the tactile
-queries for learnable mask tokens (same count, same positional emb).
+  DPT path:  encoder multiscale taps at native dim (1024) → optional RGB injection
+             → DPT Reassemble(1024→256) → depth/normal.
+             Always has tactile features; RGB injection on/off controlled independently.
 
-DPT tap source:
-  - trunk (v1)              : 4 taps = spatial queries from 4 trunk layers.
-  - encoder_multiscale (v2) : 4 taps from 4 tactile-encoder layers + per-tap residual RGB
-                              injection (gate init 0). Not checkpoint-compatible with v1.
+  Pose path: encoder → Projection(1024→768) → Fusion Trunk(768) → Pose Head.
+             Modality dropout (both/tactile/rgb) only affects this path.
+
+Benefits:
+  - DPT gets 100% tactile training (no modality dropout dilution)
+  - Direct encoder taps at 1024 preserve spatial detail (matches DINOv3 Pipeline baseline)
+  - RGB injection is residual with ReZero gate (init=0 → starts as pure encoder taps)
+  - Pose path unchanged from v1
 """
 from __future__ import annotations
 
@@ -38,37 +41,49 @@ def _config_flags(config):
 
 
 class TapInjection(nn.Module):
-    """v2 per-tap residual RGB injection: tap += gate * CrossAttn(Q=tap, K=V=bottleneck).
+    """Per-tap residual RGB injection: tap += gate * CrossAttn(Q=tap, K=V=bottleneck).
 
-    ReZero gate init 0 -> starts as pure encoder taps, learns to inject. When RGB is absent the
-    caller skips this entirely (adds exactly 0), keeping single-modality fair.
+    Q is at encoder dim (e.g. 1024), KV at trunk dim (e.g. 768).
+    ReZero gate init 0 → starts as pure encoder taps, learns to inject.
     """
 
-    def __init__(self, dim, num_heads, dropout=0.0, gate_init=0.0):
+    def __init__(self, q_dim, kv_dim, num_heads, dropout=0.0, gate_init=0.0):
         super().__init__()
-        self.norm_q = nn.LayerNorm(dim)
-        self.norm_kv = nn.LayerNorm(dim)
-        self.attn = nn.MultiheadAttention(dim, num_heads, dropout=dropout, batch_first=True)
+        self.norm_q = nn.LayerNorm(q_dim)
+        self.norm_kv = nn.LayerNorm(kv_dim)
+        self.q_proj = nn.Linear(q_dim, q_dim)
+        self.k_proj = nn.Linear(kv_dim, q_dim)
+        self.v_proj = nn.Linear(kv_dim, q_dim)
+        self.out_proj = nn.Linear(q_dim, q_dim)
+        self.num_heads = num_heads
+        self.head_dim = q_dim // num_heads
         self.gate = nn.Parameter(torch.tensor(float(gate_init)))
 
     def forward(self, tap, bottleneck):
-        q = self.norm_q(tap)
-        kv = self.norm_kv(bottleneck)
-        a, _ = self.attn(q, kv, kv, need_weights=False)
-        return tap + self.gate * a
+        B, N, _ = tap.shape
+        q = self.q_proj(self.norm_q(tap))
+        kv_normed = self.norm_kv(bottleneck)
+        k = self.k_proj(kv_normed)
+        v = self.v_proj(kv_normed)
+
+        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        k = k.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        v = v.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
+
+        attn = torch.nn.functional.scaled_dot_product_attention(q, k, v)
+        attn = attn.transpose(1, 2).reshape(B, N, -1)
+        return tap + self.gate * self.out_proj(attn)
 
 
 class VisuoTactileModel(nn.Module):
     def __init__(self, cfg):
-        """cfg: the merged model config (configs/model.yaml as a namespace)."""
         super().__init__()
         self.cfg = cfg
         self.image_size = cfg.image_size
-        self.dim = cfg.trunk_dim
-        self.num_spatial = cfg.tokens.num_spatial_queries        # 196
-        self.tap_source = cfg.heads.dpt.tap_source               # {trunk, encoder_multiscale}
+        self.trunk_dim = cfg.trunk_dim                              # 768
+        self.num_spatial = cfg.tokens.num_spatial_queries            # 196
 
-        # ---- Encoders (frozen). Shared weights or two instances. ----
+        # ---- Encoder (frozen, shared weights) ----
         enc_cfg = cfg.encoder
         if enc_cfg.get("multiscale_layers", None) is None:
             enc_cfg = dict(enc_cfg)
@@ -78,50 +93,47 @@ class VisuoTactileModel(nn.Module):
             self.rgb_encoder = self.tactile_encoder
         else:
             self.rgb_encoder = build_encoder(enc_cfg, self.image_size)
-        enc_dim = self.tactile_encoder.embed_dim
+        self.enc_dim = self.tactile_encoder.embed_dim               # 1024
 
-        # ---- Projections (E -> D) + modality embeddings ----
-        self.tactile_proj = BranchProjection(enc_dim, self.dim)
-        self.rgb_proj = BranchProjection(enc_dim, self.dim)
-        self.spatial_pos = SpatialPosEmbedding(self.num_spatial, self.dim)
+        # ---- Pose path: projection (1024→768) + trunk ----
+        self.tactile_proj = BranchProjection(self.enc_dim, self.trunk_dim)
+        self.rgb_proj = BranchProjection(self.enc_dim, self.trunk_dim)
+        self.spatial_pos = SpatialPosEmbedding(self.num_spatial, self.trunk_dim)
         self.use_rgb_pos = cfg.projection.get("rgb_positional_embedding", False)
         if self.use_rgb_pos:
-            self.rgb_spatial_pos = SpatialPosEmbedding(self.num_spatial, self.dim)
+            self.rgb_spatial_pos = SpatialPosEmbedding(self.num_spatial, self.trunk_dim)
 
-        # ---- Mask tokens for RGB-only ----
-        self.spatial_mask = nn.Parameter(torch.zeros(1, self.num_spatial, self.dim))
-        self.pose_mask = nn.Parameter(torch.zeros(1, 1, self.dim))
+        self.spatial_mask = nn.Parameter(torch.zeros(1, self.num_spatial, self.trunk_dim))
+        self.pose_mask = nn.Parameter(torch.zeros(1, 1, self.trunk_dim))
         nn.init.trunc_normal_(self.spatial_mask, std=0.02)
         nn.init.trunc_normal_(self.pose_mask, std=0.02)
 
-        # ---- Fusion trunk ----
-        self.trunk = FusionTrunk(cfg.fusion_trunk, self.dim)
+        self.trunk = FusionTrunk(cfg.fusion_trunk, self.trunk_dim)
 
-        # ---- DPT v2 components (always built, for fairness) ----
-        if self.tap_source == "encoder_multiscale":
-            self.tap_proj = nn.ModuleList(
-                [nn.Linear(enc_dim, self.dim) for _ in range(4)]
+        # ---- DPT path: direct encoder taps (1024) + RGB injection ----
+        self.dpt_pos = SpatialPosEmbedding(self.num_spatial, self.enc_dim)
+
+        self.tap_inject = nn.ModuleList([
+            TapInjection(
+                q_dim=self.enc_dim,
+                kv_dim=self.trunk_dim,
+                num_heads=cfg.fusion_trunk.num_heads,
+                dropout=cfg.fusion_trunk.dropout,
+                gate_init=cfg.heads.dpt.get("inject_gate_init", 0.0),
             )
-            self.tap_pos = SpatialPosEmbedding(self.num_spatial, self.dim)
-            # learnable taps for the (rare) RGB-only + v2 case (no tactile encoder taps)
-            self.tap_mask = nn.Parameter(torch.zeros(4, self.num_spatial, self.dim))
-            nn.init.trunc_normal_(self.tap_mask, std=0.02)
-            self.tap_inject = nn.ModuleList([
-                TapInjection(self.dim, cfg.fusion_trunk.num_heads, cfg.fusion_trunk.dropout,
-                             gate_init=cfg.heads.dpt.get("inject_gate_init", 0.0))
-                for _ in range(4)
-            ])
+            for _ in range(4)
+        ])
 
         # ---- Heads ----
         self.dpt = DPTHead(
-            embed_dim=self.dim,
+            embed_dim=self.enc_dim,
             features=cfg.heads.dpt.features,
             dropout=cfg.heads.dpt.dropout,
             out_depth_channels=cfg.heads.dpt.out_depth_channels,
             out_normal_channels=cfg.heads.dpt.out_normal_channels,
         )
         self.pose_head = PoseHead(
-            dim=self.dim,
+            dim=self.trunk_dim,
             hidden_dim=cfg.heads.pose.hidden_dim,
             dropout=cfg.heads.pose.dropout,
             pose_mode=cfg.heads.pose.pose_mode,
@@ -130,49 +142,37 @@ class VisuoTactileModel(nn.Module):
         )
 
     # ------------------------------------------------------------------ helpers
-    def _build_memory(self, rgb, enc_out=None):
-        """RGB -> read-only memory M = [B, 197, D] (196 patch + 1 CLS)."""
-        if enc_out is not None:
-            patch, cls = enc_out
-        else:
-            patch, cls = self.rgb_encoder(rgb)
-        patch = self.rgb_proj(patch)
-        cls = self.rgb_proj(cls)
+
+    def _build_pose_memory(self, rgb_patch, rgb_cls):
+        """RGB → pose memory M = [B, 197, trunk_dim]."""
+        patch = self.rgb_proj(rgb_patch)
+        cls = self.rgb_proj(rgb_cls)
         if self.use_rgb_pos:
             patch = self.rgb_spatial_pos(patch)
-        return torch.cat([patch, cls], dim=1)            # [B, 197, D]
+        return torch.cat([patch, cls], dim=1)
 
-    def _build_queries(self, tactile, use_tactile, batch_size, device, enc_out=None):
-        """Assemble the 197 queries: 196 spatial + 1 pose."""
+    def _build_pose_queries(self, tac_patch, tac_cls, use_tactile, B, device):
+        """Build 197 pose queries at trunk_dim."""
         if use_tactile:
-            if enc_out is not None:
-                patch, cls = enc_out
-            else:
-                patch, cls = self.tactile_encoder(tactile)
-            spatial = self.spatial_pos(self.tactile_proj(patch))   # [B, 196, D]
-            pose_q = self.tactile_proj(cls)                        # [B, 1, D]
+            spatial = self.spatial_pos(self.tactile_proj(tac_patch))
+            pose_q = self.tactile_proj(tac_cls)
         else:
-            spatial = self.spatial_pos(self.spatial_mask.expand(batch_size, -1, -1))
-            pose_q = self.pose_mask.expand(batch_size, -1, -1)
-        return torch.cat([spatial, pose_q], dim=1)                 # [B, 197, D]
-
-    def _v2_taps(self, tactile, use_tactile, use_rgb, bottleneck, batch_size):
-        """4 encoder-multiscale taps (+ residual RGB injection)."""
-        if use_tactile:
-            ms = self.tactile_encoder.forward_multiscale(tactile)  # 4 x [B, 196, E]
-            taps = [self.tap_pos(proj(m)) for proj, m in zip(self.tap_proj, ms)]
-        else:
-            taps = [self.tap_pos(self.tap_mask[i].unsqueeze(0).expand(batch_size, -1, -1))
-                    for i in range(4)]
-        if use_rgb:
-            taps = [inj(t, bottleneck) for inj, t in zip(self.tap_inject, taps)]
-        return taps
+            spatial = self.spatial_pos(self.spatial_mask.expand(B, -1, -1))
+            pose_q = self.pose_mask.expand(B, -1, -1)
+        return torch.cat([spatial, pose_q], dim=1)
 
     # ------------------------------------------------------------------ forward
-    def forward(self, rgb, tactile, config="both", return_decoder_inputs=False,
+
+    def forward(self, rgb, tactile, config="both", inject_rgb_to_dpt=None,
                 encoder_cache=None):
-        """encoder_cache: optional dict with 'tactile'=(patch,cls) and 'rgb'=(patch,cls)
-        pre-computed frozen encoder outputs — skips the encoder forward pass."""
+        """
+        Args:
+            config: modality config for the POSE path ("both"/"tactile"/"rgb").
+            inject_rgb_to_dpt: whether to inject RGB into DPT taps.
+                None = auto (inject when config has RGB).
+                Can be overridden for decoupled dropout training.
+            encoder_cache: pre-computed encoder outputs (skips frozen forward).
+        """
         if config not in VALID_CONFIGS:
             raise ValueError(f"config must be one of {VALID_CONFIGS}, got {config!r}")
         use_rgb, use_tactile = _config_flags(config)
@@ -180,25 +180,43 @@ class VisuoTactileModel(nn.Module):
         ref = tactile if use_tactile else rgb
         B, device = ref.shape[0], ref.device
 
+        if inject_rgb_to_dpt is None:
+            inject_rgb_to_dpt = use_rgb
+
+        # ---- Encode (frozen) ----
         tac_enc = encoder_cache.get("tactile") if encoder_cache else None
         rgb_enc = encoder_cache.get("rgb") if encoder_cache else None
 
-        memory = self._build_memory(rgb, enc_out=rgb_enc) if use_rgb else None
-        queries = self._build_queries(tactile, use_tactile, B, device, enc_out=tac_enc)
+        tac_patch = tac_cls = rgb_patch = rgb_cls = None
+        if use_tactile:
+            tac_patch, tac_cls = tac_enc if tac_enc else self.tactile_encoder(tactile)
+        if use_rgb:
+            rgb_patch, rgb_cls = rgb_enc if rgb_enc else self.rgb_encoder(rgb)
 
-        trunk_taps, pose_token, bottleneck = self.trunk(queries, memory, use_rgb)
+        # ---- Pose path: projection(768) → trunk → pose head ----
+        pose_memory = self._build_pose_memory(rgb_patch, rgb_cls) if use_rgb else None
+        pose_queries = self._build_pose_queries(
+            tac_patch, tac_cls, use_tactile, B, device)
 
-        if self.tap_source == "trunk":
-            taps = trunk_taps                                       # 4 x [B, 196, D]
-        else:  # encoder_multiscale (v2)
-            taps = self._v2_taps(tactile, use_tactile, use_rgb, bottleneck, B)
+        trunk_taps, pose_token, bottleneck = self.trunk(
+            pose_queries, pose_memory, use_rgb)
 
-        if return_decoder_inputs:
-            return {"taps": taps, "pose_token": pose_token}
-
-        depth, normal = self.dpt(taps, out_hw=(self.image_size, self.image_size))
-        spatial_queries = trunk_taps[-1]  # last trunk layer's spatial tokens [B, 196, D]
+        spatial_queries = trunk_taps[-1]
         pose = self.pose_head(pose_token, spatial_queries=spatial_queries)
+
+        # ---- DPT path: encoder multiscale taps (1024) ----
+        if use_tactile:
+            ms = self.tactile_encoder.forward_multiscale(tactile)
+        else:
+            ms = self.rgb_encoder.forward_multiscale(rgb)
+        dpt_taps = [self.dpt_pos(t) for t in ms]
+
+        if inject_rgb_to_dpt and use_rgb:
+            dpt_taps = [inj(t, bottleneck)
+                        for inj, t in zip(self.tap_inject, dpt_taps)]
+
+        depth, normal = self.dpt(dpt_taps, out_hw=(self.image_size, self.image_size))
+
         out = {"depth": depth, "normal": normal}
         out.update(pose)
         return out

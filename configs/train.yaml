@@ -26,10 +26,9 @@ modality_dropout:
   p_both: 0.55
   p_tactile_only: 0.35
   p_rgb_only: 0.10
-  # [TODO/USER] If RGB-only should NOT be in the dense ablation (predicting tactile-frame
-  # geometry without touch is intentionally weak), set rgb_only_supervises_dense: false to
-  # skip the dense loss on RGB-only batches while still training pose.
-  rgb_only_supervises_dense: true
+  # v3 decoupled dropout: DPT always trains on tactile (100% steps).
+  # RGB injection into DPT taps is sampled independently:
+  p_dpt_inject: 0.5            # probability of injecting RGB into DPT taps each step
 
 # ---- Losses ----
 loss:

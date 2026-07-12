@@ -28,7 +28,7 @@ from ..losses.total import MultiTaskLoss
 from ..models.model import build_model
 from ..utils.config import merge_configs
 from ..utils.misc import param_count_str, set_seed
-from .eval import evaluate, precompute_encoder_cache
+from .eval import evaluate
 
 
 def is_distributed():
@@ -95,25 +95,41 @@ def build_scheduler(optimizer, cfg, steps_per_epoch):
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
 
+def sample_dpt_inject(md_cfg):
+    """Independently sample whether to inject RGB into DPT taps."""
+    p = md_cfg.get("p_dpt_inject", 0.5)
+    return random.random() < p
+
+
+def sync_bool(val, device):
+    """Broadcast a boolean from rank 0."""
+    if not is_distributed():
+        return val
+    t = torch.tensor([int(val)], device=device)
+    dist.broadcast(t, src=0)
+    return bool(t.item())
+
+
 def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
                     cfg, device, epoch, writer=None):
     model.train()
     md_cfg = cfg.modality_dropout
-    dense_on_rgb_only = md_cfg.get("rgb_only_supervises_dense", True)
     running = {}
     global_step_base = epoch * len(loader)
     for step, batch in enumerate(loader):
         batch = move_batch(batch, device)
         config = sample_config(md_cfg)
         config = sync_config(config, device)
-        supervise_dense = config != "rgb" or dense_on_rgb_only
+        inject_rgb = sample_dpt_inject(md_cfg)
+        inject_rgb = sync_bool(inject_rgb, device)
 
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type=device.type, enabled=cfg.amp and device.type == "cuda"):
-            out = model(batch["rgb"], batch["tactile"], config=config)
+            out = model(batch["rgb"], batch["tactile"], config=config,
+                        inject_rgb_to_dpt=inject_rgb)
             gt = {"depth": batch["depth"], "normal": batch["normal"],
                   "pose": batch["pose"], "mask": batch.get("mask")}
-            loss, comps = criterion(out, gt, supervise_dense=supervise_dense)
+            loss, comps = criterion(out, gt, supervise_dense=True)
 
         if torch.isnan(loss) or torch.isinf(loss):
             if is_main_process():
@@ -134,7 +150,8 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
         if is_main_process() and step % cfg.log_every == 0:
             lr_now = optimizer.param_groups[0]["lr"]
             msg = "  ".join(f"{k}={running[k] / (step + 1):.4f}" for k in sorted(running))
-            print(f"[epoch {epoch:03d} | step {step:04d}/{len(loader)} | cfg={config:7s} | "
+            inj = "+rgb" if inject_rgb else ""
+            print(f"[epoch {epoch:03d} | step {step:04d}/{len(loader)} | cfg={config:7s}{inj} | "
                   f"lr={lr_now:.2e}] {msg}")
 
         if is_main_process() and writer is not None and step % cfg.log_every == 0:
@@ -313,16 +330,11 @@ def main():
         if is_main_process():
             print(f"  resumed at epoch {start_epoch}, best_metric={best_metric:.4f}")
 
-    # Pre-compute frozen encoder outputs for val (no augmentation → deterministic)
-    val_enc_cache = None
     writer = None
     history = []
     plot_dir = None
     history_path = None
     if is_main_process():
-        raw_model = model.module if isinstance(model, DDP) else model
-        print("Pre-computing val encoder cache...")
-        val_enc_cache = precompute_encoder_cache(raw_model, val_loader, device)
         writer = SummaryWriter(log_dir=os.path.join(args.output_dir, "tb"))
         plot_dir = os.path.join(args.output_dir, "plots")
         history_path = os.path.join(args.output_dir, "history.json")
@@ -349,8 +361,7 @@ def main():
                 writer.add_scalar(f"train_epoch/{k}", v, epoch)
 
             raw_model = model.module if isinstance(model, DDP) else model
-            val_metrics = evaluate(raw_model, val_loader, cfg, device,
-                                   encoder_cache=val_enc_cache)
+            val_metrics = evaluate(raw_model, val_loader, cfg, device)
             print(f"[epoch {epoch:03d}] val metrics: {val_metrics}")
 
             for config_name, metrics in val_metrics.items():
