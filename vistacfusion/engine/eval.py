@@ -86,7 +86,7 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
     rot_num_bins = cfg.heads.pose.get("rot_num_bins", 72)
 
     acc = {c: {"depth_mse": 0.0, "normal_mse": 0.0,
-               "pose_rot": 0.0, "pose_trans": 0.0,
+               "pose_rot": 0.0, "pose_rot_l1": 0.0, "pose_trans": 0.0,
                "rot_deg": 0.0, "n": 0} for c in configs}
 
     sample_idx = 0
@@ -120,6 +120,7 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
                 se2 = out["se2"]
                 cos_p, sin_p = se2[:, 0], se2[:, 1]
                 a["pose_rot"] += (1.0 - (cos_p * cos_gt + sin_p * sin_gt)).mean().item() * bs
+                a["pose_rot_l1"] += ((cos_p - cos_gt).abs() + (sin_p - sin_gt).abs()).mean().item() * bs
                 a["pose_trans"] += F.l1_loss(se2[:, 2:], txy_gt).item() * bs
 
             if "se2" in out:
@@ -136,6 +137,7 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
             "depth_mse": round(a["depth_mse"] / n, 6),
             "normal_mse": round(a["normal_mse"] / n, 6),
             "pose_rot": round(a["pose_rot"] / n, 4),
+            "pose_rot_l1": round(a["pose_rot_l1"] / n, 4),
             "pose_trans": round(a["pose_trans"] / n, 4),
             "pose_rot_deg": round(a["rot_deg"] / n, 3),
         }

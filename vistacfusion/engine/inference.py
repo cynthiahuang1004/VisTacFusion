@@ -93,7 +93,7 @@ def predict(model, rgb_tensor, tactile_tensor, config="both", device="cpu",
     rgb = rgb_tensor.to(device)
     tac = tactile_tensor.to(device)
 
-    with torch.no_grad(), torch.autocast(device_type=device.type, enabled=device.type == "cuda"):
+    with torch.no_grad():
         out = model(rgb, tac, config=config)
         if pose_model is not None:
             pose_out = pose_model(rgb, tac, config=config)
@@ -343,10 +343,10 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
 
     # --- Batched evaluation with cache ---
     metrics = {cfg_name: {
-        "depth_mse": 0.0, "normal_mse": 0.0,
+        "depth_mse": 0.0, "normal_mse": 0.0, "normal_mse_norm": 0.0,
         "depth_mae": [], "depth_rmse": [], "depth_d1": [],
         "normal_ang_mean": 0.0, "normal_ang_median": 0.0,
-        "pose_rot_deg": 0.0, "pose_trans_l1": 0.0, "n": 0,
+        "pose_rot_l1": 0.0, "pose_rot_deg": 0.0, "pose_trans_l1": 0.0, "n": 0,
     } for cfg_name in CONFIGS_3}
 
     vis_results = {}
@@ -360,8 +360,7 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
         batch_enc = _slice_cache(encoder_cache, sample_idx, sample_idx + bs, device)
 
         for cfg_name in CONFIGS_3:
-            with torch.no_grad(), torch.autocast(device_type=device.type,
-                                                  enabled=device.type == "cuda"):
+            with torch.no_grad():
                 out = model(batch_dev["rgb"], batch_dev["tactile"],
                             config=cfg_name, encoder_cache=batch_enc)
                 if pose_model is not None:
@@ -378,9 +377,10 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
             pred_normal = out["normal"].cpu()
             gt_normal = batch["normal"]
 
-            # Angular error (batched)
+            # Normalized normal metrics (batched)
             p_n = F.normalize(pred_normal.float(), dim=1)
             g_n = F.normalize(gt_normal.float(), dim=1)
+            m["normal_mse_norm"] += F.mse_loss(p_n, g_n).item() * bs
             cos_sim = (p_n * g_n).sum(dim=1).clamp(-1, 1)
             angles = torch.acos(cos_sim) * (180.0 / _math.pi)
             m["normal_ang_mean"] += angles.mean().item() * bs
@@ -396,6 +396,7 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
                 theta_gt = torch.atan2(sin_g, cos_g)
                 rot_err = (theta_pred - theta_gt).abs()
                 rot_err = torch.min(rot_err, 2 * _math.pi - rot_err)
+                m["pose_rot_l1"] += ((cos_p - cos_g).abs() + (sin_p - sin_g).abs()).mean().item() * bs
                 m["pose_rot_deg"] += (rot_err * 180.0 / _math.pi).mean().item() * bs
                 m["pose_trans_l1"] += F.l1_loss(se2[:, 2:], gt_pose[:, 2:]).item() * bs
 
@@ -443,11 +444,13 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
         summary[cfg_name] = {
             "depth_mse": m["depth_mse"] / n,
             "normal_mse": m["normal_mse"] / n,
+            "normal_mse_norm": m["normal_mse_norm"] / n,
             "depth_mae": float(np.mean(m["depth_mae"])) if m["depth_mae"] else float("nan"),
             "depth_rmse": float(np.mean(m["depth_rmse"])) if m["depth_rmse"] else float("nan"),
             "depth_d1": float(np.mean(m["depth_d1"])) if m["depth_d1"] else float("nan"),
             "normal_ang_mean": m["normal_ang_mean"] / n,
             "normal_ang_median": m["normal_ang_median"] / n,
+            "pose_rot_l1": m["pose_rot_l1"] / n,
             "pose_rot_deg": m["pose_rot_deg"] / n,
             "pose_trans_l1": m["pose_trans_l1"] / n,
         }
@@ -468,8 +471,10 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
             f.write(f"  Depth RMSE:              {s['depth_rmse']:.6f}\n")
             f.write(f"  Depth delta<1.25 (%):    {s['depth_d1']:.2f}\n")
             f.write(f"  Normal MSE:              {s['normal_mse']:.6f}\n")
+            f.write(f"  Normal MSE (norm):       {s['normal_mse_norm']:.6f}\n")
             f.write(f"  Normal Ang Mean (deg):   {s['normal_ang_mean']:.2f}\n")
             f.write(f"  Normal Ang Median (deg): {s['normal_ang_median']:.2f}\n")
+            f.write(f"  Pose Rot L1 (cos,sin):   {s['pose_rot_l1']:.6f}\n")
             f.write(f"  Pose Rot Error (deg):    {s['pose_rot_deg']:.2f}\n")
             f.write(f"  Pose Trans L1:           {s['pose_trans_l1']:.6f}\n")
             f.write("\n")
@@ -481,8 +486,8 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
     print(f"{'Metric':30s} {'Both':>12s} {'Tactile':>12s} {'RGB':>12s}")
     print("=" * 72)
     for key in ["depth_mse", "depth_mae", "depth_rmse", "depth_d1",
-                "normal_mse", "normal_ang_mean", "normal_ang_median",
-                "pose_rot_deg", "pose_trans_l1"]:
+                "normal_mse", "normal_mse_norm", "normal_ang_mean", "normal_ang_median",
+                "pose_rot_l1", "pose_rot_deg", "pose_trans_l1"]:
         vals = [summary[c].get(key, float("nan")) for c in CONFIGS_3]
         fmt = ".2f" if "deg" in key or "d1" in key else ".6f"
         print(f"  {key:28s} {vals[0]:{fmt}} {vals[1]:{fmt}} {vals[2]:{fmt}}")
