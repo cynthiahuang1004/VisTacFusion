@@ -263,6 +263,75 @@ def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None,
                    pose_model=pose_model)
 
 
+def run_real_data_tree(model, real_root, cfg, device, output_dir,
+                       max_samples_per_sensor=None, pose_model=None,
+                       rgb_subdir="rgb"):
+    """Run inference on real data with <object>/session_*/sensor_*/ structure.
+
+    Each sensor dir has samples/ (tactile) and rgb/ (or rgb_subdir).
+    GT depth/normal loaded from raw_data/ if available.
+    """
+    import glob as _glob
+    sensor_dirs = sorted(_glob.glob(osp.join(real_root, "*", "session_*", "sensor_*")))
+    sensor_dirs = [d for d in sensor_dirs if osp.isdir(osp.join(d, "samples"))]
+
+    if not sensor_dirs:
+        print(f"No sensor directories found under {real_root}")
+        return
+
+    total_samples = 0
+    for sensor_dir in sensor_dirs:
+        obj_name = osp.basename(osp.dirname(osp.dirname(sensor_dir)))
+        session = osp.basename(osp.dirname(sensor_dir))
+        sensor = osp.basename(sensor_dir)
+        tag = f"{obj_name}__{session}__{sensor}"
+
+        samples_dir = osp.join(sensor_dir, "samples")
+        rgb_dir = osp.join(sensor_dir, rgb_subdir)
+
+        pngs = sorted(f for f in os.listdir(samples_dir) if f.endswith(".png"))
+        if max_samples_per_sensor:
+            pngs = pngs[:max_samples_per_sensor]
+
+        if not pngs:
+            continue
+
+        sub_out = osp.join(output_dir, obj_name)
+        os.makedirs(sub_out, exist_ok=True)
+        raw_dir = osp.join(sensor_dir, "raw_data")
+
+        print(f"  {tag}: {len(pngs)} samples")
+        for png in pngs:
+            idx_str = osp.splitext(png)[0]
+            tactile_path = osp.join(samples_dir, png)
+            rgb_path = osp.join(rgb_dir, png)
+
+            if not osp.exists(rgb_path):
+                continue
+
+            gt_depth = gt_normal = None
+            try:
+                idx = int(idx_str)
+                gt_path = osp.join(raw_dir, f"{idx:04d}_gt.npy")
+            except ValueError:
+                gt_path = osp.join(raw_dir, f"{idx_str}_gt.npy")
+            if osp.exists(gt_path):
+                from ..data.dataset import depth_to_normal
+                from ..data.transforms import FIXED_CROP, fixed_center_crop
+                gt_depth_raw = fixed_center_crop(
+                    np.load(gt_path).astype(np.float32))
+                gt_depth = gt_depth_raw * 1000.0
+                px = cfg.sim.get("gel_view_m", 0.017502) * FIXED_CROP / cfg.image_size
+                gt_normal = depth_to_normal(gt_depth_raw, px, px)
+
+            run_single(model, rgb_path, tactile_path, cfg, device, sub_out,
+                       gt_depth=gt_depth, gt_normal=gt_normal,
+                       name=f"{tag}_{idx_str}", pose_model=pose_model)
+            total_samples += 1
+
+    print(f"Real data inference done: {total_samples} samples from {len(sensor_dirs)} sensors")
+
+
 def _angular_error_deg(pred_normal, gt_normal):
     """Compute per-pixel angular error in degrees between predicted and GT normals.
     Both are (H, W, 3) unit vectors in [-1, 1]. Returns mean and median in degrees."""
