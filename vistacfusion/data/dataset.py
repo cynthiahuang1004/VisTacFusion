@@ -402,10 +402,13 @@ def build_datasets(cfg):
         real_val = SimVisuoTactileDataset(
             cfg, image_size, augment=False, split="val",
             data_section="real", shared_obj_map=shared_obj_map)
+        real_oversample = cfg.real.get("oversample", 1)
+        if real_oversample <= 0:
+            real_oversample = max(1, len(sim_train) // max(1, len(real_train)) // 2)
         print(f"  sim+real co-training: sim={len(sim_train)}+{len(sim_val)}, "
-              f"real={len(real_train)}+{len(real_val)}")
+              f"real={len(real_train)}+{len(real_val)} (oversample {real_oversample}x)")
         print(f"  shared object classes: {list(shared_obj_map.keys())}")
-        train = ConcatDataset([sim_train, real_train])
+        train = ConcatDataset([sim_train] + [real_train] * real_oversample)
         val = ConcatDataset([sim_val, real_val])
         return train, val
     raise ValueError(f"Unknown dataset {which!r} (configs/data.yaml dataset:)")

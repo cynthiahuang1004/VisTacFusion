@@ -45,6 +45,7 @@ real:
   rgb_subdir: rgb_contact       # real data uses rgb_contact/ instead of rgb/
   use_rendered_normals: false    # real data has no rendered normals, always depth-computed
   val_every: 20
+  oversample: 0                 # real train oversampling factor; 0 = auto (~sim/real/2)
 
 # ---- DataLoader ----
 loader:
