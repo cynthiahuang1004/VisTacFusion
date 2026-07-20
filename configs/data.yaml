@@ -42,7 +42,7 @@ sim:
 real:
   root: /media/hdd2/ihsuan/gs_blender/real_data
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
-  rgb_subdir: rgb_contact       # real data uses rgb_contact/ instead of rgb/
+  rgb_subdir: rgb               # real data also uses rgb/
   use_rendered_normals: false    # real data has no rendered normals, always depth-computed
   val_every: 20
   oversample: 0                 # real train oversampling factor; 0 = auto (~sim/real/2)
