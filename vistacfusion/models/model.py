@@ -110,6 +110,12 @@ class VisuoTactileModel(nn.Module):
 
         self.trunk = FusionTrunk(cfg.fusion_trunk, self.trunk_dim)
 
+        # ---- Optional object embedding (for sim+real co-training) ----
+        self.use_obj_emb = cfg.tokens.get("object_embedding", False)
+        if self.use_obj_emb:
+            num_obj = cfg.tokens.get("num_objects", 20)
+            self.obj_embedding = nn.Embedding(num_obj, self.trunk_dim)
+
         # ---- DPT path: direct encoder taps (1024) + RGB injection ----
         self.dpt_pos = SpatialPosEmbedding(self.num_spatial, self.enc_dim)
 
@@ -164,7 +170,7 @@ class VisuoTactileModel(nn.Module):
     # ------------------------------------------------------------------ forward
 
     def forward(self, rgb, tactile, config="both", inject_rgb_to_dpt=None,
-                encoder_cache=None):
+                encoder_cache=None, object_ids=None):
         """
         Args:
             config: modality config for the POSE path ("both"/"tactile"/"rgb").
@@ -172,6 +178,7 @@ class VisuoTactileModel(nn.Module):
                 None = auto (inject when config has RGB).
                 Can be overridden for decoupled dropout training.
             encoder_cache: pre-computed encoder outputs (skips frozen forward).
+            object_ids: (B,) int tensor of object class indices (for co-training).
         """
         if config not in VALID_CONFIGS:
             raise ValueError(f"config must be one of {VALID_CONFIGS}, got {config!r}")
@@ -197,6 +204,10 @@ class VisuoTactileModel(nn.Module):
         pose_memory = self._build_pose_memory(rgb_patch, rgb_cls) if use_rgb else None
         pose_queries = self._build_pose_queries(
             tac_patch, tac_cls, use_tactile, B, device)
+
+        if self.use_obj_emb and object_ids is not None:
+            obj_emb = self.obj_embedding(object_ids).unsqueeze(1)  # (B, 1, D)
+            pose_queries = pose_queries + obj_emb
 
         trunk_taps, pose_token, bottleneck = self.trunk(
             pose_queries, pose_memory, use_rgb)

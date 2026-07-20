@@ -110,18 +110,20 @@ class SimVisuoTactileDataset(Dataset):
     """
 
     def __init__(self, cfg_data, image_size, augment=False, include_objects=None,
-                 split="all", seed=0):
+                 split="all", seed=0, data_section="sim", shared_obj_map=None):
         """split: 'train' | 'val' | 'all'. Per-session split: every val_every-th sample
-        (idx % val_every == 0) is val, the rest train. Deterministic — no split file."""
+        (idx % val_every == 0) is val, the rest train. Deterministic — no split file.
+        data_section: 'sim' or 'real' — which config section to read paths from.
+        shared_obj_map: if provided, use this obj_name→id mapping (for sim+real alignment)."""
         self.image_size = image_size
         self.augment = augment
         self.split = split
-        sim = cfg_data.sim
+        sim = getattr(cfg_data, data_section)
         norm = cfg_data.norm
         self.val_every = sim.get("val_every", 20)
         self.root = sim.root
         self.mesh_dir = sim.get("mesh_dir", osp.join(osp.dirname(self.root), "meshes"))
-        self.rgb_subdir = sim.rgb_subdir
+        self.rgb_subdir = sim.get("rgb_subdir", "rgb")
         self.use_gt_depth = sim.get("use_gt_depth", True)
         # Tactile camera view is fixed & square for ALL objects (fov=60, half-width
         # 0.008751m -> 17.5mm). session.json X_MIN/X_MAX is the press sampling range,
@@ -135,6 +137,7 @@ class SimVisuoTactileDataset(Dataset):
         self.rot_aug = augment and sim.get("rot_augment", True)
         self.rot_aug_max_deg = sim.get("rot_augment_max_deg", 180.0)
         self.use_rendered_normals = sim.get("use_rendered_normals", False)
+        self.data_section = data_section
 
         if self.root is None:
             raise ValueError("configs/data.yaml sim.root is null — set the sim data path.")
@@ -210,7 +213,10 @@ class SimVisuoTactileDataset(Dataset):
         valid_units = [u for u in units if u in self.unit_meta]
         self.objects = sorted({osp.basename(osp.dirname(osp.dirname(u)))
                                for u in valid_units})
-        self._obj_to_id = {o: i for i, o in enumerate(self.objects)}
+        if shared_obj_map is not None:
+            self._obj_to_id = shared_obj_map
+        else:
+            self._obj_to_id = {o: i for i, o in enumerate(self.objects)}
 
     def _load_object_pose_info(self):
         """Pre-load mesh + session_000 info for each object."""
@@ -382,9 +388,24 @@ def build_datasets(cfg):
         val = SyntheticVisuoTactileDataset(n_val, image_size, s.num_objects, seed=1)
         return train, val
     if which == "sim":
-        # Per-session split: every val_every-th sample of every session is val
-        # (all objects appear in both train and val, different press samples).
         train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
         val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
+        return train, val
+    if which == "sim+real":
+        from torch.utils.data import ConcatDataset
+        sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
+        sim_val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
+        shared_obj_map = sim_train._obj_to_id
+        real_train = SimVisuoTactileDataset(
+            cfg, image_size, augment=True, split="train",
+            data_section="real", shared_obj_map=shared_obj_map)
+        real_val = SimVisuoTactileDataset(
+            cfg, image_size, augment=False, split="val",
+            data_section="real", shared_obj_map=shared_obj_map)
+        print(f"  sim+real co-training: sim={len(sim_train)}+{len(sim_val)}, "
+              f"real={len(real_train)}+{len(real_val)}")
+        print(f"  shared object classes: {list(shared_obj_map.keys())}")
+        train = ConcatDataset([sim_train, real_train])
+        val = ConcatDataset([sim_val, real_val])
         return train, val
     raise ValueError(f"Unknown dataset {which!r} (configs/data.yaml dataset:)")

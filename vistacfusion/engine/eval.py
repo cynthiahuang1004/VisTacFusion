@@ -105,7 +105,8 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
 
         for c in configs:
             out = model(batch["rgb"], batch["tactile"], config=c,
-                        encoder_cache=batch_enc)
+                        encoder_cache=batch_enc,
+                        object_ids=batch.get("object"))
             a = acc[c]
 
             a["depth_mse"] += F.mse_loss(out["depth"], batch["depth"]).item() * bs

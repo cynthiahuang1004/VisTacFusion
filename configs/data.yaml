@@ -6,7 +6,7 @@ image_size: 224                 # square; must match model.yaml image_size (keep
 # ---- Dataset selection ----
 # 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists.
 #               Switch to 'sim' once the loader is wired.
-dataset: sim                    # {synthetic, sim}
+dataset: sim                    # {synthetic, sim, sim+real}
 
 synthetic:
   num_samples: 256              # how many fake samples the stub serves
@@ -38,10 +38,13 @@ sim:
   # unseen-object pose generalization is not the target; real eval is separate).
   val_every: 20
 
-# ---- Real eval set (sim2real, reported zero-shot) ----
+# ---- Real co-training set (sim+real mode) ----
 real:
-  root: null                    # real captures, same per-sample fields as sim
-  rgb_subdir: rgb
+  root: /media/hdd2/ihsuan/gs_blender/real_data
+  mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
+  rgb_subdir: rgb_contact       # real data uses rgb_contact/ instead of rgb/
+  use_rendered_normals: false    # real data has no rendered normals, always depth-computed
+  val_every: 20
 
 # ---- DataLoader ----
 loader:

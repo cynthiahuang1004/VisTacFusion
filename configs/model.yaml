@@ -26,6 +26,8 @@ tokens:
   num_spatial_queries: 196      # = 14x14, fixed (do not change without changing image_size)
   num_pose_queries: 1
   # spatial(196) + pose(1) = 197 queries; decoder input is fixed regardless of modalities
+  object_embedding: false       # add learnable per-object embedding to queries (for sim+real co-training)
+  num_objects: 20               # number of object classes (must cover all objects in dataset)
 
 fusion_trunk:
   num_layers: 4                 # L — default 4 to match the DPT's 4 taps

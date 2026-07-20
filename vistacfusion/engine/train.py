@@ -125,8 +125,9 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
 
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type=device.type, enabled=cfg.amp and device.type == "cuda"):
+            obj_ids = batch.get("object")
             out = model(batch["rgb"], batch["tactile"], config=config,
-                        inject_rgb_to_dpt=inject_rgb)
+                        inject_rgb_to_dpt=inject_rgb, object_ids=obj_ids)
             gt = {"depth": batch["depth"], "normal": batch["normal"],
                   "pose": batch["pose"], "mask": batch.get("mask")}
             loss, comps = criterion(out, gt, supervise_dense=True)
