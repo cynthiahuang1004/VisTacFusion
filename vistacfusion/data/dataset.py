@@ -397,7 +397,7 @@ def build_datasets(cfg):
         sim_val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
         shared_obj_map = sim_train._obj_to_id
         real_train = SimVisuoTactileDataset(
-            cfg, image_size, augment=True, split="train",
+            cfg, image_size, augment=False, split="train",
             data_section="real", shared_obj_map=shared_obj_map)
         real_val = SimVisuoTactileDataset(
             cfg, image_size, augment=False, split="val",
