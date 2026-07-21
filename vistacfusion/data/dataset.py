@@ -409,6 +409,6 @@ def build_datasets(cfg):
               f"real={len(real_train)}+{len(real_val)} (oversample {real_oversample}x)")
         print(f"  shared object classes: {list(shared_obj_map.keys())}")
         train = ConcatDataset([sim_train] + [real_train] * real_oversample)
-        val = ConcatDataset([sim_val, real_val])
+        val = real_val
         return train, val
     raise ValueError(f"Unknown dataset {which!r} (configs/data.yaml dataset:)")

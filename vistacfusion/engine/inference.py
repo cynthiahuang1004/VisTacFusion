@@ -381,7 +381,17 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
     from torch.utils.data import DataLoader
     from ..data.dataset import build_datasets, SimVisuoTactileDataset
     from .eval import precompute_encoder_cache, _slice_cache
-    _, val_ds = build_datasets(cfg)
+
+    if getattr(cfg, "dataset", "sim") == "sim+real":
+        sim_train = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False, split="train")
+        shared_obj_map = sim_train._obj_to_id
+        val_ds = SimVisuoTactileDataset(
+            cfg, cfg.image_size, augment=False, split="val",
+            data_section="real", shared_obj_map=shared_obj_map)
+        del sim_train
+        print(f"  sim+real mode: eval on real val only ({len(val_ds)} samples)")
+    else:
+        _, val_ds = build_datasets(cfg)
 
     os.makedirs(output_dir, exist_ok=True)
 
