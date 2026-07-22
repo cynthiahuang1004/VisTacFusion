@@ -88,15 +88,16 @@ def _extract_outputs(out):
 
 
 def predict(model, rgb_tensor, tactile_tensor, config="both", device="cpu",
-            pose_model=None):
+            pose_model=None, object_ids=None):
     """Run inference. If pose_model is given, use it for pose and model for depth/normal."""
     rgb = rgb_tensor.to(device)
     tac = tactile_tensor.to(device)
+    obj = object_ids.to(device) if object_ids is not None else None
 
     with torch.no_grad():
-        out = model(rgb, tac, config=config)
+        out = model(rgb, tac, config=config, object_ids=obj)
         if pose_model is not None:
-            pose_out = pose_model(rgb, tac, config=config)
+            pose_out = pose_model(rgb, tac, config=config, object_ids=obj)
             out["se2"] = pose_out.get("se2", pose_out.get("trans"))
 
     return _extract_outputs(out)
@@ -172,7 +173,8 @@ def visualize_three_configs(tactile_img, rgb_img, results,
 
 
 def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
-               gt_depth=None, gt_normal=None, name="sample", pose_model=None, **kwargs):
+               gt_depth=None, gt_normal=None, gt_pose=None,
+               name="sample", pose_model=None, object_ids=None, **kwargs):
     """Run inference on a single pair with all 3 configs."""
     image_size = cfg.image_size
     rgb_t = preprocess_image(rgb_path, image_size)
@@ -181,7 +183,8 @@ def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
     results = {}
     for config in CONFIGS_3:
         depth, normal, pose, theta = predict(model, rgb_t, tac_t, config=config,
-                                             device=device, pose_model=pose_model)
+                                             device=device, pose_model=pose_model,
+                                             object_ids=object_ids)
         results[config] = (depth, normal, pose, theta)
         np.save(osp.join(output_dir, f"{name}_{config}_depth.npy"), depth)
         np.save(osp.join(output_dir, f"{name}_{config}_pose.npy"), pose)
@@ -191,7 +194,8 @@ def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
 
     save_path = osp.join(output_dir, f"{name}.png")
     visualize_three_configs(tactile_img, rgb_img, results,
-                            gt_depth=gt_depth, gt_normal=gt_normal, save_path=save_path)
+                            gt_depth=gt_depth, gt_normal=gt_normal,
+                            gt_pose=gt_pose, save_path=save_path)
 
     for cfg_name in CONFIGS_3:
         _, _, pose, theta = results[cfg_name]
@@ -263,6 +267,62 @@ def run_real_dir(model, real_dir, cfg, device, output_dir, max_samples=None,
                    pose_model=pose_model)
 
 
+def _load_pose_info_for_tree(real_root, mesh_dir):
+    """Pre-load mesh + session_000 info for each object under real_root.
+    Returns {obj_name: {vertices, fixed_scale, half, rz0}}."""
+    import json as _json
+    try:
+        import trimesh
+    except ImportError:
+        print("[WARN] trimesh not available, GT pose will be skipped")
+        return {}
+
+    info = {}
+    obj_dirs = sorted(d for d in os.listdir(real_root)
+                      if osp.isdir(osp.join(real_root, d)))
+    for obj_name in obj_dirs:
+        mesh_path = osp.join(mesh_dir, f"{obj_name}.obj")
+        s0_path = osp.join(real_root, obj_name, "session_000", "session.json")
+        if not osp.exists(mesh_path) or not osp.exists(s0_path):
+            continue
+        mesh = trimesh.load(mesh_path, force="mesh")
+        with open(s0_path) as f:
+            d0 = _json.load(f)
+        info[obj_name] = {
+            "vertices": mesh.vertices,
+            "fixed_scale": d0["fixed_scale"],
+            "half": d0.get("_target_size_mm", 82.0) / 2.0 / 1000.0,
+            "rz0": d0["base_rotation"][2],
+        }
+    return info
+
+
+def _compute_gt_pose(pose_json_path, obj_info, session_json):
+    """Compute GT SE(2) pose (cos, sin, tx_norm, ty_norm) for a single sample."""
+    import json as _json
+    import math as _math
+    from scipy.spatial.transform import Rotation
+
+    with open(pose_json_path) as f:
+        data = _json.load(f)
+
+    delta_rz = data["rotation_euler"][2] - obj_info["rz0"]
+    half = obj_info["half"]
+
+    R_3d = Rotation.from_euler("xyz", base_rot)
+    v = R_3d.apply(obj_info["vertices"]) / obj_info["fixed_scale"]
+    cx = (v[:, 0].min() + v[:, 0].max()) / 2.0
+    cy = (v[:, 1].min() + v[:, 1].max()) / 2.0
+
+    cos_rz = _math.cos(delta_rz)
+    sin_rz = _math.sin(delta_rz)
+    sx, sy = data["sample_x"], data["sample_y"]
+    x_norm = (cos_rz * sx - sin_rz * sy) / max(half, 1e-8)
+    y_norm = (sin_rz * sx + cos_rz * sy) / max(half, 1e-8)
+
+    return np.array([cos_rz, sin_rz, x_norm, y_norm], dtype=np.float32)
+
+
 def run_real_data_tree(model, real_root, cfg, device, output_dir,
                        max_samples_per_sensor=None, pose_model=None,
                        rgb_subdir="rgb"):
@@ -270,7 +330,9 @@ def run_real_data_tree(model, real_root, cfg, device, output_dir,
 
     Each sensor dir has samples/ (tactile) and rgb/ (or rgb_subdir).
     GT depth/normal loaded from raw_data/ if available.
+    GT pose computed from pose json + mesh info.
     """
+    import json as _json
     import glob as _glob
     sensor_dirs = sorted(_glob.glob(osp.join(real_root, "*", "session_*", "sensor_*")))
     sensor_dirs = [d for d in sensor_dirs if osp.isdir(osp.join(d, "samples"))]
@@ -278,6 +340,13 @@ def run_real_data_tree(model, real_root, cfg, device, output_dir,
     if not sensor_dirs:
         print(f"No sensor directories found under {real_root}")
         return
+
+    mesh_dir = cfg.real.get("mesh_dir",
+                            cfg.sim.get("mesh_dir",
+                                        osp.join(osp.dirname(real_root), "meshes")))
+    obj_pose_info = _load_pose_info_for_tree(real_root, mesh_dir)
+
+    session_cache = {}
 
     total_samples = 0
     for sensor_dir in sensor_dirs:
@@ -300,6 +369,16 @@ def run_real_data_tree(model, real_root, cfg, device, output_dir,
         os.makedirs(sub_out, exist_ok=True)
         raw_dir = osp.join(sensor_dir, "raw_data")
 
+        session_dir = osp.dirname(sensor_dir)
+        if session_dir not in session_cache:
+            sj_path = osp.join(session_dir, "session.json")
+            if osp.exists(sj_path):
+                with open(sj_path) as f:
+                    session_cache[session_dir] = _json.load(f)
+            else:
+                session_cache[session_dir] = None
+        sess_json = session_cache[session_dir]
+
         print(f"  {tag}: {len(pngs)} samples")
         for png in pngs:
             idx_str = osp.splitext(png)[0]
@@ -309,12 +388,15 @@ def run_real_data_tree(model, real_root, cfg, device, output_dir,
             if not osp.exists(rgb_path):
                 continue
 
-            gt_depth = gt_normal = None
+            gt_depth = gt_normal = gt_pose = None
             try:
                 idx = int(idx_str)
                 gt_path = osp.join(raw_dir, f"{idx:04d}_gt.npy")
+                pose_path = osp.join(raw_dir, f"{idx:04d}_pose.json")
             except ValueError:
                 gt_path = osp.join(raw_dir, f"{idx_str}_gt.npy")
+                pose_path = osp.join(raw_dir, f"{idx_str}_pose.json")
+
             if osp.exists(gt_path):
                 from ..data.dataset import depth_to_normal
                 from ..data.transforms import FIXED_CROP, fixed_center_crop
@@ -324,8 +406,16 @@ def run_real_data_tree(model, real_root, cfg, device, output_dir,
                 px = cfg.sim.get("gel_view_m", 0.017502) * FIXED_CROP / cfg.image_size
                 gt_normal = depth_to_normal(gt_depth_raw, px, px)
 
+            if (osp.exists(pose_path) and obj_name in obj_pose_info
+                    and sess_json is not None):
+                try:
+                    gt_pose = _compute_gt_pose(
+                        pose_path, obj_pose_info[obj_name], sess_json)
+                except Exception:
+                    pass
+
             run_single(model, rgb_path, tactile_path, cfg, device, sub_out,
-                       gt_depth=gt_depth, gt_normal=gt_normal,
+                       gt_depth=gt_depth, gt_normal=gt_normal, gt_pose=gt_pose,
                        name=f"{tag}_{idx_str}", pose_model=pose_model)
             total_samples += 1
 
@@ -428,13 +518,17 @@ def run_eval_sim(model, cfg, device, output_dir, num_vis=20, pose_model=None,
                      for k, v in batch.items()}
         batch_enc = _slice_cache(encoder_cache, sample_idx, sample_idx + bs, device)
 
+        obj_ids = batch_dev.get("object")
+
         for cfg_name in CONFIGS_3:
             with torch.no_grad():
                 out = model(batch_dev["rgb"], batch_dev["tactile"],
-                            config=cfg_name, encoder_cache=batch_enc)
+                            config=cfg_name, encoder_cache=batch_enc,
+                            object_ids=obj_ids)
                 if pose_model is not None:
                     pose_out = pose_model(batch_dev["rgb"], batch_dev["tactile"],
-                                         config=cfg_name, encoder_cache=batch_enc)
+                                         config=cfg_name, encoder_cache=batch_enc,
+                                         object_ids=obj_ids)
                     out["se2"] = pose_out.get("se2", pose_out.get("trans"))
 
             m = metrics[cfg_name]

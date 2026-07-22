@@ -43,7 +43,10 @@ loss:
     rot_weight: 1.0             # rotation classification CE loss
     trans_weight: 1.0           # L1 on (t_x, t_y)
     weight: 1.0
-  uncertainty_weighting: true   # Kendall et al. auto task weighting — balances depth/normal/pose gradients
+  uncertainty_weighting: true   # Kendall et al. auto task weighting
+  grouped_uncertainty: true     # separate dense (depth+normal) vs pose (rot+trans) groups;
+                                # prevents pose improvements from starving dense gradients
+  dense_pose_ratio: 1.0         # fixed weight between the two groups
 
 # ---- Augmentation / domain randomization (sim2real workhorse) ----
 augmentation:

@@ -187,6 +187,7 @@ class SimVisuoTactileDataset(Dataset):
 
             self.unit_meta[unit] = {
                 "delta_rz": delta_rz,
+                "rz0": info["rz0"],
                 "session_center": session_center,
                 "half": info["half"],
                 "valid_cells": {c["gx"] * 1000 + c["gy"]: c for c in sess.get("valid_cells", [])},
@@ -355,15 +356,14 @@ class SimVisuoTactileDataset(Dataset):
         with open(pose_path) as f:
             data = json.load(f)
 
-        delta_rz = meta["delta_rz"]
         half = meta["half"]
 
-        # pose json sample_x/sample_y = press offset from the session object center in
-        # WORLD axes with x negated: (sx, sy) = (-(cx - scx), +(cy - scy)) — verified
-        # against session.json valid_cells at 0/30/90 deg sessions.
-        # Reference label (pose_calculation.py): [x, y] = diag(-1,1) @ R(th).T @ off_cell.
-        # Substituting off_cell = diag(-1,1) @ (sx, sy) and simplifying with
-        # M R(th).T M = R(th):  label = R(+th) @ (sx, sy) / half.
+        # Use per-sample rotation from pose json (not session-level delta_rz).
+        # In sim all samples in a session share the same rotation_euler[2] ==
+        # base_rotation[2], so this is equivalent.  In real data each sample
+        # has its own rotation_euler[2] within a single session.
+        delta_rz = data["rotation_euler"][2] - meta["rz0"]
+
         cos_rz = math.cos(delta_rz)
         sin_rz = math.sin(delta_rz)
         sx, sy = data["sample_x"], data["sample_y"]
