@@ -1,0 +1,61 @@
+# configs/train_finetune.yaml
+# Fine-tuning config: lower lr, no warmup, cosine over 50 epochs.
+# Resume from a pre-trained checkpoint with --resume.
+
+seed: 0
+device: cuda
+amp: true
+
+optim:
+  name: adamw
+  lr: 2.0e-5                    # 10x lower than initial training
+  weight_decay: 0.05
+  betas: [0.9, 0.999]
+
+schedule:
+  name: cosine
+  warmup_steps: 0               # no warmup for fine-tuning
+  max_epochs: 200               # will run from resume epoch to 200
+
+batch_size: 64
+num_workers: 8
+
+modality_dropout:
+  enabled: true
+  p_both: 0.55
+  p_tactile_only: 0.35
+  p_rgb_only: 0.10
+  p_dpt_inject: 0.5
+
+loss:
+  depth:
+    type: mse
+    grad_matching_weight: 0.0
+    weight: 1.0
+  normal:
+    type: mse
+    weight: 1.0
+  pose:
+    rot_weight: 1.0
+    trans_weight: 1.0
+    weight: 1.0
+  uncertainty_weighting: true
+  grouped_uncertainty: true
+  dense_pose_ratio: 1.0
+
+augmentation:
+  tactile:
+    gain: true
+    bias: true
+    gradient: true
+    residual_noise: true
+    geometric: true
+  rgb:
+    photometric: true
+    geometric: false
+
+eval:
+  metrics: [depth_absrel, depth_rmse, normal_mean_angle, pose_rot_deg, pose_trans_mm]
+  report_per_config: true
+log_every: 50
+ckpt_every_epochs: 5

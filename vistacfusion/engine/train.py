@@ -268,6 +268,8 @@ def main():
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--resume", type=str, default=None,
                     help="Path to checkpoint to resume from")
+    ap.add_argument("--finetune", action="store_true",
+                    help="Load only model weights from --resume, reset optimizer/scheduler")
     ap.add_argument("--output-dir", type=str, default="outputs",
                     help="Directory for checkpoints and logs")
     args = ap.parse_args()
@@ -323,11 +325,15 @@ def main():
     best_pose_metric = float("inf")
     if args.resume:
         if is_main_process():
-            print(f"Resuming from {args.resume}")
-        start_epoch, best_metric = load_checkpoint(
-            args.resume, model, optimizer, scheduler, scaler,
-            criterion=criterion, device=device)
-        start_epoch += 1
+            print(f"Resuming from {args.resume}"
+                  f"{' (finetune: fresh optimizer/scheduler)' if args.finetune else ''}")
+        if args.finetune:
+            load_checkpoint(args.resume, model, device=device)
+        else:
+            start_epoch, best_metric = load_checkpoint(
+                args.resume, model, optimizer, scheduler, scaler,
+                criterion=criterion, device=device)
+            start_epoch += 1
         if is_main_process():
             print(f"  resumed at epoch {start_epoch}, best_metric={best_metric:.4f}")
 
