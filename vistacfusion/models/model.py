@@ -81,23 +81,33 @@ class VisuoTactileModel(nn.Module):
         self.cfg = cfg
         self.image_size = cfg.image_size
         self.trunk_dim = cfg.trunk_dim                              # 768
-        self.num_spatial = cfg.tokens.num_spatial_queries            # 196
+        # num_spatial derived from encoder (196 for p16@224, 256 for p14@224)
+        # Overridable via cfg for backward compat, but defaults to encoder value.
 
-        # ---- Encoder (frozen, shared weights) ----
-        enc_cfg = cfg.encoder
+        # ---- Encoder (frozen) ----
+        enc_cfg = dict(cfg.encoder)
         if enc_cfg.get("multiscale_layers", None) is None:
-            enc_cfg = dict(enc_cfg)
             enc_cfg["multiscale_layers"] = list(cfg.heads.dpt.encoder_tap_layers)
         self.tactile_encoder = build_encoder(enc_cfg, self.image_size)
-        if enc_cfg.get("share_encoder_weights", True):
+
+        rgb_enc_cfg = cfg.get("rgb_encoder", None)
+        if rgb_enc_cfg is not None:
+            rgb_enc_cfg = dict(rgb_enc_cfg)
+            if rgb_enc_cfg.get("multiscale_layers", None) is None:
+                rgb_enc_cfg["multiscale_layers"] = list(cfg.heads.dpt.encoder_tap_layers)
+            self.rgb_encoder = build_encoder(rgb_enc_cfg, self.image_size)
+        elif enc_cfg.get("share_encoder_weights", True):
             self.rgb_encoder = self.tactile_encoder
         else:
             self.rgb_encoder = build_encoder(enc_cfg, self.image_size)
-        self.enc_dim = self.tactile_encoder.embed_dim               # 1024
 
-        # ---- Pose path: projection (1024→768) + trunk ----
+        self.enc_dim = self.tactile_encoder.embed_dim
+        self.rgb_enc_dim = self.rgb_encoder.embed_dim
+        self.num_spatial = self.tactile_encoder.num_patches          # 196 or 256
+
+        # ---- Pose path: projection (enc_dim→768) + trunk ----
         self.tactile_proj = BranchProjection(self.enc_dim, self.trunk_dim)
-        self.rgb_proj = BranchProjection(self.enc_dim, self.trunk_dim)
+        self.rgb_proj = BranchProjection(self.rgb_enc_dim, self.trunk_dim)
         self.spatial_pos = SpatialPosEmbedding(self.num_spatial, self.trunk_dim)
         self.use_rgb_pos = cfg.projection.get("rgb_positional_embedding", False)
         if self.use_rgb_pos:
@@ -116,7 +126,7 @@ class VisuoTactileModel(nn.Module):
             num_obj = cfg.tokens.get("num_objects", 20)
             self.obj_embedding = nn.Embedding(num_obj, self.trunk_dim)
 
-        # ---- DPT path: direct encoder taps (1024) + RGB injection ----
+        # ---- DPT path: direct encoder taps + RGB injection ----
         self.dpt_pos = SpatialPosEmbedding(self.num_spatial, self.enc_dim)
 
         self.tap_inject = nn.ModuleList([
@@ -150,18 +160,24 @@ class VisuoTactileModel(nn.Module):
     # ------------------------------------------------------------------ helpers
 
     def _build_pose_memory(self, rgb_patch, rgb_cls):
-        """RGB → pose memory M = [B, 197, trunk_dim]."""
+        """RGB -> pose memory M = [B, N+1, trunk_dim]."""
         patch = self.rgb_proj(rgb_patch)
-        cls = self.rgb_proj(rgb_cls)
+        if rgb_cls is not None:
+            cls = self.rgb_proj(rgb_cls)
+        else:
+            cls = self.pose_mask.expand(patch.shape[0], -1, -1)
         if self.use_rgb_pos:
             patch = self.rgb_spatial_pos(patch)
         return torch.cat([patch, cls], dim=1)
 
     def _build_pose_queries(self, tac_patch, tac_cls, use_tactile, B, device):
-        """Build 197 pose queries at trunk_dim."""
+        """Build N+1 pose queries at trunk_dim."""
         if use_tactile:
             spatial = self.spatial_pos(self.tactile_proj(tac_patch))
-            pose_q = self.tactile_proj(tac_cls)
+            if tac_cls is not None:
+                pose_q = self.tactile_proj(tac_cls)
+            else:
+                pose_q = self.pose_mask.expand(B, -1, -1)
         else:
             spatial = self.spatial_pos(self.spatial_mask.expand(B, -1, -1))
             pose_q = self.pose_mask.expand(B, -1, -1)
@@ -220,15 +236,21 @@ class VisuoTactileModel(nn.Module):
         rgb_ms = encoder_cache.get("rgb_ms") if encoder_cache else None
         if use_tactile:
             ms = tac_ms if tac_ms is not None else self.tactile_encoder.forward_multiscale(tactile)
-        else:
+            dpt_taps = [self.dpt_pos(t) for t in ms]
+        elif self.rgb_enc_dim == self.enc_dim:
             ms = rgb_ms if rgb_ms is not None else self.rgb_encoder.forward_multiscale(rgb)
-        dpt_taps = [self.dpt_pos(t) for t in ms]
+            dpt_taps = [self.dpt_pos(t) for t in ms]
+        else:
+            dpt_taps = None
 
-        if inject_rgb_to_dpt and use_rgb:
-            dpt_taps = [inj(t, bottleneck)
-                        for inj, t in zip(self.tap_inject, dpt_taps)]
-
-        depth, normal = self.dpt(dpt_taps, out_hw=(self.image_size, self.image_size))
+        if dpt_taps is not None:
+            if inject_rgb_to_dpt and use_rgb:
+                dpt_taps = [inj(t, bottleneck)
+                            for inj, t in zip(self.tap_inject, dpt_taps)]
+            depth, normal = self.dpt(dpt_taps, out_hw=(self.image_size, self.image_size))
+        else:
+            depth = torch.zeros(B, 1, self.image_size, self.image_size, device=device)
+            normal = torch.zeros(B, 3, self.image_size, self.image_size, device=device)
 
         out = {"depth": depth, "normal": normal}
         out.update(pose)

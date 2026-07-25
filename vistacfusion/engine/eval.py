@@ -30,9 +30,9 @@ def precompute_encoder_cache(model, loader, device):
         tp, tc = model.tactile_encoder(tactile)
         rp, rc = model.rgb_encoder(rgb)
         tac_p.append(tp.half().cpu())
-        tac_c.append(tc.half().cpu())
+        tac_c.append(tc.half().cpu() if tc is not None else None)
         rgb_p.append(rp.half().cpu())
-        rgb_c.append(rc.half().cpu())
+        rgb_c.append(rc.half().cpu() if rc is not None else None)
         t_ms = model.tactile_encoder.forward_multiscale(tactile)
         r_ms = model.rgb_encoder.forward_multiscale(rgb)
         for i in range(4):
@@ -40,9 +40,9 @@ def precompute_encoder_cache(model, loader, device):
             rgb_ms[i].append(r_ms[i].half().cpu())
     cache = {
         "tactile_patch": torch.cat(tac_p),
-        "tactile_cls": torch.cat(tac_c),
+        "tactile_cls": torch.cat(tac_c) if tac_c[0] is not None else None,
         "rgb_patch": torch.cat(rgb_p),
-        "rgb_cls": torch.cat(rgb_c),
+        "rgb_cls": torch.cat(rgb_c) if rgb_c[0] is not None else None,
         "tactile_ms": [torch.cat(ms) for ms in tac_ms],
         "rgb_ms": [torch.cat(ms) for ms in rgb_ms],
     }
@@ -55,14 +55,16 @@ def precompute_encoder_cache(model, loader, device):
 
 
 def _slice_cache(cache, start, end, device):
+    def _sl(t):
+        return t[start:end].to(device, dtype=torch.float32) if t is not None else None
     return {
         "tactile": (
-            cache["tactile_patch"][start:end].to(device, dtype=torch.float32),
-            cache["tactile_cls"][start:end].to(device, dtype=torch.float32),
+            _sl(cache["tactile_patch"]),
+            _sl(cache["tactile_cls"]),
         ),
         "rgb": (
-            cache["rgb_patch"][start:end].to(device, dtype=torch.float32),
-            cache["rgb_cls"][start:end].to(device, dtype=torch.float32),
+            _sl(cache["rgb_patch"]),
+            _sl(cache["rgb_cls"]),
         ),
         "tactile_ms": [ms[start:end].to(device, dtype=torch.float32)
                        for ms in cache["tactile_ms"]],

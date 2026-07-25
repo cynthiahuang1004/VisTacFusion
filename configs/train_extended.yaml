@@ -1,6 +1,6 @@
-# configs/train_finetune.yaml
-# Fine-tuning config: lower lr, no warmup, cosine over 50 epochs.
-# Resume from a pre-trained checkpoint with --resume.
+# configs/train_extended.yaml
+# Extended training: 300 epochs, dense_pose_ratio=2.0.
+# Resume from epoch 149 of the grouped run.
 
 seed: 0
 device: cuda
@@ -8,14 +8,14 @@ amp: true
 
 optim:
   name: adamw
-  lr: 2.0e-5                    # 10x lower than initial training
+  lr: 2.0e-4
   weight_decay: 0.05
   betas: [0.9, 0.999]
 
 schedule:
   name: cosine
-  warmup_steps: 0               # no warmup for fine-tuning
-  max_epochs: 200               # will run from resume epoch to 200
+  warmup_steps: 1000
+  max_epochs: 300
 
 batch_size: 64
 num_workers: 8
@@ -41,7 +41,7 @@ loss:
     weight: 1.0
   uncertainty_weighting: true
   grouped_uncertainty: true
-  dense_pose_ratio: 3.0
+  dense_pose_ratio: 2.0
 
 augmentation:
   tactile:
