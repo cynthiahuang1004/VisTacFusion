@@ -393,22 +393,62 @@ def build_datasets(cfg):
         return train, val
     if which == "sim+real":
         from torch.utils.data import ConcatDataset
+
+        test_objects = list(cfg.real.get("test_objects", []))
+        all_real_objects = sorted(
+            d for d in os.listdir(cfg.real.root)
+            if osp.isdir(osp.join(cfg.real.root, d)))
+        train_objects = [o for o in all_real_objects if o not in test_objects] or None
+
         sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
         sim_val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
         shared_obj_map = sim_train._obj_to_id
         real_train = SimVisuoTactileDataset(
             cfg, image_size, augment=False, split="train",
-            data_section="real", shared_obj_map=shared_obj_map)
+            data_section="real", shared_obj_map=shared_obj_map,
+            include_objects=train_objects)
         real_val = SimVisuoTactileDataset(
             cfg, image_size, augment=False, split="val",
-            data_section="real", shared_obj_map=shared_obj_map)
+            data_section="real", shared_obj_map=shared_obj_map,
+            include_objects=train_objects)
+        real_test = None
+        if test_objects:
+            real_test = SimVisuoTactileDataset(
+                cfg, image_size, augment=False, split="all",
+                data_section="real", shared_obj_map=shared_obj_map,
+                include_objects=test_objects)
+
+        sample_ratio = cfg.real.get("sample_ratio", None)
+        if sample_ratio is not None and sample_ratio >= 0:
+            train = ConcatDataset([sim_train, real_train])
+            w_sim = (1.0 - sample_ratio) / len(sim_train)
+            w_real = sample_ratio / len(real_train)
+            train.sample_weights = torch.cat([
+                torch.full((len(sim_train),), w_sim, dtype=torch.double),
+                torch.full((len(real_train),), w_real, dtype=torch.double),
+            ])
+            train.num_samples = len(sim_train)
+            print(f"  sim+real weighted sampling: sim={len(sim_train)}+{len(sim_val)}, "
+                  f"real_train={len(real_train)}+{len(real_val)} "
+                  f"(p_real={sample_ratio}, epoch={train.num_samples})")
+            if real_test:
+                print(f"  real test (held-out): {len(real_test)} samples, "
+                      f"objects={test_objects}")
+                train.real_test = real_test
+            print(f"  shared object classes: {list(shared_obj_map.keys())}")
+            return train, real_val
+
         real_oversample = cfg.real.get("oversample", 1)
         if real_oversample <= 0:
             real_oversample = max(1, len(sim_train) // max(1, len(real_train)) // 2)
         print(f"  sim+real co-training: sim={len(sim_train)}+{len(sim_val)}, "
-              f"real={len(real_train)}+{len(real_val)} (oversample {real_oversample}x)")
+              f"real_train={len(real_train)}+{len(real_val)} (oversample {real_oversample}x)")
+        if real_test:
+            print(f"  real test (held-out): {len(real_test)} samples, "
+                  f"objects={test_objects}")
         print(f"  shared object classes: {list(shared_obj_map.keys())}")
         train = ConcatDataset([sim_train] + [real_train] * real_oversample)
-        val = real_val
-        return train, val
+        if real_test:
+            train.real_test = real_test
+        return train, real_val
     raise ValueError(f"Unknown dataset {which!r} (configs/data.yaml dataset:)")

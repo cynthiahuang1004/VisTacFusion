@@ -6,7 +6,7 @@ image_size: 224                 # square; must match model.yaml image_size (keep
 # ---- Dataset selection ----
 # 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists.
 #               Switch to 'sim' once the loader is wired.
-dataset: sim                    # {synthetic, sim, sim+real}
+dataset: sim+real            # ratio ablation
 
 synthetic:
   num_samples: 256              # how many fake samples the stub serves
@@ -45,8 +45,8 @@ real:
   rgb_subdir: rgb               # real data also uses rgb/
   use_rendered_normals: false    # real data has no rendered normals, always depth-computed
   val_every: 20
-  oversample: 0                 # real train oversampling factor; 0 = auto (~sim/real/2)
-  test_objects:                  # held-out real objects for final evaluation (never in training)
+  sample_ratio: 0.25            # weighted sampling: expected real fraction per batch
+  test_objects:
     - pattern_01_2_lines_angle_2
     - pattern_04_3_lines_angle_1
     - pattern_32

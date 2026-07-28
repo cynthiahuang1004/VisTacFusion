@@ -294,7 +294,21 @@ def main():
         print(f"Train: {len(train_ds)} samples | Val: {len(val_ds)} samples")
 
     lc = cfg.loader
-    train_sampler = DistributedSampler(train_ds, shuffle=True) if is_distributed() else None
+    sample_weights = getattr(train_ds, "sample_weights", None)
+    if is_distributed():
+        if sample_weights is not None:
+            raise NotImplementedError(
+                "Weighted sampling (real.sample_ratio) is single-GPU only; "
+                "launch without torchrun.")
+        train_sampler = DistributedSampler(train_ds, shuffle=True)
+    elif sample_weights is not None:
+        from torch.utils.data import WeightedRandomSampler
+        train_sampler = WeightedRandomSampler(
+            sample_weights,
+            num_samples=getattr(train_ds, "num_samples", len(train_ds)),
+            replacement=True)
+    else:
+        train_sampler = None
     train_loader = DataLoader(
         train_ds, batch_size=cfg.batch_size,
         shuffle=(train_sampler is None), sampler=train_sampler,
@@ -355,7 +369,7 @@ def main():
 
     max_epochs = args.epochs if args.epochs is not None else cfg.schedule.max_epochs
     for epoch in range(start_epoch, max_epochs):
-        if train_sampler is not None:
+        if train_sampler is not None and hasattr(train_sampler, "set_epoch"):
             train_sampler.set_epoch(epoch)
 
         t0 = time.time()
@@ -403,10 +417,10 @@ def main():
                     os.path.join(args.output_dir, "best_pose.pt"),
                     model, optimizer, scheduler, scaler, epoch, best_pose_metric,
                     criterion=criterion)
-                print(f"  ** new best pose: rot_ce={best_pose_metric:.4f}")
+                print(f"  ** new best pose: rot_1cos={best_pose_metric:.4f}")
 
             save_checkpoint(
-                os.path.join(args.output_dir, f"epoch_{epoch:03d}.pt"),
+                os.path.join(args.output_dir, "latest.pt"),
                 model, optimizer, scheduler, scaler, epoch, best_metric,
                 criterion=criterion)
             writer.flush()

@@ -237,7 +237,7 @@ class VisuoTactileModel(nn.Module):
         if use_tactile:
             ms = tac_ms if tac_ms is not None else self.tactile_encoder.forward_multiscale(tactile)
             dpt_taps = [self.dpt_pos(t) for t in ms]
-        elif self.rgb_enc_dim == self.enc_dim:
+        elif self.rgb_enc_dim == self.enc_dim and self.rgb_encoder.num_patches == self.num_spatial:
             ms = rgb_ms if rgb_ms is not None else self.rgb_encoder.forward_multiscale(rgb)
             dpt_taps = [self.dpt_pos(t) for t in ms]
         else:
