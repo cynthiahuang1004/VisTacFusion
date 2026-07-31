@@ -309,11 +309,6 @@ def _compute_gt_pose(pose_json_path, obj_info, session_json):
     delta_rz = data["rotation_euler"][2] - obj_info["rz0"]
     half = obj_info["half"]
 
-    R_3d = Rotation.from_euler("xyz", base_rot)
-    v = R_3d.apply(obj_info["vertices"]) / obj_info["fixed_scale"]
-    cx = (v[:, 0].min() + v[:, 0].max()) / 2.0
-    cy = (v[:, 1].min() + v[:, 1].max()) / 2.0
-
     cos_rz = _math.cos(delta_rz)
     sin_rz = _math.sin(delta_rz)
     sx, sy = data["sample_x"], data["sample_y"]

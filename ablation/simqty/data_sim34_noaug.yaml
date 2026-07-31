@@ -6,14 +6,14 @@ image_size: 224                 # square; must match model.yaml image_size (keep
 # ---- Dataset selection ----
 # 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists.
 #               Switch to 'sim' once the loader is wired.
-dataset: sim+real            # ratio ablation
+dataset: sim+real                    # {synthetic, sim, sim+real}
 
 synthetic:
   num_samples: 256              # how many fake samples the stub serves
   num_objects: 8                # fake object ids (used by the object-wise split)
 
 sim:
-  root: /media/hdd2/ihsuan/gs_blender/renders
+  root: /media/hdd2/ihsuan/gs_blender/renders_v3
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb               # <unit>/rgb/<idx>.png
   use_gt_depth: true            # load *_gt.npy (clean GT) vs *.npy (with noise)
@@ -37,6 +37,7 @@ sim:
   # file. All objects appear in both train and val (markers are object-specific, so
   # unseen-object pose generalization is not the target; real eval is separate).
   val_every: 20
+  train_samples_per_session: 34   # sim-quantity ablation (max 190/session)
 
 # ---- Real co-training set (sim+real mode) ----
 real:
@@ -45,7 +46,8 @@ real:
   rgb_subdir: rgb               # real data also uses rgb/
   use_rendered_normals: false    # real data has no rendered normals, always depth-computed
   val_every: 10
-  sample_ratio: 0.10            # weighted sampling: expected real fraction per batch
+  augment: false                # A/B control: no real-data augmentation
+  oversample: 1                 # real train oversampling factor; 0 = auto (~sim/real/2)
 
 # ---- DataLoader ----
 loader:

@@ -4,6 +4,10 @@
 .venv/
 venv/
 outputs/
+eval_results/
+weights/
+pretrained_encoders/
+meshes.tar
 *.pt
 *.pth
 *.ckpt

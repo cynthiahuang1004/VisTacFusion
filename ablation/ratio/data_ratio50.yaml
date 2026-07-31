@@ -40,16 +40,12 @@ sim:
 
 # ---- Real co-training set (sim+real mode) ----
 real:
-  root: /media/hdd2/ihsuan/gs_blender/real_data
+  root: /media/hdd2/xiangdong/gelslim_depth/data/sim_format_ortho
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb               # real data also uses rgb/
   use_rendered_normals: false    # real data has no rendered normals, always depth-computed
-  val_every: 20
+  val_every: 10
   sample_ratio: 0.50            # weighted sampling: expected real fraction per batch
-  test_objects:
-    - pattern_01_2_lines_angle_2
-    - pattern_04_3_lines_angle_1
-    - pattern_32
 
 # ---- DataLoader ----
 loader:

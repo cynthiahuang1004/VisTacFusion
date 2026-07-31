@@ -138,6 +138,9 @@ class SimVisuoTactileDataset(Dataset):
         self.rot_aug_max_deg = sim.get("rot_augment_max_deg", 180.0)
         self.use_rendered_normals = sim.get("use_rendered_normals", False)
         self.data_section = data_section
+        # Optional per-session train subsampling (sim-quantity ablation).
+        # Applies to the TRAIN split only; val keeps every val_every-th sample.
+        self.train_samples_per_session = sim.get("train_samples_per_session", None)
 
         if self.root is None:
             raise ValueError("configs/data.yaml sim.root is null — set the sim data path.")
@@ -193,6 +196,7 @@ class SimVisuoTactileDataset(Dataset):
                 "valid_cells": {c["gx"] * 1000 + c["gy"]: c for c in sess.get("valid_cells", [])},
             }
 
+            selected = []
             for png in pngs:
                 idx = int(osp.splitext(png)[0])
                 is_val = (idx % self.val_every == 0)
@@ -200,6 +204,19 @@ class SimVisuoTactileDataset(Dataset):
                     continue
                 if self.split == "val" and not is_val:
                     continue
+                selected.append(idx)
+
+            # Evenly subsample train samples per session (sim-quantity ablation)
+            if (self.split == "train" and self.train_samples_per_session is not None
+                    and len(selected) > self.train_samples_per_session):
+                k = int(self.train_samples_per_session)
+                if k <= 0:
+                    selected = []
+                else:
+                    pos = np.linspace(0, len(selected) - 1, k).round().astype(int)
+                    selected = [selected[i] for i in sorted(set(pos.tolist()))]
+
+            for idx in selected:
                 suffix = "_gt" if self.use_gt_depth else ""
                 rgb_ok = osp.exists(osp.join(unit, self.rgb_subdir, f"{idx:04d}.png"))
                 depth_ok = osp.exists(osp.join(unit, "raw_data", f"{idx:04d}{suffix}.npy"))
@@ -400,13 +417,23 @@ def build_datasets(cfg):
             if osp.isdir(osp.join(cfg.real.root, d)))
         train_objects = [o for o in all_real_objects if o not in test_objects] or None
 
-        sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
         sim_val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
-        shared_obj_map = sim_train._obj_to_id
-        real_train = SimVisuoTactileDataset(
-            cfg, image_size, augment=False, split="train",
-            data_section="real", shared_obj_map=shared_obj_map,
-            include_objects=train_objects)
+        spp = cfg.sim.get("train_samples_per_session", None)
+        if spp is not None and int(spp) <= 0:
+            sim_train = None                     # sim-quantity ablation: no sim at all
+            shared_obj_map = sim_val._obj_to_id
+        else:
+            sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
+            shared_obj_map = sim_train._obj_to_id
+        real_augment = cfg.real.get("augment", True)
+        rspp = cfg.real.get("train_samples_per_session", None)
+        if rspp is not None and int(rspp) <= 0:
+            real_train = None                    # sim-only baseline: no real in training
+        else:
+            real_train = SimVisuoTactileDataset(
+                cfg, image_size, augment=real_augment, split="train",
+                data_section="real", shared_obj_map=shared_obj_map,
+                include_objects=train_objects)
         real_val = SimVisuoTactileDataset(
             cfg, image_size, augment=False, split="val",
             data_section="real", shared_obj_map=shared_obj_map,
@@ -420,6 +447,9 @@ def build_datasets(cfg):
 
         sample_ratio = cfg.real.get("sample_ratio", None)
         if sample_ratio is not None and sample_ratio >= 0:
+            if sim_train is None:
+                raise ValueError("sample_ratio requires sim data; unset "
+                                 "sim.train_samples_per_session or set it > 0")
             train = ConcatDataset([sim_train, real_train])
             w_sim = (1.0 - sample_ratio) / len(sim_train)
             w_real = sample_ratio / len(real_train)
@@ -438,16 +468,24 @@ def build_datasets(cfg):
             print(f"  shared object classes: {list(shared_obj_map.keys())}")
             return train, real_val
 
+        n_sim = len(sim_train) if sim_train is not None else 0
+        n_real = len(real_train) if real_train is not None else 0
+        if n_sim == 0 and n_real == 0:
+            raise ValueError("Both sim and real train are empty — check "
+                             "train_samples_per_session settings.")
         real_oversample = cfg.real.get("oversample", 1)
         if real_oversample <= 0:
-            real_oversample = max(1, len(sim_train) // max(1, len(real_train)) // 2)
-        print(f"  sim+real co-training: sim={len(sim_train)}+{len(sim_val)}, "
-              f"real_train={len(real_train)}+{len(real_val)} (oversample {real_oversample}x)")
+            real_oversample = max(1, n_sim // max(1, n_real) // 2)
+        print(f"  sim+real co-training: sim={n_sim}+{len(sim_val)}, "
+              f"real_train={n_real}+{len(real_val)} (oversample {real_oversample}x)")
         if real_test:
             print(f"  real test (held-out): {len(real_test)} samples, "
                   f"objects={test_objects}")
         print(f"  shared object classes: {list(shared_obj_map.keys())}")
-        train = ConcatDataset([sim_train] + [real_train] * real_oversample)
+        parts = ([sim_train] if sim_train is not None else [])
+        if real_train is not None:
+            parts += [real_train] * real_oversample
+        train = ConcatDataset(parts)
         if real_test:
             train.real_test = real_test
         return train, real_val
