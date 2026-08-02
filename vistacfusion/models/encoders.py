@@ -623,6 +623,77 @@ class SparshEncoder(nn.Module):
 
 
 # ──────────────────────────────────────────────────────────────────────
+#  TVL ViT-Base (Touch-Vision-Language tactile encoder)
+# ──────────────────────────────────────────────────────────────────────
+
+class TVLEncoder(nn.Module):
+    """Frozen TVL tactile encoder (ViT-B/16, dim=768, 12 layers, has CLS).
+
+    Checkpoint format: ``{model: {tactile_encoder.*, logit_scale}}``.
+    We load only the ``tactile_encoder.*`` keys, discarding the CLIP
+    projection head (``head.*``, ``fc_norm.*``) and ``logit_scale``.
+    """
+
+    def __init__(self, weights, multiscale_layers=None, image_size=224):
+        super().__init__()
+        print(f"  [encoder] loading TVL weights from {weights}")
+        raw = torch.load(weights, map_location="cpu", weights_only=False)
+        sd_raw = raw["model"] if "model" in raw else raw
+
+        prefix = "tactile_encoder."
+        sd = {}
+        for k, v in sd_raw.items():
+            if k.startswith(prefix) and "head." not in k:
+                clean = k[len(prefix):]
+                clean = clean.replace("fc_norm.", "norm.")
+                sd[clean] = v
+
+        dim, patch, depth, heads = 768, 16, 12, 12
+        grid = image_size // patch
+        self.embed_dim = dim
+        self.num_patches = grid * grid
+
+        self.patch_embed = nn.Module()
+        self.patch_embed.proj = nn.Conv2d(3, dim, patch, patch)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, 1 + self.num_patches, dim))
+        self.blocks = nn.ModuleList([_Block(dim, heads) for _ in range(depth)])
+        self.norm = nn.LayerNorm(dim)
+
+        self.load_state_dict(sd, strict=True)
+        self.multiscale_layers = _resolve_multiscale(multiscale_layers, depth)
+        for p in self.parameters():
+            p.requires_grad = False
+
+    def train(self, mode=True):
+        super().train(False)
+        return self
+
+    def _embed(self, x):
+        B = x.shape[0]
+        t = self.patch_embed.proj(x).flatten(2).transpose(1, 2)
+        return torch.cat([self.cls_token.expand(B, -1, -1), t], dim=1) + self.pos_embed
+
+    @torch.no_grad()
+    def forward(self, x):
+        t = self._embed(x)
+        for blk in self.blocks:
+            t = blk(t)
+        t = self.norm(t)
+        return t[:, 1:], t[:, :1]
+
+    @torch.no_grad()
+    def forward_multiscale(self, x):
+        t = self._embed(x)
+        taps = []
+        for i, blk in enumerate(self.blocks):
+            t = blk(t)
+            if i in self.multiscale_layers:
+                taps.append(t[:, 1:])
+        return taps
+
+
+# ──────────────────────────────────────────────────────────────────────
 #  MockEncoder (testing stand-in)
 # ──────────────────────────────────────────────────────────────────────
 
@@ -701,8 +772,10 @@ def build_encoder(enc_cfg, image_size):
         ssl_name = enc_cfg.get("ssl_name", "dinov2")
         return SparshEncoder(weights=checkpoint, multiscale_layers=ms, image_size=image_size,
                              ssl_name=ssl_name)
+    if name == "tvl_vitb16":
+        return TVLEncoder(weights=checkpoint, multiscale_layers=ms, image_size=image_size)
 
     raise ValueError(
         f"Unknown encoder name {name!r}. Available: dinov3_vitl16, mae_vitl16, "
-        f"siglip_vitl16, clip_vitl14, dav2_vitl14, t3_large, sparsh_dino_base"
+        f"siglip_vitl16, clip_vitl14, dav2_vitl14, t3_large, sparsh_dino_base, tvl_vitb16"
     )

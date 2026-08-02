@@ -114,14 +114,19 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
                     cfg, device, epoch, writer=None):
     model.train()
     md_cfg = cfg.modality_dropout
+    is_single = cfg.get("model_type", "visuo_tactile") == "single_encoder"
     running = {}
     global_step_base = epoch * len(loader)
     for step, batch in enumerate(loader):
         batch = move_batch(batch, device)
-        config = sample_config(md_cfg)
-        config = sync_config(config, device)
-        inject_rgb = sample_dpt_inject(md_cfg)
-        inject_rgb = sync_bool(inject_rgb, device)
+        if is_single:
+            config = "tactile"
+            inject_rgb = False
+        else:
+            config = sample_config(md_cfg)
+            config = sync_config(config, device)
+            inject_rgb = sample_dpt_inject(md_cfg)
+            inject_rgb = sync_bool(inject_rgb, device)
 
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type=device.type, enabled=cfg.amp and device.type == "cuda"):

@@ -257,5 +257,88 @@ class VisuoTactileModel(nn.Module):
         return out
 
 
+class SingleEncoderModel(nn.Module):
+    """Single-encoder baseline: frozen encoder → DPT + PoseHead, no fusion trunk.
+
+    Architecture:
+        tactile → encoder (frozen) → CLS [B,1,E] + patches [B,N,E]
+                                        ↓                ↓
+                                  multiscale taps     CLS + mean(patches)
+                                        ↓                ↓
+                                   DPT decoder        Pose head
+                                  (depth+normal)      (SE(2) pose)
+    """
+
+    def __init__(self, cfg):
+        super().__init__()
+        self.cfg = cfg
+        self.image_size = cfg.image_size
+
+        enc_cfg = dict(cfg.encoder)
+        if enc_cfg.get("multiscale_layers", None) is None:
+            enc_cfg["multiscale_layers"] = list(cfg.heads.dpt.encoder_tap_layers)
+        self.encoder = build_encoder(enc_cfg, self.image_size)
+
+        self.enc_dim = self.encoder.embed_dim
+        self.num_spatial = self.encoder.num_patches
+
+        self.use_obj_emb = cfg.tokens.get("object_embedding", False)
+        if self.use_obj_emb:
+            num_obj = cfg.tokens.get("num_objects", 20)
+            self.obj_embedding = nn.Embedding(num_obj, self.enc_dim)
+
+        self.dpt_pos = SpatialPosEmbedding(self.num_spatial, self.enc_dim)
+
+        self.dpt = DPTHead(
+            embed_dim=self.enc_dim,
+            features=cfg.heads.dpt.features,
+            dropout=cfg.heads.dpt.dropout,
+            out_depth_channels=cfg.heads.dpt.out_depth_channels,
+            out_normal_channels=cfg.heads.dpt.out_normal_channels,
+        )
+        self.pose_head = PoseHead(
+            dim=self.enc_dim,
+            hidden_dim=cfg.heads.pose.hidden_dim,
+            dropout=cfg.heads.pose.dropout,
+            pose_mode=cfg.heads.pose.pose_mode,
+            rot_num_bins=cfg.heads.pose.get("rot_num_bins", 72),
+            use_spatial_pool=cfg.heads.pose.get("use_spatial_pool", True),
+        )
+
+    @property
+    def tactile_encoder(self):
+        return self.encoder
+
+    @property
+    def rgb_encoder(self):
+        return self.encoder
+
+    def forward(self, rgb, tactile, config="both", inject_rgb_to_dpt=None,
+                encoder_cache=None, object_ids=None):
+        B, device = tactile.shape[0], tactile.device
+
+        tac_enc = encoder_cache.get("tactile") if encoder_cache else None
+        tac_patch, tac_cls = tac_enc if tac_enc else self.encoder(tactile)
+
+        if self.use_obj_emb and object_ids is not None:
+            obj_emb = self.obj_embedding(object_ids).unsqueeze(1)
+            tac_patch = tac_patch + obj_emb
+            if tac_cls is not None:
+                tac_cls = tac_cls + obj_emb
+
+        tac_ms = encoder_cache.get("tactile_ms") if encoder_cache else None
+        ms = tac_ms if tac_ms is not None else self.encoder.forward_multiscale(tactile)
+        dpt_taps = [self.dpt_pos(t) for t in ms]
+        depth, normal = self.dpt(dpt_taps, out_hw=(self.image_size, self.image_size))
+
+        pose = self.pose_head(tac_cls, spatial_queries=tac_patch)
+
+        out = {"depth": depth, "normal": normal}
+        out.update(pose)
+        return out
+
+
 def build_model(cfg):
+    if cfg.get("model_type", "visuo_tactile") == "single_encoder":
+        return SingleEncoderModel(cfg)
     return VisuoTactileModel(cfg)

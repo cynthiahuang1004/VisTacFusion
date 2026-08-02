@@ -83,7 +83,10 @@ def _theta_to_bin(theta, num_bins=72):
 def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
     model.eval()
     report_per_config = cfg.eval.get("report_per_config", True)
-    configs = configs if report_per_config else ("both",)
+    if cfg.get("model_type", "visuo_tactile") == "single_encoder":
+        configs = ("tactile",)
+    elif not report_per_config:
+        configs = ("both",)
     pose_mode = cfg.heads.pose.pose_mode
     rot_num_bins = cfg.heads.pose.get("rot_num_bins", 72)
 
