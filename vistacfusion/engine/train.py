@@ -114,7 +114,9 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
                     cfg, device, epoch, writer=None):
     model.train()
     md_cfg = cfg.modality_dropout
-    is_single = cfg.get("model_type", "visuo_tactile") == "single_encoder"
+    _mt = cfg.get("model_type", "visuo_tactile")
+    is_single = _mt in ("single_encoder", "mvitac")
+    has_dense = _mt != "mvitac"
     running = {}
     global_step_base = epoch * len(loader)
     for step, batch in enumerate(loader):
@@ -131,11 +133,24 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type=device.type, enabled=cfg.amp and device.type == "cuda"):
             obj_ids = batch.get("object")
+            domain_ids = batch.get("domain")
             out = model(batch["rgb"], batch["tactile"], config=config,
-                        inject_rgb_to_dpt=inject_rgb, object_ids=obj_ids)
+                        inject_rgb_to_dpt=inject_rgb, object_ids=obj_ids,
+                        domain_ids=domain_ids)
             gt = {"depth": batch["depth"], "normal": batch["normal"],
                   "pose": batch["pose"], "mask": batch.get("mask")}
-            loss, comps = criterion(out, gt, supervise_dense=True)
+            loss, comps = criterion(out, gt, supervise_dense=has_dense)
+
+            # Sim weight annealing: downweight sim samples' loss
+            sim_anneal = cfg.get("sim_weight_annealing", None)
+            if sim_anneal and domain_ids is not None:
+                max_ep = cfg.schedule.max_epochs
+                import math as _math
+                w = 0.5 * (1 + _math.cos(_math.pi * epoch / max_ep))
+                sim_w = sim_anneal.get("min_weight", 0.0) + w * (1.0 - sim_anneal.get("min_weight", 0.0))
+                is_sim = (domain_ids == 0).float()
+                sample_weight = torch.where(is_sim.bool(), sim_w, 1.0)
+                loss = loss * sample_weight.mean()
 
         if torch.isnan(loss) or torch.isinf(loss):
             if is_main_process():
@@ -363,8 +378,9 @@ def main():
     history_path = None
     if is_main_process():
         raw_model = model.module if isinstance(model, DDP) else model
-        print("Pre-computing val encoder cache...")
-        val_enc_cache = precompute_encoder_cache(raw_model, val_loader, device)
+        if hasattr(raw_model, 'tactile_encoder'):
+            print("Pre-computing val encoder cache...")
+            val_enc_cache = precompute_encoder_cache(raw_model, val_loader, device)
         writer = SummaryWriter(log_dir=os.path.join(args.output_dir, "tb"))
         plot_dir = os.path.join(args.output_dir, "plots")
         history_path = os.path.join(args.output_dir, "history.json")

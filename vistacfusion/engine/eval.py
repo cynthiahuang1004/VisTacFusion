@@ -83,7 +83,8 @@ def _theta_to_bin(theta, num_bins=72):
 def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
     model.eval()
     report_per_config = cfg.eval.get("report_per_config", True)
-    if cfg.get("model_type", "visuo_tactile") == "single_encoder":
+    mt = cfg.get("model_type", "visuo_tactile")
+    if mt in ("single_encoder", "mvitac"):
         configs = ("tactile",)
     elif not report_per_config:
         configs = ("both",)
@@ -109,9 +110,14 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
         txy_gt = gt_pose[:, 2:]
 
         for c in configs:
+            domain_ids = batch.get("domain")
+            if domain_ids is None:
+                bs = batch["rgb"].shape[0]
+                domain_ids = torch.ones(bs, dtype=torch.long, device=device)
             out = model(batch["rgb"], batch["tactile"], config=c,
                         encoder_cache=batch_enc,
-                        object_ids=batch.get("object"))
+                        object_ids=batch.get("object"),
+                        domain_ids=domain_ids)
             a = acc[c]
 
             a["depth_mse"] += F.mse_loss(out["depth"], batch["depth"]).item() * bs

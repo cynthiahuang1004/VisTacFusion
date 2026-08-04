@@ -357,6 +357,8 @@ class SimVisuoTactileDataset(Dataset):
         obj_name = osp.basename(osp.dirname(osp.dirname(unit)))
         obj_id = self._obj_to_id[obj_name]
 
+        domain = 0 if self.data_section == "sim" else 1
+
         return {
             "rgb": self.img_xform(rgb),
             "tactile": self.img_xform(tactile),
@@ -366,6 +368,7 @@ class SimVisuoTactileDataset(Dataset):
             "mask": torch.from_numpy(mask).unsqueeze(0),          # (1, H, W)
             "pose": pose,                                         # (4,)
             "object": obj_id,
+            "domain": domain,                                     # 0=sim, 1=real
         }
 
     def _load_pose(self, unit, sample_idx, meta):
