@@ -377,21 +377,25 @@ class SimVisuoTactileDataset(Dataset):
             data = json.load(f)
 
         half = meta["half"]
-
-        # Use per-sample rotation from pose json (not session-level delta_rz).
-        # In sim all samples in a session share the same rotation_euler[2] ==
-        # base_rotation[2], so this is equivalent.  In real data each sample
-        # has its own rotation_euler[2] within a single session.
-        delta_rz = data["rotation_euler"][2] - meta["rz0"]
-
-        cos_rz = math.cos(delta_rz)
-        sin_rz = math.sin(delta_rz)
         sx, sy = data["sample_x"], data["sample_y"]
-        x_norm = (cos_rz * sx - sin_rz * sy) / max(half, 1e-8)
-        y_norm = (sin_rz * sx + cos_rz * sy) / max(half, 1e-8)
+
+        if self.data_section == "real":
+            # Real data: rotation_euler[2] is absolute GT (no delta needed).
+            rz = data["rotation_euler"][2]
+            cos_rz = math.cos(rz)
+            sin_rz = math.sin(rz)
+            tx = sx / max(half, 1e-8)
+            ty = sy / max(half, 1e-8)
+        else:
+            # Sim data: compute delta rotation and rotate+normalize translation.
+            delta_rz = data["rotation_euler"][2] - meta["rz0"]
+            cos_rz = math.cos(delta_rz)
+            sin_rz = math.sin(delta_rz)
+            tx = (cos_rz * sx - sin_rz * sy) / max(half, 1e-8)
+            ty = (sin_rz * sx + cos_rz * sy) / max(half, 1e-8)
 
         return torch.tensor(
-            [cos_rz, sin_rz, x_norm, y_norm],
+            [cos_rz, sin_rz, tx, ty],
             dtype=torch.float32,
         )
 
