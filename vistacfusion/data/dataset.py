@@ -141,6 +141,16 @@ class SimVisuoTactileDataset(Dataset):
         # Optional per-session train subsampling (sim-quantity ablation).
         # Applies to the TRAIN split only; val keeps every val_every-th sample.
         self.train_samples_per_session = sim.get("train_samples_per_session", None)
+        # Sim-to-real rotation alignment: use ABSOLUTE session rotation as pose GT
+        # (matching real data convention) and keep only sessions whose base rotation
+        # falls inside the object's real rotation window (rotation_windows json).
+        self.align_real_rotation = sim.get("align_real_rotation", False)
+        self._rotation_windows = None
+        if self.align_real_rotation and data_section == "sim":
+            win_path = sim.get("rotation_windows", None)
+            if win_path and osp.exists(win_path):
+                with open(win_path) as f:
+                    self._rotation_windows = json.load(f)
 
         if self.root is None:
             raise ValueError("configs/data.yaml sim.root is null — set the sim data path.")
@@ -185,6 +195,19 @@ class SimVisuoTactileDataset(Dataset):
 
             base_rot = sess["base_rotation"]
             delta_rz = base_rot[2] - info["rz0"]
+
+            # Rotation-window filter (sim-to-real alignment): drop sessions whose
+            # base rotation lies outside the object's real rotation window.
+            if self._rotation_windows is not None and obj_name in self._rotation_windows:
+                lo, hi = self._rotation_windows[obj_name]
+                center = (lo + hi) / 2.0
+                halfwidth = (hi - lo) / 2.0
+                base_deg = math.degrees(base_rot[2])
+                d = (base_deg - center) % 360.0
+                circ = min(d, 360.0 - d)
+                if circ > halfwidth:
+                    continue
+
             session_center = self._get_session_center(
                 info["vertices"], info["fixed_scale"], base_rot)
 
@@ -379,8 +402,9 @@ class SimVisuoTactileDataset(Dataset):
         half = meta["half"]
         sx, sy = data["sample_x"], data["sample_y"]
 
-        if self.data_section == "real":
-            # Real data: rotation_euler[2] is absolute GT (no delta needed).
+        if self.data_section == "real" or self.align_real_rotation:
+            # Real data (and rotation-aligned sim): rotation_euler[2] is the
+            # absolute GT rotation; translation is normalized but not rotated.
             rz = data["rotation_euler"][2]
             cos_rz = math.cos(rz)
             sin_rz = math.sin(rz)
