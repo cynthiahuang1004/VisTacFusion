@@ -1,0 +1,68 @@
+# configs/data.yaml
+# Data paths + loader settings. The model trains on SIM and evaluates zero-shot on REAL.
+
+image_size: 224                 # square; must match model.yaml image_size (keeps 14x14=196 grid)
+
+# ---- Dataset selection ----
+# 'synthetic' = random-tensor stub so the whole pipeline runs before real data exists.
+#               Switch to 'sim' once the loader is wired.
+dataset: sim+real                    # {synthetic, sim, sim+real}
+
+synthetic:
+  num_samples: 256              # how many fake samples the stub serves
+  num_objects: 8                # fake object ids (used by the object-wise split)
+
+sim:
+  root: /media/hdd2/ihsuan/gs_blender/renders_v3
+  mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
+  rgb_subdir: rgb               # <unit>/rgb/<idx>.png
+  use_gt_depth: true            # load *_gt.npy (clean GT) vs *.npy (with noise)
+  use_rendered_normals: true     # true = load Blender-rendered normal PNGs from norms/;
+                                 # false = compute from depth (matches training run new2)
+  # Tactile camera view is FIXED for all objects: fov=60deg, length(half-width)=0.008751m
+  # (bo_tactile.py) -> square 17.5mm x 17.5mm view. Used for depth->normal pixel size.
+  # (session.json X_MIN/X_MAX is the press SAMPLING range, NOT the camera view.)
+  # EVERY sample (train/val/inference, rotated or not) gets a FIXED 1/sqrt(2) center
+  # crop -> effective 12.37mm view, constant scale everywhere (no zoom<->angle leakage,
+  # no train/val scale gap). Same crop MUST be applied at real inference (it is —
+  # inference.preprocess_image shares transforms.fixed_center_crop).
+  gel_view_m: 0.017502
+  # Gel-spin rotation augmentation (train only). Rotates tactile+rgb+depth by random
+  # phi; GT theta -= phi (pose = sensor relative to object; sign verified on real
+  # cross-session pairs of asymmetric objects); (x,y) unchanged.
+  rot_augment: true
+  rot_augment_max_deg: 15.0    # phi ~ Uniform(-180, 180) fills the full theta circle
+  # Per-session train/val split: every val_every-th sample (idx % val_every == 0) of
+  # EVERY session is val (~10/session, 5%), the rest train. Deterministic, no split
+  # file. All objects appear in both train and val (markers are object-specific, so
+  # unseen-object pose generalization is not the target; real eval is separate).
+  val_every: 20
+  align_real_rotation: true
+  rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
+  train_samples_per_session: 8   # sim-quantity ablation (max 190/session)
+
+# ---- Real co-training set (sim+real mode) ----
+real:
+  train_samples_per_session: 12
+  root: /media/hdd2/ihsuan/gs_blender/real_filtered
+  mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
+  rgb_subdir: rgb               # real data also uses rgb/
+  use_rendered_normals: false    # real data has no rendered normals, always depth-computed
+  val_every: 10
+  augment: false                # A/B control: no real-data augmentation
+  oversample: 7                 # real train oversampling factor; 0 = auto (~sim/real/2)
+
+# ---- DataLoader ----
+loader:
+  num_workers: 8
+  pin_memory: true
+  prefetch_factor: 4
+  persistent_workers: true
+
+# ---- Normalization ----
+# RGB + tactile images go through ImageNet normalization for the DINOv3 encoder.
+# Depth and normals are NOT image-normalized (depth is raw float32 from .npy;
+# normals are computed from depth as unit vectors in [-1,1]).
+norm:
+  imagenet_mean: [123.675, 116.28, 103.53]
+  imagenet_std:  [58.395, 57.12, 57.375]

@@ -124,6 +124,7 @@ class SimVisuoTactileDataset(Dataset):
         self.root = sim.root
         self.mesh_dir = sim.get("mesh_dir", osp.join(osp.dirname(self.root), "meshes"))
         self.rgb_subdir = sim.get("rgb_subdir", "rgb")
+        self.tactile_subdir = sim.get("tactile_subdir", "samples")
         self.use_gt_depth = sim.get("use_gt_depth", True)
         # Tactile camera view is fixed & square for ALL objects (fov=60, half-width
         # 0.008751m -> 17.5mm). session.json X_MIN/X_MAX is the press sampling range,
@@ -168,7 +169,7 @@ class SimVisuoTactileDataset(Dataset):
         units = sorted(_glob.glob(osp.join(self.root, "*", "session_*", "sensor_*")))
         if not units:
             units = sorted(_glob.glob(osp.join(self.root, "sensor_*")))
-        units = [u for u in units if osp.isdir(osp.join(u, "samples"))]
+        units = [u for u in units if osp.isdir(osp.join(u, self.tactile_subdir))]
         if include_objects is not None:
             incl = set(include_objects)
             units = [u for u in units
@@ -178,7 +179,7 @@ class SimVisuoTactileDataset(Dataset):
         self.samples = []
         self.unit_meta = {}
         for unit in units:
-            sample_dir = osp.join(unit, "samples")
+            sample_dir = osp.join(unit, self.tactile_subdir)
             pngs = sorted(f for f in os.listdir(sample_dir) if f.endswith(".png"))
             if not pngs:
                 continue
@@ -316,7 +317,7 @@ class SimVisuoTactileDataset(Dataset):
 
         # --- Load images ---
         tactile = np.array(
-            Image.open(osp.join(unit, "samples", f"{sample_idx:04d}.png")),
+            Image.open(osp.join(unit, self.tactile_subdir, f"{sample_idx:04d}.png")),
             dtype=np.float32,
         )
         rgb = np.array(
@@ -448,13 +449,17 @@ def build_datasets(cfg):
             if osp.isdir(osp.join(cfg.real.root, d)))
         train_objects = [o for o in all_real_objects if o not in test_objects] or None
 
-        sim_val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
+        sim_objects = cfg.sim.get("include_objects", None)
+        sim_objects = list(sim_objects) if sim_objects else None
+        sim_val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val",
+                                         include_objects=sim_objects)
         spp = cfg.sim.get("train_samples_per_session", None)
         if spp is not None and int(spp) <= 0:
             sim_train = None                     # sim-quantity ablation: no sim at all
             shared_obj_map = sim_val._obj_to_id
         else:
-            sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
+            sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train",
+                                               include_objects=sim_objects)
             shared_obj_map = sim_train._obj_to_id
         real_augment = cfg.real.get("augment", True)
         rspp = cfg.real.get("train_samples_per_session", None)
@@ -517,7 +522,48 @@ def build_datasets(cfg):
         if real_train is not None:
             parts += [real_train] * real_oversample
         train = ConcatDataset(parts)
+        train.n_sim = n_sim                       # concat layout: [sim, real×k]
+        train.n_real = n_real * real_oversample
         if real_test:
             train.real_test = real_test
         return train, real_val
     raise ValueError(f"Unknown dataset {which!r} (configs/data.yaml dataset:)")
+
+
+class BalancedDomainBatchSampler(torch.utils.data.Sampler):
+    """Fixed per-batch real:sim composition for sim+real co-training.
+
+    Decouples sim dataset size from gradient share: every batch contains
+    exactly round(batch_size*real_fraction) real samples. An epoch is one
+    full pass over the real data (each real sample seen once per epoch);
+    sim samples are drawn from a reshuffled cycle, so ratios differ only
+    in sim DIVERSITY, not per-step influence. Assumes ConcatDataset layout
+    [sim (n_sim), real (n_real)]. Reshuffles itself on every new iteration.
+    """
+
+    def __init__(self, n_sim, n_real, batch_size, real_fraction=0.5, seed=0):
+        self.n_sim, self.n_real = n_sim, n_real
+        self.real_per_batch = max(1, int(round(batch_size * real_fraction)))
+        self.sim_per_batch = batch_size - self.real_per_batch
+        if n_sim == 0 or self.sim_per_batch == 0:
+            raise ValueError("BalancedDomainBatchSampler needs sim data and "
+                             "real_fraction < 1")
+        self.steps = n_real // self.real_per_batch
+        self.seed = seed
+        self._epoch = 0
+
+    def __len__(self):
+        return self.steps
+
+    def __iter__(self):
+        g = torch.Generator()
+        g.manual_seed(self.seed + self._epoch)
+        self._epoch += 1
+        real_perm = (torch.randperm(self.n_real, generator=g) + self.n_sim).tolist()
+        sim_stream = []
+        for b in range(self.steps):
+            while len(sim_stream) < self.sim_per_batch:
+                sim_stream += torch.randperm(self.n_sim, generator=g).tolist()
+            batch = [sim_stream.pop() for _ in range(self.sim_per_batch)]
+            batch += real_perm[b * self.real_per_batch:(b + 1) * self.real_per_batch]
+            yield batch

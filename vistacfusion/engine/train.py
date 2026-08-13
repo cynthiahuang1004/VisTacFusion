@@ -314,28 +314,48 @@ def main():
         print(f"Train: {len(train_ds)} samples | Val: {len(val_ds)} samples")
 
     lc = cfg.loader
-    sample_weights = getattr(train_ds, "sample_weights", None)
-    if is_distributed():
-        if sample_weights is not None:
+    bal_frac = cfg.get("balanced_real_fraction", None)
+    if bal_frac is not None and getattr(train_ds, "n_sim", 0) > 0:
+        if is_distributed():
             raise NotImplementedError(
-                "Weighted sampling (real.sample_ratio) is single-GPU only; "
-                "launch without torchrun.")
-        train_sampler = DistributedSampler(train_ds, shuffle=True)
-    elif sample_weights is not None:
-        from torch.utils.data import WeightedRandomSampler
-        train_sampler = WeightedRandomSampler(
-            sample_weights,
-            num_samples=getattr(train_ds, "num_samples", len(train_ds)),
-            replacement=True)
-    else:
+                "balanced_real_fraction is single-GPU only; launch without torchrun.")
+        from ..data.dataset import BalancedDomainBatchSampler
+        batch_sampler = BalancedDomainBatchSampler(
+            train_ds.n_sim, train_ds.n_real, cfg.batch_size,
+            real_fraction=float(bal_frac), seed=cfg.get("seed", 0))
+        if is_main_process():
+            print(f"  balanced sampling: {batch_sampler.real_per_batch} real + "
+                  f"{batch_sampler.sim_per_batch} sim per batch, "
+                  f"{batch_sampler.steps} steps/epoch (1 epoch = 1 real pass)")
         train_sampler = None
-    train_loader = DataLoader(
-        train_ds, batch_size=cfg.batch_size,
-        shuffle=(train_sampler is None), sampler=train_sampler,
-        num_workers=lc.num_workers, pin_memory=lc.pin_memory,
-        drop_last=True,
-        persistent_workers=lc.persistent_workers and lc.num_workers > 0,
-    )
+        train_loader = DataLoader(
+            train_ds, batch_sampler=batch_sampler,
+            num_workers=lc.num_workers, pin_memory=lc.pin_memory,
+            persistent_workers=lc.persistent_workers and lc.num_workers > 0,
+        )
+    else:
+        sample_weights = getattr(train_ds, "sample_weights", None)
+        if is_distributed():
+            if sample_weights is not None:
+                raise NotImplementedError(
+                    "Weighted sampling (real.sample_ratio) is single-GPU only; "
+                    "launch without torchrun.")
+            train_sampler = DistributedSampler(train_ds, shuffle=True)
+        elif sample_weights is not None:
+            from torch.utils.data import WeightedRandomSampler
+            train_sampler = WeightedRandomSampler(
+                sample_weights,
+                num_samples=getattr(train_ds, "num_samples", len(train_ds)),
+                replacement=True)
+        else:
+            train_sampler = None
+        train_loader = DataLoader(
+            train_ds, batch_size=cfg.batch_size,
+            shuffle=(train_sampler is None), sampler=train_sampler,
+            num_workers=lc.num_workers, pin_memory=lc.pin_memory,
+            drop_last=True,
+            persistent_workers=lc.persistent_workers and lc.num_workers > 0,
+        )
     val_loader = DataLoader(val_ds, batch_size=cfg.batch_size, shuffle=False,
                             num_workers=lc.num_workers, pin_memory=lc.pin_memory)
 

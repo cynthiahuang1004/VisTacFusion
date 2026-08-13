@@ -127,6 +127,52 @@ class CoralAdapter(nn.Module):
         return patch, cls
 
 
+class CoralTapAdapter(nn.Module):
+    """CORAL alignment for the DPT multiscale tap layers (per-tap statistics).
+
+    Same transform as CoralAdapter but one (μ_s, μ_r, A) set per tap layer,
+    patch tokens only. Stats from scripts/compute_coral_tap_stats.py.
+    """
+
+    def __init__(self, tap_stats, obj_has_real, per_object_mean=True):
+        super().__init__()
+        self.n_taps = len([k for k in tap_stats if k.startswith("tap")])
+        for t in range(self.n_taps):
+            s = tap_stats[f"tap{t}"]
+            self.register_buffer(f"t{t}_mu_s", s["patch_mu_s"].float())
+            self.register_buffer(f"t{t}_mu_r", s["patch_mu_r"].float())
+            self.register_buffer(f"t{t}_A", s["patch_A"].float())
+            self.register_buffer(f"t{t}_obj_mu_s", s["obj_patch_mu_s"].float())
+            self.register_buffer(f"t{t}_obj_mu_r", s["obj_patch_mu_r"].float())
+        self.register_buffer("obj_has_real", obj_has_real.bool())
+        self.per_object_mean = per_object_mean
+
+    def forward(self, taps, domain_ids, object_ids=None):
+        if domain_ids is None:
+            return taps
+        sim_mask = domain_ids == 0
+        if not sim_mask.any():
+            return taps
+        out = []
+        for t, x in enumerate(taps):
+            B = x.shape[0]
+            mu_s = getattr(self, f"t{t}_mu_s")
+            mu_r = getattr(self, f"t{t}_mu_r")
+            if self.per_object_mean and object_ids is not None:
+                has = self.obj_has_real[object_ids]
+                o_s = getattr(self, f"t{t}_obj_mu_s")[object_ids]
+                o_r = getattr(self, f"t{t}_obj_mu_r")[object_ids]
+                mu_s = torch.where(has[:, None], o_s, mu_s.expand(B, -1)).unsqueeze(1)
+                mu_r = torch.where(has[:, None], o_r, mu_r.expand(B, -1)).unsqueeze(1)
+            else:
+                mu_s = mu_s.view(1, 1, -1)
+                mu_r = mu_r.view(1, 1, -1)
+            A = getattr(self, f"t{t}_A")
+            y = (x.float() - mu_s) @ A + mu_r
+            out.append(torch.where(sim_mask[:, None, None], y.to(x.dtype), x))
+        return out
+
+
 class VisuoTactileModel(nn.Module):
     def __init__(self, cfg):
         super().__init__()
@@ -185,14 +231,27 @@ class VisuoTactileModel(nn.Module):
 
         # ---- Optional CORAL sim→real feature alignment (pose path only) ----
         self.coral_tac = self.coral_rgb = None
+        self.coral_dpt_tac = self.coral_dpt_rgb = None
         coral_cfg = cfg.get("coral", None)
         if coral_cfg is not None and coral_cfg.get("enabled", False):
             stats = torch.load(coral_cfg.get("stats_path"),
                                map_location="cpu", weights_only=True)
             pom = coral_cfg.get("per_object_mean", True)
-            self.coral_tac = CoralAdapter(stats["tactile"], per_object_mean=pom)
-            self.coral_rgb = CoralAdapter(stats["rgb"], per_object_mean=pom)
-            print(f"  [coral] sim→real feature alignment ON (per_object_mean={pom})")
+            branches = coral_cfg.get("branches", ["tactile", "rgb"])
+            if "tactile" in branches:
+                self.coral_tac = CoralAdapter(stats["tactile"], per_object_mean=pom)
+            if "rgb" in branches:
+                self.coral_rgb = CoralAdapter(stats["rgb"], per_object_mean=pom)
+            print(f"  [coral] sim→real feature alignment ON "
+                  f"(branches={list(branches)}, per_object_mean={pom})")
+            if coral_cfg.get("dpt_taps", False):
+                dstats = torch.load(coral_cfg.get("dpt_stats_path"),
+                                    map_location="cpu", weights_only=True)
+                self.coral_dpt_tac = CoralTapAdapter(
+                    dstats["tactile"], dstats["obj_has_real"], per_object_mean=pom)
+                self.coral_dpt_rgb = CoralTapAdapter(
+                    dstats["rgb"], dstats["obj_has_real"], per_object_mean=pom)
+                print("  [coral] DPT tap alignment ON")
 
         # ---- DPT path: direct encoder taps + RGB injection ----
         self.dpt_pos = SpatialPosEmbedding(self.num_spatial, self.enc_dim)
@@ -287,11 +346,11 @@ class VisuoTactileModel(nn.Module):
 
         # ---- CORAL: move sim features onto the real distribution (pose path only;
         #      DPT taps below stay raw) ----
-        if self.coral_tac is not None and domain_ids is not None:
-            if tac_patch is not None:
+        if domain_ids is not None:
+            if self.coral_tac is not None and tac_patch is not None:
                 tac_patch, tac_cls = self.coral_tac(
                     tac_patch, tac_cls, domain_ids, object_ids)
-            if rgb_patch is not None:
+            if self.coral_rgb is not None and rgb_patch is not None:
                 rgb_patch, rgb_cls = self.coral_rgb(
                     rgb_patch, rgb_cls, domain_ids, object_ids)
 
@@ -319,9 +378,13 @@ class VisuoTactileModel(nn.Module):
         rgb_ms = encoder_cache.get("rgb_ms") if encoder_cache else None
         if use_tactile:
             ms = tac_ms if tac_ms is not None else self.tactile_encoder.forward_multiscale(tactile)
+            if self.coral_dpt_tac is not None and domain_ids is not None:
+                ms = self.coral_dpt_tac(ms, domain_ids, object_ids)
             dpt_taps = [self.dpt_pos(t) for t in ms]
         elif self.rgb_enc_dim == self.enc_dim and self.rgb_encoder.num_patches == self.num_spatial:
             ms = rgb_ms if rgb_ms is not None else self.rgb_encoder.forward_multiscale(rgb)
+            if self.coral_dpt_rgb is not None and domain_ids is not None:
+                ms = self.coral_dpt_rgb(ms, domain_ids, object_ids)
             dpt_taps = [self.dpt_pos(t) for t in ms]
         else:
             dpt_taps = None
