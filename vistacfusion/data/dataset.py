@@ -146,6 +146,15 @@ class SimVisuoTactileDataset(Dataset):
         # (matching real data convention) and keep only sessions whose base rotation
         # falls inside the object's real rotation window (rotation_windows json).
         self.align_real_rotation = sim.get("align_real_rotation", False)
+        # Window-targeted rotation aug: use ALL sessions; every sample is rotated
+        # to a random angle inside the object's real rotation window (the session
+        # filter below is skipped — out-of-window sessions become usable geometry).
+        self.rot_target_window = sim.get("rot_target_window", False)
+        # Pre-rotated G renders (samples_gr): the tactile image was rendered from a
+        # rotated depth (rotate-then-render, lighting stays fixed/correct). The dataset
+        # applies the SAME stored phi to rgb/depth/normal GT + pose label — in train AND
+        # val (it is alignment, not augmentation). Regular rot aug must be off.
+        self.rot_prerendered = sim.get("rot_prerendered", False)
         self._rotation_windows = None
         if self.align_real_rotation and data_section == "sim":
             win_path = sim.get("rotation_windows", None)
@@ -199,7 +208,9 @@ class SimVisuoTactileDataset(Dataset):
 
             # Rotation-window filter (sim-to-real alignment): drop sessions whose
             # base rotation lies outside the object's real rotation window.
-            if self._rotation_windows is not None and obj_name in self._rotation_windows:
+            if (not self.rot_target_window and not self.rot_prerendered
+                    and self._rotation_windows is not None
+                    and obj_name in self._rotation_windows):
                 lo, hi = self._rotation_windows[obj_name]
                 center = (lo + hi) / 2.0
                 halfwidth = (hi - lo) / 2.0
@@ -219,6 +230,13 @@ class SimVisuoTactileDataset(Dataset):
                 "half": info["half"],
                 "valid_cells": {c["gx"] * 1000 + c["gy"]: c for c in sess.get("valid_cells", [])},
             }
+
+            # Pre-rotated renders: load the per-image rotation angles baked in at
+            # generation time (generate_tactile_rot.py).
+            if self.rot_prerendered:
+                rot_meta_path = osp.join(sample_dir, "rot_meta.json")
+                with open(rot_meta_path) as f:
+                    self.unit_meta[unit]["rot_meta"] = json.load(f)
 
             selected = []
             for png in pngs:
@@ -342,9 +360,30 @@ class SimVisuoTactileDataset(Dataset):
         # --- Pose: SE(2) = (cos θ, sin θ, tx_norm, ty_norm) ---
         pose = self._load_pose(unit, sample_idx, meta)
 
+        # --- Pre-rotated G renders: tactile is ALREADY at angle θ* (rendered from
+        # rotated depth, lighting fixed/correct). Rotate rgb + depth/normal GT + pose
+        # label by the stored φ to match. Applies in train AND val (alignment). ---
+        if self.rot_prerendered:
+            phi_deg = meta["rot_meta"][f"{sample_idx:04d}"]
+            if normal is not None:
+                rgb, _, depth, normal = rotate_gel_spin(rgb, rgb, depth, phi_deg,
+                                                        normal=normal)
+            else:
+                rgb, _, depth = rotate_gel_spin(rgb, rgb, depth, phi_deg)
+            pose = rotate_pose_theta(pose, -math.radians(phi_deg))
         # --- Gel-spin rotation aug: tactile+rgb+depth+normal rotate together, θ -= φ ---
-        if self.rot_aug:
-            phi_deg = random.uniform(-self.rot_aug_max_deg, self.rot_aug_max_deg)
+        elif self.rot_aug:
+            obj_name = osp.basename(osp.dirname(osp.dirname(unit)))
+            if (self.rot_target_window and self._rotation_windows is not None
+                    and obj_name in self._rotation_windows):
+                # rotate INTO the object's real window: target θ* ~ U(lo, hi),
+                # φ = θ_session − θ* so the post-rotation label is exactly θ*
+                lo, hi = self._rotation_windows[obj_name]
+                theta_sess = math.degrees(meta["delta_rz"] + meta["rz0"])
+                theta_star = random.uniform(lo, hi)
+                phi_deg = theta_sess - theta_star
+            else:
+                phi_deg = random.uniform(-self.rot_aug_max_deg, self.rot_aug_max_deg)
             if normal is not None:
                 tactile, rgb, depth, normal = rotate_gel_spin(
                     tactile, rgb, depth, phi_deg, normal=normal)
