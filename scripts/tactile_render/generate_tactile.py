@@ -70,25 +70,39 @@ def main():
             todo.append((d, out))
     print(f"{len(todo)} to generate (rest exist)", flush=True)
 
+    from concurrent.futures import ThreadPoolExecutor
+
+    def prep(item):
+        dp, _ = item
+        d = np.load(dp).astype(np.float32)
+        if args.depth_jitter > 0:
+            seed = int(hashlib.md5(dp.encode()).hexdigest()[:8], 16)
+            rng = np.random.RandomState(seed)
+            d = d * (1 + rng.uniform(-args.depth_jitter, args.depth_jitter))
+        return with_coords(torch.from_numpy(d / DEPTH_SCALE * 2 - 1)[None])
+
+    def save(arg):
+        out, img = arg
+        os.makedirs(osp.dirname(out), exist_ok=True)
+        Image.fromarray(img.transpose(1, 2, 0)).save(out)
+
+    prep_pool = ThreadPoolExecutor(max_workers=8)
+    save_pool = ThreadPoolExecutor(max_workers=6)
+    batches = [todo[i:i + args.batch] for i in range(0, len(todo), args.batch)]
+    pending = prep_pool.map(prep, batches[0]) if batches else None
     with torch.no_grad():
-        for i in range(0, len(todo), args.batch):
-            chunk = todo[i:i + args.batch]
-            xs = []
-            for dp, _ in chunk:
-                d = np.load(dp).astype(np.float32)
-                if args.depth_jitter > 0:
-                    seed = int(hashlib.md5(dp.encode()).hexdigest()[:8], 16)
-                    rng = np.random.RandomState(seed)
-                    d = d * (1 + rng.uniform(-args.depth_jitter, args.depth_jitter))
-                xs.append(with_coords(torch.from_numpy(d / DEPTH_SCALE * 2 - 1)[None]))
+        for bi, chunk in enumerate(batches):
+            xs = list(pending)
+            if bi + 1 < len(batches):
+                pending = prep_pool.map(prep, batches[bi + 1])
             x = torch.stack(xs).to(dev)
             y = G(x)
             y = ((y.clamp(-1, 1) + 1) * 127.5).byte().cpu().numpy()
-            for (dp, out), img in zip(chunk, y):
-                os.makedirs(osp.dirname(out), exist_ok=True)
-                Image.fromarray(img.transpose(1, 2, 0)).save(out)
-            if (i // args.batch) % 20 == 0:
-                print(f"  {i + len(chunk)}/{len(todo)}", flush=True)
+            list(save_pool.map(save, [(out, img) for (_, out), img in zip(chunk, y)]))
+            if bi % 20 == 0:
+                print(f"  {(bi + 1) * args.batch}/{len(todo)}", flush=True)
+    prep_pool.shutdown()
+    save_pool.shutdown()
     print("done", flush=True)
 
 
