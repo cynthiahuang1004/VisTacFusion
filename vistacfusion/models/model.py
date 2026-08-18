@@ -460,7 +460,8 @@ class SingleEncoderModel(nn.Module):
         return self.encoder
 
     def forward(self, rgb, tactile, config="both", inject_rgb_to_dpt=None,
-                encoder_cache=None, object_ids=None):
+                encoder_cache=None, object_ids=None, domain_ids=None):
+        # domain_ids accepted for interface parity with VisuoTactileModel (unused).
         B, device = tactile.shape[0], tactile.device
 
         tac_enc = encoder_cache.get("tactile") if encoder_cache else None

@@ -1,10 +1,15 @@
 """MViTac pretraining: MoCo contrastive learning on paired RGB + tactile.
 
 Usage:
+  # (a) all sim renders under a root
   python -m vistacfusion.engine.pretrain_mvitac \
     --data-root /media/hdd2/ihsuan/gs_blender/renders_v3 \
     --output-dir outputs/mvitac_pretrain \
     --device cuda:0 --epochs 240 --batch-size 256
+  # (b) EXACTLY the sim+real train images of a ratio-ladder data config
+  python -m vistacfusion.engine.pretrain_mvitac \
+    --data-config ablation/simqty_gtac/data_ratio_bl3s_sim380.yaml \
+    --output-dir outputs/mvitac_pretrain_ratio_bl3s_sim380 --device cuda:0
 """
 import argparse
 import os
@@ -27,9 +32,12 @@ class PairedAugDataset(Dataset):
     Returns two augmented views of each modality for MoCo pretraining.
     """
 
-    def __init__(self, root, transform, val_every=20, split="train"):
+    def __init__(self, root, transform, val_every=20, split="train", samples=None):
         self.transform = transform
         self.samples = []  # (tactile_path, rgb_path)
+        if samples is not None:          # explicit (tactile_path, rgb_path) list
+            self.samples = list(samples)
+            return
 
         for obj_dir in sorted(glob.glob(osp.join(root, "*"))):
             if not osp.isdir(obj_dir):
@@ -68,6 +76,35 @@ class PairedAugDataset(Dataset):
         return rgb_q, rgb_k, tac_q, tac_k
 
 
+def paired_paths_from_data_config(cfg_path):
+    """(tactile_path, rgb_path) for every sim + real TRAIN sample of a data config —
+    the exact image set a co-training run on that config sees (same object filter,
+    rotation-window session filter, per-session subsampling, tactile_subdir)."""
+    from omegaconf import OmegaConf
+    from ..data.dataset import SimVisuoTactileDataset
+    cfg = OmegaConf.load(cfg_path)
+    pairs = []
+    def _add(ds):
+        for unit, idx in ds.samples:
+            pairs.append((osp.join(unit, ds.tactile_subdir, f"{idx:04d}.png"),
+                          osp.join(unit, ds.rgb_subdir, f"{idx:04d}.png")))
+    n_sim = n_real = 0
+    spp = cfg.sim.get("train_samples_per_session", None)
+    if spp is None or int(spp) > 0:
+        inc = cfg.sim.get("include_objects", None)
+        sim_ds = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False, split="train",
+                                        include_objects=list(inc) if inc else None)
+        _add(sim_ds); n_sim = len(sim_ds.samples)
+    if cfg.get("dataset") == "sim+real":
+        rspp = cfg.real.get("train_samples_per_session", None)
+        if rspp is None or int(rspp) > 0:
+            real_ds = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False,
+                                             split="train", data_section="real")
+            _add(real_ds); n_real = len(real_ds.samples)
+    print(f"  data-config pairs: sim={n_sim} real={n_real} total={len(pairs)}")
+    return pairs
+
+
 def get_transform():
     return T.Compose([
         T.Resize(256),
@@ -82,7 +119,10 @@ def get_transform():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data-root", required=True)
+    ap.add_argument("--data-root", default=None,
+                    help="all sim renders under this root (legacy mode)")
+    ap.add_argument("--data-config", default=None,
+                    help="VisTacFusion data yaml: pretrain on exactly its sim+real train images")
     ap.add_argument("--output-dir", default="outputs/mvitac_pretrain")
     ap.add_argument("--epochs", type=int, default=240)
     ap.add_argument("--batch-size", type=int, default=256)
@@ -101,8 +141,14 @@ def main():
     device = torch.device(args.device)
 
     transform = get_transform()
-    train_ds = PairedAugDataset(args.data_root, transform,
-                                 val_every=args.val_every, split="train")
+    if args.data_config:
+        train_ds = PairedAugDataset(None, transform,
+                                    samples=paired_paths_from_data_config(args.data_config))
+    elif args.data_root:
+        train_ds = PairedAugDataset(args.data_root, transform,
+                                    val_every=args.val_every, split="train")
+    else:
+        ap.error("one of --data-root / --data-config is required")
     print(f"Train samples: {len(train_ds)}")
 
     train_loader = DataLoader(

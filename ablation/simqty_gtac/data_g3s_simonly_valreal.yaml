@@ -1,4 +1,4 @@
-# G-rendered sim tactile (shared objects),  sim190 (5.6x), NO real augmentation
+# SIM-ONLY (no real train), val on filtered REAL val (472, same as ratio runs). g3s tactile, 760/session
 
 image_size: 224
 
@@ -10,6 +10,19 @@ synthetic:
 
 sim:
   tactile_subdir: samples_g
+  include_objects:
+    - pattern_01_2_lines_angle_1_2
+    - pattern_01_2_lines_angle_2
+    - pattern_01_2_lines_angle_3
+    - pattern_04_3_lines_angle_1
+    - pattern_04_3_lines_angle_2
+    - pattern_06_5_lines_angle_1
+    - pattern_31_rod
+    - pattern_32
+    - pattern_33
+    - pattern_35
+    - pattern_36
+    - pattern_37
   root: /media/hdd2/ihsuan/gs_blender/renders_v3
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb
@@ -21,9 +34,10 @@ sim:
   val_every: 20
   align_real_rotation: true
   rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
-  train_samples_per_session: 190
+  train_samples_per_session: 760
 
 real:
+  train_samples_per_session: 0
   root: /media/hdd2/ihsuan/gs_blender/real_filtered
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb

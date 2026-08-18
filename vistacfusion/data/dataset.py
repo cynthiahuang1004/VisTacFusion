@@ -476,8 +476,13 @@ def build_datasets(cfg):
         val = SyntheticVisuoTactileDataset(n_val, image_size, s.num_objects, seed=1)
         return train, val
     if which == "sim":
-        train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train")
-        val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val")
+        sim_objects = cfg.sim.get("include_objects", None)
+        sim_objects = list(sim_objects) if sim_objects else None
+        train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train",
+                                       include_objects=sim_objects)
+        val = SimVisuoTactileDataset(cfg, image_size, augment=False, split="val",
+                                     include_objects=sim_objects)
+        print(f"  sim-only: train={len(train)} val={len(val)} (sim val split)")
         return train, val
     if which == "sim+real":
         from torch.utils.data import ConcatDataset

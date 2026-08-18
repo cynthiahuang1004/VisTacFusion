@@ -184,7 +184,8 @@ class MViTacPoseModel(nn.Module):
         return torch.cat([t_feat, v_feat], dim=-1)  # [B, 1024]
 
     def forward(self, rgb, tactile, config="both", inject_rgb_to_dpt=None,
-                encoder_cache=None, object_ids=None):
+                encoder_cache=None, object_ids=None, domain_ids=None):
+        # domain_ids accepted for interface parity with VisuoTactileModel (unused).
         B, device = tactile.shape[0], tactile.device
         feat = self._encode(tactile, rgb)
 

@@ -1,4 +1,4 @@
-# 3 in-window sessions (G tactile, extended to 800/session), sim760 per session
+# 3 in-window sessions (Blender, extended to 800/session), sim120 per session
 
 image_size: 224
 
@@ -33,7 +33,7 @@ sim:
   val_every: 20
   align_real_rotation: true
   rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
-  train_samples_per_session: 760
+  train_samples_per_session: 120
 
 real:
   root: /media/hdd2/ihsuan/gs_blender/real_filtered

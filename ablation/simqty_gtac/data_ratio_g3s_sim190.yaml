@@ -1,4 +1,4 @@
-# 3 in-window sessions (G tactile, extended to 800/session), sim570 per session
+# G-rendered sim tactile (shared objects),  sim190 (5.6x), NO real augmentation
 
 image_size: 224
 
@@ -22,6 +22,7 @@ sim:
     - pattern_35
     - pattern_36
     - pattern_37
+  tactile_subdir: samples_g
   root: /media/hdd2/ihsuan/gs_blender/renders_v3
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb
@@ -33,7 +34,7 @@ sim:
   val_every: 20
   align_real_rotation: true
   rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
-  train_samples_per_session: 570
+  train_samples_per_session: 190
 
 real:
   root: /media/hdd2/ihsuan/gs_blender/real_filtered
