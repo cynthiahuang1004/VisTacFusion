@@ -16,6 +16,7 @@ Supported encoders
   dav2_vitl14      Depth Anything v2 ViT-L/14 (fine-tuned DINOv2)
   t3_large         T3 sensor encoder + shared trunk (two-file checkpoint)
   sparsh_dino_base Sparsh DINOv2-B tactile encoder (768 dim, 6-ch input, Fourier PE)
+  sitr_b18         SITR B18 tactile encoder (768 dim, 18 calibration images, cached)
   (no checkpoint)  MockEncoder (deterministic stand-in for testing)
 """
 from __future__ import annotations
@@ -739,6 +740,128 @@ class MockEncoder(nn.Module):
 
 
 # ──────────────────────────────────────────────────────────────────────
+#  SITR B18 (tactile encoder with calibration)
+# ──────────────────────────────────────────────────────────────────────
+
+class SITREncoder(nn.Module):
+    """Frozen SITR encoder (ViT-B/16, dim=768, depth=12, 18 calibration images).
+
+    Calibration is handled internally: the 18 calibration images from a
+    reference sim unit are loaded once at init, embedded, and cached as a
+    buffer.  Every forward pass appends the cached calibration tokens to the
+    sequence (same mechanism as gsrl's ``encoder.cache_calibration()``), then
+    strips them before returning — so the caller sees the standard
+    ``(patch [B,N,768], cls [B,1,768])`` interface with no calibration args.
+    """
+
+    def __init__(self, weights, calibration_dir=None, num_calibration=18,
+                 multiscale_layers=None, image_size=224):
+        super().__init__()
+        print(f"  [encoder] loading SITR from {weights}")
+        sd = torch.load(weights, map_location="cpu", weights_only=False)
+        if isinstance(sd, dict) and "model" in sd:
+            sd = sd["model"]
+
+        dim, patch, heads, depth = 768, 16, 12, 12
+        grid = image_size // patch
+        self.embed_dim = dim
+        self.num_patches = grid * grid
+        self._num_calibration = num_calibration
+
+        self.patch_embed = nn.Module()
+        self.patch_embed.proj = nn.Conv2d(3, dim, patch, patch)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, 1 + self.num_patches, dim))
+        self.blocks = nn.ModuleList([_Block(dim, heads) for _ in range(depth)])
+        self.norm = nn.LayerNorm(dim)
+
+        if num_calibration > 0:
+            self.c_patch_embed = nn.Module()
+            self.c_patch_embed.proj = nn.Conv2d(num_calibration * 3, dim, patch, patch)
+            self.c_pos_embed = nn.Parameter(torch.zeros(1, self.num_patches, dim))
+
+        compatible = {k: v for k, v in sd.items()
+                      if k in self.state_dict() and v.shape == self.state_dict()[k].shape}
+        self.load_state_dict(compatible, strict=False)
+        skipped = [k for k in sd if k not in compatible]
+        if skipped:
+            print(f"  [encoder] skipped {len(skipped)} keys: "
+                  f"{skipped[:5]}{'...' if len(skipped) > 5 else ''}")
+        print(f"  [encoder] loaded {len(compatible)}/{len(sd)} keys "
+              f"(depth={depth}, dim={dim}, calib={num_calibration})")
+
+        self.multiscale_layers = _resolve_multiscale(multiscale_layers, depth)
+
+        for p in self.parameters():
+            p.requires_grad = False
+
+        self.register_buffer("_calib_cache", None)
+        if calibration_dir and num_calibration > 0:
+            self._build_calib_cache(calibration_dir, image_size)
+
+    @torch.no_grad()
+    def _build_calib_cache(self, calib_dir, image_size):
+        from PIL import Image
+        import numpy as np
+        from ..data.transforms import fixed_center_crop, ToTensorResize
+        xf = ToTensorResize((image_size, image_size),
+                            mean=[123.675, 116.28, 103.53],
+                            std=[58.395, 57.12, 57.375])
+        ids = list(range(1, self._num_calibration + 1))
+        imgs = []
+        for i in ids:
+            img = np.array(Image.open(os.path.join(calib_dir, f"{i:04d}.png")),
+                           dtype=np.float32)
+            imgs.append(xf(fixed_center_crop(img)))
+        calib_tensor = torch.cat(imgs, dim=0).unsqueeze(0)
+        c_enc = self.c_patch_embed.proj(calib_tensor).flatten(2).transpose(1, 2)
+        c_enc = c_enc + self.c_pos_embed
+        self._calib_cache = c_enc
+        print(f"  [encoder] calibration cache built from {calib_dir} "
+              f"-> {tuple(self._calib_cache.shape)}")
+
+    def set_calibration_dir(self, calib_dir, image_size=224):
+        self._build_calib_cache(calib_dir, image_size)
+
+    def train(self, mode=True):
+        super().train(False)
+        return self
+
+    def _embed(self, x):
+        B = x.shape[0]
+        t = self.patch_embed.proj(x).flatten(2).transpose(1, 2)
+        t = t + self.pos_embed[:, 1:, :]
+        cls = (self.cls_token + self.pos_embed[:, :1, :]).expand(B, -1, -1)
+        t = torch.cat([cls, t], dim=1)
+        if self._calib_cache is not None:
+            t = torch.cat([t, self._calib_cache.expand(B, -1, -1)], dim=1)
+        return t
+
+    def _strip_calib(self, t):
+        if self._num_calibration > 0:
+            return t[:, :self.num_patches + 1, :]
+        return t
+
+    @torch.no_grad()
+    def forward(self, x):
+        t = self._embed(x)
+        for blk in self.blocks:
+            t = blk(t)
+        t = self.norm(self._strip_calib(t))
+        return t[:, 1:], t[:, :1]
+
+    @torch.no_grad()
+    def forward_multiscale(self, x):
+        t = self._embed(x)
+        taps = []
+        for i, blk in enumerate(self.blocks):
+            t = blk(t)
+            if i in self.multiscale_layers:
+                taps.append(self._strip_calib(t)[:, 1:])
+        return taps
+
+
+# ──────────────────────────────────────────────────────────────────────
 #  Factory
 # ──────────────────────────────────────────────────────────────────────
 
@@ -774,8 +897,15 @@ def build_encoder(enc_cfg, image_size):
                              ssl_name=ssl_name)
     if name == "tvl_vitb16":
         return TVLEncoder(weights=checkpoint, multiscale_layers=ms, image_size=image_size)
+    if name == "sitr_b18":
+        calib_dir = enc_cfg.get("calibration_dir", None)
+        num_calib = enc_cfg.get("num_calibration", 18)
+        return SITREncoder(weights=checkpoint, calibration_dir=calib_dir,
+                           num_calibration=num_calib, multiscale_layers=ms,
+                           image_size=image_size)
 
     raise ValueError(
         f"Unknown encoder name {name!r}. Available: dinov3_vitl16, mae_vitl16, "
-        f"siglip_vitl16, clip_vitl14, dav2_vitl14, t3_large, sparsh_dino_base, tvl_vitb16"
+        f"siglip_vitl16, clip_vitl14, dav2_vitl14, t3_large, sparsh_dino_base, "
+        f"tvl_vitb16, sitr_b18"
     )

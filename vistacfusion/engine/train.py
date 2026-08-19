@@ -115,8 +115,8 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
     model.train()
     md_cfg = cfg.modality_dropout
     _mt = cfg.get("model_type", "visuo_tactile")
-    is_single = _mt in ("single_encoder", "mvitac")
-    has_dense = _mt != "mvitac"
+    is_single = _mt in ("single_encoder", "mvitac", "vital")
+    has_dense = _mt not in ("mvitac",)  # vital has DPT; mvitac does not
     running = {}
     global_step_base = epoch * len(loader)
     for step, batch in enumerate(loader):

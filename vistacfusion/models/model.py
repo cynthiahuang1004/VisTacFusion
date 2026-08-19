@@ -500,4 +500,17 @@ def build_model(cfg):
             num_objects=cfg.tokens.get("num_objects", 20),
             use_obj_emb=cfg.tokens.get("object_embedding", True),
         )
+    if model_type == "vital":
+        from .vital import VITaLPoseModel
+        vc = cfg.vital
+        return VITaLPoseModel(
+            tactile_ckpt=vc.tactile_ckpt,
+            vision_ckpt=vc.vision_ckpt,
+            hidden_dim=cfg.heads.pose.hidden_dim,
+            dropout=cfg.heads.pose.dropout,
+            num_objects=cfg.tokens.get("num_objects", 20),
+            use_obj_emb=cfg.tokens.get("object_embedding", True),
+            dpt_features=vc.get("dpt_features", 128),
+            image_size=cfg.image_size,
+        )
     return VisuoTactileModel(cfg)

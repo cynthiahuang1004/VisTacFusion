@@ -84,8 +84,10 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
     model.eval()
     report_per_config = cfg.eval.get("report_per_config", True)
     mt = cfg.get("model_type", "visuo_tactile")
-    if mt in ("single_encoder", "mvitac"):
+    if mt == "single_encoder":
         configs = ("tactile",)
+    elif mt in ("mvitac", "vital"):
+        configs = ("both",)
     elif not report_per_config:
         configs = ("both",)
     pose_mode = cfg.heads.pose.pose_mode
