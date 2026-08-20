@@ -167,7 +167,8 @@ class SimVisuoTactileDataset(Dataset):
 
         self.img_xform = ToTensorResize((image_size, image_size),
                                         norm.imagenet_mean, norm.imagenet_std)
-        self.tactile_aug = TactileAugment() if augment else None
+        tac_aug_style = sim.get("tactile_aug_style", "heavy")
+        self.tactile_aug = TactileAugment(style=tac_aug_style) if augment else None
         self.rgb_aug = RGBPhotometricAug() if augment else None
 
         # Pre-load per-object mesh info for pose computation

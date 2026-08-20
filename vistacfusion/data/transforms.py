@@ -71,16 +71,27 @@ DEFAULT_AUGMENT_PARAMS = {
     "hflip": False, "vflip": False,
 }
 
+LIGHT_AUGMENT_PARAMS = {
+    "gain": 0.3, "bias": 20.0, "grad": 0.4, "bright": 15.0,
+    "resid": 0.0, "noise": 4.0, "rot_deg": 0.0,
+    "hflip": False, "vflip": False,
+}
+
 
 class TactileAugment:
     """Heavy tactile domain randomization. Operates on float32 HWC arrays in-place-ish.
 
     __call__(sample_diff, calib_diffs, depth, normal) -> same tuple, augmented.
     Geometric ops are applied to ALL images; normal vectors are corrected on flip/rotate.
+
+    style="heavy" (default): per-channel gain/bias, strong params, residual noise.
+    style="light": uniform gain/bias (like RGBPhotometricAug), no residual noise.
     """
 
-    def __init__(self, params=None):
-        self.p = {**DEFAULT_AUGMENT_PARAMS, **(params or {})}
+    def __init__(self, params=None, style="heavy"):
+        defaults = LIGHT_AUGMENT_PARAMS if style == "light" else DEFAULT_AUGMENT_PARAMS
+        self.p = {**defaults, **(params or {})}
+        self.uniform = (style == "light")
 
     def __call__(self, sample_diff, calib_diffs, depth, normal):
         p = self.p
@@ -88,10 +99,16 @@ class TactileAugment:
 
         # ---- Photometric (sample only) ----
         if p["gain"] > 0:
-            g = np.random.uniform(1 - p["gain"], 1 + p["gain"], size=(1, 1, 3)).astype(np.float32)
+            if self.uniform:
+                g = np.float32(np.random.uniform(1 - p["gain"], 1 + p["gain"]))
+            else:
+                g = np.random.uniform(1 - p["gain"], 1 + p["gain"], size=(1, 1, 3)).astype(np.float32)
             sample_diff = sample_diff * g
         if p["bias"] > 0:
-            b = np.random.uniform(-p["bias"], p["bias"], size=(1, 1, 3)).astype(np.float32)
+            if self.uniform:
+                b = np.float32(np.random.uniform(-p["bias"], p["bias"]))
+            else:
+                b = np.random.uniform(-p["bias"], p["bias"], size=(1, 1, 3)).astype(np.float32)
             sample_diff = sample_diff + b
         if p["bright"] > 0:
             sample_diff = sample_diff + np.float32(np.random.uniform(-p["bright"], p["bright"]))
@@ -100,8 +117,12 @@ class TactileAugment:
             ys = np.linspace(-1, 1, H, dtype=np.float32).reshape(-1, 1)
             xs = np.linspace(-1, 1, W, dtype=np.float32).reshape(1, -1)
             grad_map = np.float32(np.cos(angle)) * xs + np.float32(np.sin(angle)) * ys
-            amp = np.random.uniform(0, p["grad"], size=(1, 1, 3)).astype(np.float32)
-            sample_diff = sample_diff + grad_map[..., None] * amp * np.float32(50.0)
+            if self.uniform:
+                amp = np.float32(np.random.uniform(0, p["grad"]))
+                sample_diff = sample_diff + grad_map[..., None] * amp * np.float32(30.0)
+            else:
+                amp = np.random.uniform(0, p["grad"], size=(1, 1, 3)).astype(np.float32)
+                sample_diff = sample_diff + grad_map[..., None] * amp * np.float32(50.0)
         if p["resid"] > 0:
             raw = np.random.randn(16, 16, 3).astype(np.float32)
             smooth = cv2.resize(raw, (W, H), interpolation=cv2.INTER_LINEAR)
