@@ -1,0 +1,55 @@
+# Real-only, capped at 25 samples per object
+
+image_size: 224
+
+dataset: sim+real
+
+synthetic:
+  num_samples: 256
+  num_objects: 8
+
+sim:
+  include_objects:
+    - pattern_01_2_lines_angle_1_2
+    - pattern_01_2_lines_angle_2
+    - pattern_01_2_lines_angle_3
+    - pattern_04_3_lines_angle_1
+    - pattern_04_3_lines_angle_2
+    - pattern_06_5_lines_angle_1
+    - pattern_31_rod
+    - pattern_32
+    - pattern_33
+    - pattern_35
+    - pattern_36
+    - pattern_37
+  root: /media/hdd2/ihsuan/gs_blender/renders_v3
+  mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
+  rgb_subdir: rgb
+  use_gt_depth: true
+  use_rendered_normals: true
+  gel_view_m: 0.017502
+  rot_augment: false
+  val_every: 20
+  align_real_rotation: true
+  rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
+  train_samples_per_session: 0
+
+real:
+  root: /media/hdd2/ihsuan/gs_blender/real_filtered
+  mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
+  rgb_subdir: rgb
+  use_rendered_normals: false
+  val_every: 10
+  augment: false
+  oversample: 1
+  train_samples_per_session: 25
+
+loader:
+  num_workers: 8
+  pin_memory: true
+  prefetch_factor: 4
+  persistent_workers: true
+
+norm:
+  imagenet_mean: [123.675, 116.28, 103.53]
+  imagenet_std:  [58.395, 57.12, 57.375]

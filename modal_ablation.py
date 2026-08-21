@@ -58,7 +58,7 @@ image = (
     .pip_install(
         "transformers", "safetensors", "tensorboard",
         "opencv-python-headless", "matplotlib", "pyyaml",
-        "tqdm", "timm", "scipy", "Pillow",
+        "tqdm", "timm", "scipy", "Pillow", "trimesh",
     )
     .apt_install("git")
 )
