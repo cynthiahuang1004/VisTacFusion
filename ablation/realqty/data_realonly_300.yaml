@@ -1,4 +1,4 @@
-# Real-only, capped at 50 samples per object
+# Real-only, capped at 300 samples per object
 
 image_size: 224
 
@@ -43,7 +43,7 @@ real:
   val_every: 10
   augment: false
   oversample: 1
-  train_samples_per_session: 50
+  train_samples_per_session: 300
 
 loader:
   num_workers: 8

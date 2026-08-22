@@ -161,6 +161,12 @@ class SimVisuoTactileDataset(Dataset):
             if win_path and osp.exists(win_path):
                 with open(win_path) as f:
                     self._rotation_windows = json.load(f)
+        self._translation_bounds = None
+        trans_bounds_path = sim.get("translation_bounds", None)
+        if trans_bounds_path and osp.exists(trans_bounds_path) and data_section == "sim":
+            with open(trans_bounds_path) as f:
+                self._translation_bounds = json.load(f)
+            self._trans_margin = sim.get("translation_margin", 1.5)
 
         if self.root is None:
             raise ValueError("configs/data.yaml sim.root is null — set the sim data path.")
@@ -259,12 +265,23 @@ class SimVisuoTactileDataset(Dataset):
                     pos = np.linspace(0, len(selected) - 1, k).round().astype(int)
                     selected = [selected[i] for i in sorted(set(pos.tolist()))]
 
+            trans_lim = None
+            if self._translation_bounds is not None and obj_name in self._translation_bounds:
+                tb = self._translation_bounds[obj_name]
+                trans_lim = (tb["sx_max"] * self._trans_margin,
+                             tb["sy_max"] * self._trans_margin)
+
             for idx in selected:
                 suffix = "_gt" if self.use_gt_depth else ""
                 rgb_ok = osp.exists(osp.join(unit, self.rgb_subdir, f"{idx:04d}.png"))
                 depth_ok = osp.exists(osp.join(unit, "raw_data", f"{idx:04d}{suffix}.npy"))
                 pose_ok = osp.exists(osp.join(unit, "raw_data", f"{idx:04d}_pose.json"))
                 if rgb_ok and depth_ok and pose_ok:
+                    if trans_lim is not None:
+                        with open(osp.join(unit, "raw_data", f"{idx:04d}_pose.json")) as _pf:
+                            _pd = json.load(_pf)
+                        if abs(_pd["sample_x"]) > trans_lim[0] or abs(_pd["sample_y"]) > trans_lim[1]:
+                            continue
                     self.samples.append((unit, idx))
 
         if not self.samples:

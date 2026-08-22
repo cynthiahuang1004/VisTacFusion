@@ -1,6 +1,6 @@
 #!/bin/bash
 # Real-data quantity ablation: real-only training with decreasing per-object caps
-# Runs sequentially on a single GPU
+# Uses train_bs32.yaml (150 epochs), same real data handling as co-train
 
 set -e
 
@@ -8,7 +8,7 @@ GPU=${1:-1}
 MODEL="configs/model.yaml"
 TRAIN="configs/train_bs32.yaml"
 
-CAPS="all 200 100 50 25 10"
+CAPS="all 350 300 200 100 50 25"
 
 for cap in $CAPS; do
     DATA="ablation/realqty/data_realonly_${cap}.yaml"
@@ -22,7 +22,7 @@ for cap in $CAPS; do
 
     echo "=========================================="
     echo "  Real-only cap=$cap  ->  $OUT"
-    echo "  GPU=$GPU"
+    echo "  GPU=$GPU, 150 epochs"
     echo "=========================================="
 
     CUDA_VISIBLE_DEVICES=$GPU \

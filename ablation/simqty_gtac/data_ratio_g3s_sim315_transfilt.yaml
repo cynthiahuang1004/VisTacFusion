@@ -1,4 +1,5 @@
-# Real-only, capped at 50 samples per object
+# Same as data_ratio_g3s_sim315 + translation filtering (sim samples
+# outside real translation range are dropped, 1.5x margin)
 
 image_size: 224
 
@@ -9,6 +10,7 @@ synthetic:
   num_objects: 8
 
 sim:
+  tactile_subdir: samples_g
   include_objects:
     - pattern_01_2_lines_angle_1_2
     - pattern_01_2_lines_angle_2
@@ -33,7 +35,8 @@ sim:
   val_every: 20
   align_real_rotation: true
   rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
-  train_samples_per_session: 0
+  translation_bounds: ablation/simqty_filtered/real_translation_bounds.json
+  translation_margin: 1.5
 
 real:
   root: /media/hdd2/ihsuan/gs_blender/real_filtered
@@ -43,7 +46,6 @@ real:
   val_every: 10
   augment: false
   oversample: 1
-  train_samples_per_session: 50
 
 loader:
   num_workers: 8
