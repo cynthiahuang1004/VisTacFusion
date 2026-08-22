@@ -41,6 +41,8 @@ RGB_KEYS = ["mae", "dinov3", "clip", "siglip"]
 
 DONE_LOCALLY = {
     ("t3", "mae"),
+    ("t3", "clip"),
+    ("t3", "dinov3"),
     ("dinov3", "mae"),
     ("sitr", "mae"),
 }
@@ -60,7 +62,17 @@ image = (
         "opencv-python-headless", "matplotlib", "pyyaml",
         "tqdm", "timm", "scipy", "Pillow", "trimesh",
     )
-    .apt_install("git")
+)
+
+# Add repo code into the image (baked in, no git clone needed)
+image = image.add_local_dir(
+    "/media/hdd2/ihsuan/VisTacFusion",
+    remote_path="/workspace",
+    ignore=[
+        "outputs/", ".git/", "weights/", "pretrained_encoders/",
+        "tmp_*", ".tmp_*", ".claude_tmp*", ".matplotlib*", ".mpl_tmp/",
+        "eval_results/", "*.pyc", "__pycache__/",
+    ],
 )
 
 # ============================================================
@@ -71,7 +83,7 @@ def model_config(tac: str, rgb: str) -> str:
     return f"ablation/encoder/tac_{tac}_rgb_{rgb}.yaml"
 
 def output_name(tac: str, rgb: str) -> str:
-    return f"ablation_{tac}_{rgb}_g3s_sim315"
+    return f"ablation_g3s_sim315_{tac}_{rgb}"
 
 
 # ============================================================
@@ -175,7 +187,9 @@ CKPT_REMAP = {
     "pretrained_encoders/mae_vitl16.pth": "/data/weights/mae_vitl16.pth",
     "pretrained_encoders/dav2_vitl14.pth": "/data/weights/dav2_vitl14.pth",
     "pretrained_encoders/sparsh_dinov2_base.ckpt": "/data/weights/sparsh_dinov2_base.ckpt",
-    "/media/hdd2/ihsuan/sparsh/weights/sparsh/mae_vitbase.ckpt": "/data/weights/sparsh_mae_base.ckpt",
+    "pretrained_encoders/sparsh_dinov2_base.safetensors": "/data/weights/sparsh_dinov2_base.safetensors",
+    "pretrained_encoders/sparsh_mae_base.safetensors": "/data/weights/sparsh_mae_base.safetensors",
+    "/media/hdd2/ihsuan/sparsh/weights/sparsh/mae_vitbase.ckpt": "/data/weights/sparsh_mae_base.safetensors",
     "/media/hdd2/ihsuan/gsrl/datasets/checkpoints/SITR_B18.pth": "/data/weights/SITR_B18.pth",
 }
 
@@ -198,12 +212,6 @@ def train_one(tac: str, rgb: str):
     print(f"  {run_name}  (tac={tac}, rgb={rgb})")
     print(f"{'='*60}\n")
 
-    # Clone repo
-    subprocess.run(
-        ["git", "clone", "--branch", REPO_BRANCH, "--depth", "1",
-         REPO_URL, "/workspace"],
-        check=True, capture_output=True,
-    )
     os.chdir("/workspace")
 
     # --- Build data config with Modal paths ---
@@ -336,19 +344,26 @@ def train_remaining():
 @app.local_entrypoint()
 def download_results():
     """Download checkpoints + history from Modal to local outputs/."""
+    import re
     vol = modal.Volume.from_name(RESULTS_VOLUME)
     for entry in vol.listdir("/"):
-        run = entry.path.strip("/")
-        local_dir = os.path.join("outputs", run)
+        remote_name = entry.path.strip("/")
+        # Rename: ablation_{tac}_{rgb}_g3s_sim315 -> ablation_g3s_sim315_{tac}_{rgb}
+        m = re.match(r"ablation_(.+)_g3s_sim315$", remote_name)
+        if m:
+            local_name = f"ablation_g3s_sim315_{m.group(1)}"
+        else:
+            local_name = remote_name
+        local_dir = os.path.join("outputs", local_name)
         os.makedirs(local_dir, exist_ok=True)
-        for f in vol.listdir(f"/{run}"):
+        for f in vol.listdir(f"/{remote_name}"):
             fname = os.path.basename(f.path)
             if fname.endswith((".pt", ".json", ".yaml")):
                 local_path = os.path.join(local_dir, fname)
                 with open(local_path, "wb") as fout:
                     for chunk in vol.read_file(f.path):
                         fout.write(chunk)
-                print(f"  {run}/{fname}")
+                print(f"  {local_name}/{fname}")
     print("Download complete.")
 
 

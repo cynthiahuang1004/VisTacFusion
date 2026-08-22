@@ -4,7 +4,7 @@ image_size: 224
 trunk_dim: 768
 encoder:
   name: sparsh_dino_base
-  checkpoint: pretrained_encoders/sparsh_dinov2_base.ckpt
+  checkpoint: pretrained_encoders/sparsh_dinov2_base.safetensors
   ssl_name: dinov2
   embed_dim: 768
   patch_size: 16

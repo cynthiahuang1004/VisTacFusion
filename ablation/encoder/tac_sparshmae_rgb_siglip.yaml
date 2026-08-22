@@ -4,7 +4,7 @@ image_size: 224
 trunk_dim: 768
 encoder:
   name: sparsh_dino_base
-  checkpoint: /media/hdd2/ihsuan/sparsh/weights/sparsh/mae_vitbase.ckpt
+  checkpoint: pretrained_encoders/sparsh_mae_base.safetensors
   ssl_name: mae
   embed_dim: 768
   patch_size: 16
