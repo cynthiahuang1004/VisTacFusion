@@ -566,6 +566,22 @@ def build_datasets(cfg):
             print(f"  shared object classes: {list(shared_obj_map.keys())}")
             return train, real_val
 
+        sim_oversample = cfg.sim.get("sim_oversample", 1.0)
+        if sim_train is not None and sim_oversample > 1.0:
+            from torch.utils.data import Subset
+            n_base = len(sim_train)
+            target_n = int(round(n_base * sim_oversample))
+            full_copies = target_n // n_base
+            remainder = target_n - full_copies * n_base
+            parts_sim = [sim_train] * full_copies
+            if remainder > 0:
+                rng = np.random.RandomState(0)
+                idx = rng.choice(n_base, remainder, replace=False).tolist()
+                parts_sim.append(Subset(sim_train, idx))
+            sim_train = ConcatDataset(parts_sim)
+            print(f"  sim oversample: {n_base} -> {len(sim_train)} "
+                  f"({sim_oversample:.2f}x, {full_copies} full + {remainder} extra)")
+
         n_sim = len(sim_train) if sim_train is not None else 0
         n_real = len(real_train) if real_train is not None else 0
         if n_sim == 0 and n_real == 0:

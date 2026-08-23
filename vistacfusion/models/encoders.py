@@ -531,7 +531,7 @@ class SparshEncoder(nn.Module):
         in_ch = int(sd["patch_embed.proj.weight"].shape[1])
         patch = int(sd["patch_embed.proj.weight"].shape[-1])
         depth = 1 + max(int(k.split(".")[1]) for k in sd if k.startswith("blocks."))
-        n_reg = int(sd["register_tokens"].shape[1])
+        n_reg = int(sd["register_tokens"].shape[1]) if "register_tokens" in sd else 0
         heads = dim // 64  # DINOv2 head_dim = 64
 
         grid = image_size // patch
@@ -543,7 +543,8 @@ class SparshEncoder(nn.Module):
 
         self.patch_embed = nn.Module()
         self.patch_embed.proj = nn.Conv2d(in_ch, dim, patch, patch)
-        self.register_tokens = nn.Parameter(torch.zeros(1, n_reg, dim))
+        if n_reg > 0:
+            self.register_tokens = nn.Parameter(torch.zeros(1, n_reg, dim))
 
         # Fourier positional embedding: frequency_bands [2, dim//4]
         nb = dim // 4
@@ -553,7 +554,11 @@ class SparshEncoder(nn.Module):
         self.blocks = nn.ModuleList([_Block(dim, heads, layer_scale=True) for _ in range(depth)])
         self.norm = nn.LayerNorm(dim)
 
-        self.load_state_dict(sd, strict=True)
+        result = self.load_state_dict(sd, strict=False)
+        if result.missing_keys:
+            print(f"  [encoder] Sparsh missing {len(result.missing_keys)} keys: {result.missing_keys[:5]}")
+        if result.unexpected_keys:
+            print(f"  [encoder] Sparsh unexpected {len(result.unexpected_keys)} keys: {result.unexpected_keys[:5]}")
         self.multiscale_layers = _resolve_multiscale(multiscale_layers, depth)
         for p in self.parameters():
             p.requires_grad = False

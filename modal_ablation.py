@@ -32,7 +32,7 @@ import modal
 VOLUME_NAME = "vistacfusion-data"
 RESULTS_VOLUME = "vistacfusion-results"
 GPU_TYPE = "A100"          # A100-40GB: ~$3/hr, A10G: ~$1.10/hr
-TIMEOUT_HOURS = 12
+TIMEOUT_HOURS = 24
 REPO_URL = "https://github.com/cynthiahuang1004/VisTacFusion.git"
 REPO_BRANCH = "VisTacFusion-v2"
 
@@ -43,8 +43,15 @@ DONE_LOCALLY = {
     ("t3", "mae"),
     ("t3", "clip"),
     ("t3", "dinov3"),
+    ("t3", "siglip"),
     ("dinov3", "mae"),
+    ("dinov3", "dinov3"),
+    ("dinov3", "clip"),
+    ("dinov3", "siglip"),
     ("sitr", "mae"),
+    ("sitr", "clip"),
+    ("dav2", "clip"),
+    ("dav2", "dinov3"),
 }
 
 app = modal.App("vistacfusion-ablation")
@@ -325,9 +332,14 @@ def train_all():
     """Run all 24 combos."""
     combos = list(itertools.product(TACTILE_KEYS, RGB_KEYS))
     print(f"Launching {len(combos)} runs...")
-    for r in train_one.starmap(combos):
-        s = "OK" if r["returncode"] == 0 else "FAIL"
-        print(f"  {r['run_name']}: {s}")
+    handles = [train_one.spawn(t, r) for t, r in combos]
+    for h, (t, r) in zip(handles, combos):
+        try:
+            result = h.get()
+            s = "OK" if result["returncode"] == 0 else "FAIL"
+            print(f"  {result['run_name']}: {s}")
+        except Exception as e:
+            print(f"  {output_name(t, r)}: ERROR - {e}")
 
 
 @app.local_entrypoint()
@@ -336,9 +348,14 @@ def train_remaining():
     combos = [(t, r) for t, r in itertools.product(TACTILE_KEYS, RGB_KEYS)
               if (t, r) not in DONE_LOCALLY]
     print(f"Launching {len(combos)} runs (skipping {len(DONE_LOCALLY)} done locally)...")
-    for r in train_one.starmap(combos):
-        s = "OK" if r["returncode"] == 0 else "FAIL"
-        print(f"  {r['run_name']}: {s}")
+    handles = [train_one.spawn(t, r) for t, r in combos]
+    for h, (t, r) in zip(handles, combos):
+        try:
+            result = h.get()
+            s = "OK" if result["returncode"] == 0 else "FAIL"
+            print(f"  {result['run_name']}: {s}")
+        except Exception as e:
+            print(f"  {output_name(t, r)}: ERROR - {e}")
 
 
 @app.local_entrypoint()
