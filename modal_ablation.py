@@ -210,11 +210,13 @@ SITR_CAL_DIR_MODAL = "/data/sim/pattern_01_2_lines_angle_1_2/session_000/sensor_
     timeout=3600 * TIMEOUT_HOURS,
     memory=32768,
 )
-def train_one(tac: str, rgb: str):
+def train_one(tac: str, rgb: str, transfilt: bool = False):
     """Train one encoder combo on a Modal GPU."""
     import shutil, subprocess, yaml
 
     run_name = output_name(tac, rgb)
+    if transfilt:
+        run_name = run_name.replace("ablation_g3s_sim315_", "ablation_g3s_sim315_tf_")
     print(f"\n{'='*60}")
     print(f"  {run_name}  (tac={tac}, rgb={rgb})")
     print(f"{'='*60}\n")
@@ -246,7 +248,10 @@ def train_one(tac: str, rgb: str):
             "val_every": 20,
             "align_real_rotation": True,
             "rotation_windows": "/data/configs/real_rotation_windows.json",
-            "train_samples_per_session": 315,
+            **({"translation_bounds": "/data/configs/real_translation_bounds.json",
+                "translation_margin": 1.5,
+                "train_samples_per_session": 459} if transfilt else
+               {"train_samples_per_session": 315}),
         },
         "real": {
             "root": "/data/real",
@@ -328,6 +333,14 @@ def train(tac: str, rgb: str):
 
 
 @app.local_entrypoint()
+def train_tf(tac: str, rgb: str):
+    """Run one transfilt combo.  modal run modal_ablation.py::train_tf --tac t3 --rgb mae"""
+    result = train_one.remote(tac, rgb, transfilt=True)
+    status = "OK" if result["returncode"] == 0 else f"FAIL (exit {result['returncode']})"
+    print(f"{result['run_name']}: {status}")
+
+
+@app.local_entrypoint()
 def train_all():
     """Run all 24 combos."""
     combos = list(itertools.product(TACTILE_KEYS, RGB_KEYS))
@@ -356,6 +369,21 @@ def train_remaining():
             print(f"  {result['run_name']}: {s}")
         except Exception as e:
             print(f"  {output_name(t, r)}: ERROR - {e}")
+
+
+@app.local_entrypoint()
+def train_all_transfilt():
+    """Run all 24 combos with translation filtering."""
+    combos = list(itertools.product(TACTILE_KEYS, RGB_KEYS))
+    print(f"Launching {len(combos)} transfilt runs...")
+    handles = [train_one.spawn(t, r, transfilt=True) for t, r in combos]
+    for h, (t, r) in zip(handles, combos):
+        try:
+            result = h.get()
+            s = "OK" if result["returncode"] == 0 else "FAIL"
+            print(f"  {result['run_name']}: {s}")
+        except Exception as e:
+            print(f"  ablation_g3s_sim315_tf_{t}_{r}: ERROR - {e}")
 
 
 @app.local_entrypoint()

@@ -1,0 +1,193 @@
+\section{EXPERIMENTS}
+
+\subsection{Experimental Setup}
+\label{sec:setup}
+
+\paragraph{Simulation data.}
+We generate paired RGB-tactile training data in Blender for 20 objects across
+12 sessions per object. Each sample consists of a tactile gel image, an
+external RGB image, ground-truth depth (float32 \texttt{.npy}), and a
+6-DOF pose annotation. A fixed $1/\sqrt{2}$ center crop yields an effective
+$12.37$\,mm tactile field of view. All images are resized to
+$224{\times}224$.
+
+\paragraph{Real data.}
+\todo{Describe your real sensor platform, data collection (5 objects,
+session\_000), and how real samples are formatted to match sim.}
+
+\paragraph{Metrics.}
+We report: depth MAE and RMSE (contact region), normal angular error
+(mean, degrees), pose rotation error (degrees, via
+$\arccos(\cos\hat\theta\cos\theta^* + \sin\hat\theta\sin\theta^*)$),
+and pose translation L1. All metrics are computed on the simulation
+validation set (2400 samples, every 20th sample per session) unless
+otherwise noted.
+
+\paragraph{Baselines.}
+We compare against: (1)~a shared-encoder baseline using a single frozen
+DINOv3~\cite{simeoni2025dinov3} for both modalities with symmetric MBT-style
+fusion; (2)~MViTac~\cite{fu2024mvitac}, a contrastive ResNet-18 baseline;
+(3)~VITaL, a CLIP-pretrained ResNet-18 baseline with DPT decoder.
+All baselines are trained with the same data, augmentation, and loss
+configuration.
+
+% -------------------------------------------------------------------------
+\subsection{Does Fusion Beat Either Modality Alone?}
+\label{sec:modality_ablation}
+
+The central hypothesis is tested with the fair single-model protocol:
+identical trainable parameters and identical decoder input across all three
+configurations.
+
+\begin{table}[t]
+\caption{Modality ablation (one shared model, T3+MAE encoders, sim-only
+training). Dense prediction is driven by tactile; pose by RGB; fusion
+recovers both.}
+\label{tab:modality_ablation}
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Config & \begin{tabular}{@{}c@{}}Depth\\MAE$\downarrow$\end{tabular}
+       & \begin{tabular}{@{}c@{}}Normal\\(deg)$\downarrow$\end{tabular}
+       & \begin{tabular}{@{}c@{}}Rot.\\(deg)$\downarrow$\end{tabular}
+       & \begin{tabular}{@{}c@{}}Trans.\\L1$\downarrow$\end{tabular} \\
+\midrule
+RGB-only      & 0.496  & 12.67 & 2.18  & 0.008 \\
+Tactile-only  & 0.013  & 1.21  & 89.94 & 0.205 \\
+RGB+tactile   & \textbf{0.013} & \textbf{1.18}  & \textbf{2.21}  & \textbf{0.008} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Table~\ref{tab:modality_ablation} reveals a striking complementarity.
+Tactile-only achieves near-identical depth and normal accuracy as the fused
+model (MAE 0.013, $1.21^{\circ}$), confirming that contact geometry is
+overwhelmingly a tactile signal. However, tactile-only pose estimation is at
+chance ($89.94^{\circ}$ $\approx$ uniform over $[-180^{\circ},
+180^{\circ}]$), because geometrically symmetric objects cannot be
+disambiguated from gel deformation alone.
+Conversely, RGB-only recovers pose ($2.18^{\circ}$) via visual object
+identity but cannot reconstruct contact depth (MAE $38{\times}$ worse).
+Fusion inherits the strengths of both: the dense accuracy of tactile and
+the pose disambiguation of RGB.
+
+% -------------------------------------------------------------------------
+\subsection{Encoder Ablation}
+\label{sec:encoder_ablation}
+
+We compare six frozen encoder pairings (tactile $\times$ RGB) while keeping
+all other hyperparameters fixed. Training includes sim+real co-training.
+
+\begin{table}[t]
+\caption{Encoder ablation (sim+real co-training). Rotation and depth
+evaluated in ``both'' (RGB+tactile) mode.}
+\label{tab:encoder_ablation}
+\begin{center}
+\begin{tabular}{llcc}
+\toprule
+Tactile enc. & RGB enc. & Rot.\ (deg)$\downarrow$ & Depth MSE$\downarrow$ \\
+\midrule
+\textbf{T3}     & \textbf{MAE}    & \textbf{0.803} & 0.0195 \\
+DINOv3 (shared) & DINOv3 (shared) & 0.812          & 0.0204 \\
+SITR            & MAE             & 0.819          & \textbf{0.0159} \\
+TVL             & MAE             & 0.844          & 0.0223 \\
+T3              & DINOv3          & 1.481          & 0.0204 \\
+T3              & CLIP            & 1.659          & 0.0208 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Table~\ref{tab:encoder_ablation} shows that T3+MAE achieves the best pose
+accuracy ($0.803^{\circ}$), outperforming the single shared DINOv3 baseline
+($0.812^{\circ}$) despite using two separately pretrained encoders.
+SITR+MAE achieves the best depth MSE, suggesting that calibration-aware
+tactile encoders may better capture absolute surface geometry. The visual
+encoder choice matters substantially for pose: MAE consistently outperforms
+CLIP and DINOv3 as the RGB backbone, likely because its patch-level
+reconstruction pretext captures the spatial appearance details needed for
+orientation estimation.
+
+% -------------------------------------------------------------------------
+\subsection{Comparison with Baselines}
+\label{sec:baselines}
+
+\begin{table}[t]
+\caption{Comparison with baselines (sim+real co-training, ``both'' mode).}
+\label{tab:baselines}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Model & Rot.\ (deg)$\downarrow$ & Depth MSE$\downarrow$ \\
+\midrule
+\textbf{\method{} (T3+MAE)} & \textbf{0.803} & \textbf{0.0195} \\
+Shared DINOv3 (MBT)         & 0.812          & 0.0204 \\
+MViTac~\cite{fu2024mvitac}  & 1.203          & 0.1529 \\
+VITaL                       & 2.271          & 0.0270 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Table~\ref{tab:baselines} compares \method{} against three baselines trained
+with the same data and losses. MViTac, which uses a contrastive ResNet-18,
+achieves reasonable pose but poor depth reconstruction (MSE $7.8{\times}$
+higher), highlighting the advantage of ViT-based multiscale features for
+dense prediction. VITaL improves depth via its DPT decoder but trails in pose
+accuracy ($2.271^{\circ}$ vs.\ $0.803^{\circ}$). The shared-DINOv3 baseline
+with symmetric MBT fusion is a strong competitor; \method{}'s advantage comes
+from the asymmetric design and modality-matched encoders.
+
+% -------------------------------------------------------------------------
+\subsection{Sim-to-Real Transfer}
+\label{sec:sim2real}
+
+\paragraph{Role of real data.}
+Table~\ref{tab:real_ratio} reports the effect of varying the amount of real
+data during co-training (with a fixed sim dataset).
+
+\begin{table}[t]
+\caption{Real data quantity ablation (T3+MAE, ``both'' mode).}
+\label{tab:real_ratio}
+\begin{center}
+\begin{tabular}{rcc}
+\toprule
+Real samples & Rot.\ (deg)$\downarrow$ & Depth MSE$\downarrow$ \\
+\midrule
+0 (sim-only)    & 3.83  & \todo{--}  \\
+25              & 2.126 & 0.0622 \\
+100             & 1.029 & 0.0408 \\
+300             & 0.825 & 0.0236 \\
+all             & 0.886 & 0.0220 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Performance improves rapidly with the first hundred real samples and saturates
+around 300, with diminishing returns (and slight overfitting) beyond. The
+optimal real-to-sim ratio is approximately 1:2.7.
+\todo{Expand with your hardware/data-collection perspective on what makes
+this ratio work (diversity of real contacts, etc.).}
+
+\paragraph{Domain adaptation.}
+We also evaluated explicit domain adaptation methods---CORAL feature alignment
+and Fourier Domain Adaptation (FDA)---but neither improved over the
+frozen-encoder baseline ($0.846^{\circ}$ and $0.845^{\circ}$ vs.\
+$0.803^{\circ}$). This suggests that the frozen pretrained encoders already
+provide sufficient domain invariance, and sim+real co-training handles the
+residual gap.
+
+\paragraph{Real sensor evaluation.}
+\todo{Qualitative and quantitative results on real sensor data. Show
+depth/normal visualizations and pose accuracy on real objects.}
+
+% -------------------------------------------------------------------------
+\subsection{Qualitative Results}
+\label{sec:qualitative}
+
+\todo{Figure: grid of depth/normal/pose predictions for representative
+objects across the three input configurations (both, tactile-only, rgb-only),
+on both sim and real data. Include failure cases (e.g.\ symmetric objects
+under tactile-only).}

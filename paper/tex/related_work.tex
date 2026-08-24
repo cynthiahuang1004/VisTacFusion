@@ -1,0 +1,46 @@
+\section{RELATED WORK}
+
+\subsection{Vision-Based Tactile Sensing}
+Vision-based tactile sensors such as GelSight~\cite{yuan2017gelsight} and
+GelSlim~\cite{donlon2018gelslim} capture contact geometry through a
+deformable elastomer illuminated by internal LEDs. Early depth reconstruction
+methods relied on photometric stereo calibration; more recent approaches use
+learned models to predict depth and surface normals directly from the gel
+image~\cite{higuera2024sparsh}. Our work builds on this line but additionally
+fuses an external RGB view for pose estimation.
+
+\subsection{Visuo-Tactile Fusion}
+\todo{Prior fusion work: MViTac~\cite{fu2024mvitac}, VITaL (CLIP-based);
+symmetric fusion approaches (MBT~\cite{nagrani2021mbt}, shared
+bottleneck averaging). Most assume aligned or object-centric fusion.
+Contrast with our non-aligned, tactile-frame, asymmetric formulation
+where tactile is the spatial anchor and RGB is read-only context.}
+
+\subsection{Self-Supervised Representations for Touch and Vision}
+Large-scale self-supervised pretraining has produced powerful frozen feature
+extractors for both vision and touch.
+DINOv2~\cite{oquab2023dinov2} and DINOv3~\cite{simeoni2025dinov3} learn
+visual representations without labels;
+MAE~\cite{he2022mae} reconstructs masked patches as a pretext task;
+T3~\cite{zhao2024transferable} trains a sensor-specific encoder head atop a
+shared ViT trunk on diverse tactile data;
+Sparsh~\cite{higuera2024sparsh} applies DINOv2-style self-supervised learning
+to tactile images.
+We leverage these frozen encoders as a sim-to-real anchor: because the encoder
+weights are never trained on our simulator, the feature space bridges the
+domain gap without explicit domain adaptation.
+
+\subsection{Dense Prediction and Multi-Task Learning}
+The Dense Prediction Transformer (DPT)~\cite{ranftl2021dpt} reassembles
+multiscale ViT features into dense maps via a convolutional decoder. We adopt
+the DPT architecture for depth and surface normal prediction, and combine it
+with a pose estimation head in a multi-task framework. Task balancing follows
+grouped Kendall uncertainty weighting~\cite{kendall2018multi}, which
+auto-balances losses within dense and pose groups independently.
+
+\subsection{Sim-to-Real Transfer for Tactile Perception}
+\todo{Sim-to-real for tactile: TACTO~\cite{wang2022tacto}, domain
+randomization on gel images, frozen features as implicit domain bridge.
+Our approach: heavy tactile photometric augmentation + frozen pretrained
+encoders + sim+real co-training at optimized ratio. No explicit domain
+adaptation (CORAL tried but did not improve over frozen-encoder baseline).}

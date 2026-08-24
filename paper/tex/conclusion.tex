@@ -1,0 +1,22 @@
+\section{CONCLUSIONS}
+
+We presented \method{}, an asymmetric visuo-tactile fusion architecture for
+multi-task tactile perception. By treating tactile as the spatial anchor and
+RGB as read-only context through a compact bottleneck, and by decoupling the
+dense prediction and pose estimation paths, \method{} reveals a clean
+complementarity: tactile alone suffices for depth and normal reconstruction,
+while RGB is essential for disambiguating object pose. A systematic encoder
+ablation shows that modality-matched frozen encoders (T3 for tactile, MAE for
+RGB) outperform shared backbones, and sim+real co-training at an optimized
+ratio enables zero-shot transfer to real sensors without fine-tuning or
+explicit domain adaptation.
+
+\paragraph{Limitations.}
+The current model is restricted to planar SE(2) pose under single-contact
+assumptions. Depth and normal predictions are in the tactile frame only,
+without integration into a global 3D reconstruction.
+
+\paragraph{Future work.}
+Extending to SE(3) pose with multi-finger contact, and using the fused
+representation as input to downstream manipulation policies, are natural next
+steps.

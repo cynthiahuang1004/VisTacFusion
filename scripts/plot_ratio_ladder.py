@@ -178,3 +178,19 @@ plot_ladder(g3s, "GAN (G-rendered) sim tactile — real:sim ratio ladder  (dense
             os.path.join(OUT_DIR, "ratio_ladder_gan.png"))
 
 print("\nDone.")
+
+
+print("\n=== GAN 3-Session TransFilt ===")
+g3s_tf = {}
+for label, suffix, ratio_val in RATIOS:
+    if suffix == "realonly":
+        d = os.path.join(BASE, "ratio_realonly")
+    else:
+        d = os.path.join(BASE, f"ratio_g3s_{suffix}_transfilt")
+    hf = os.path.join(d, "history.json")
+    if os.path.isfile(hf):
+        g3s_tf[label] = load_best_per_mode(hf)
+    else:
+        print(f"  MISSING: {hf}")
+plot_ladder(g3s_tf, "GAN (G-rendered) sim tactile + translation filter — real:sim ratio ladder  (dense: best depth epoch; pose: best pose epoch; dashed = real-only)",
+            os.path.join(OUT_DIR, "ratio_ladder_gan_transfilt.png"))

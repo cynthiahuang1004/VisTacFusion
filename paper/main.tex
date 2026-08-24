@@ -1,0 +1,89 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% VisTacFusion — IEEE conference paper (ieeeconf class, ICRA/IROS style)
+% Build: latexmk -pdf main.tex   (or scripts/compile.sh)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[letterpaper, 10pt, conference]{ieeeconf}
+
+\IEEEoverridecommandlockouts   % needed for \thanks
+\overrideIEEEmargins           % needed to meet printer requirements
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{cite}              % sorted/ranged IEEE-style citation numbers
+\usepackage{url}
+
+% ---- convenience macros -------------------------------------------------------
+\newcommand{\method}{VisTacFusion}
+\newcommand{\todo}[1]{\textbf{\textcolor{red}{[TODO: #1]}}}
+\usepackage{color}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, calc, fit, backgrounds,
+                 decorations.pathreplacing}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{\LARGE \bf
+\method{}: Asymmetric Visuo-Tactile Fusion for\\
+Multi-Task Tactile Perception
+}
+
+\author{Xiangdong Huang$^{1}$% <-this % stops a space
+\thanks{*This work was not supported by any organization.}%
+\thanks{$^{1}$Xiangdong Huang is with \todo{affiliation}%
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+We present \method{}, a visuo-tactile multi-task model that jointly predicts
+per-pixel depth, surface normals, and planar SE(2) object pose in the tactile
+frame from a paired---but not pixel-aligned---RGB image and a vision-based
+tactile image. Each modality is encoded by a frozen pretrained
+encoder selected through systematic ablation: a tactile foundation model (T3)
+for the gel image and a self-supervised vision model (MAE ViT-L) for RGB.
+Features are combined by an asymmetric cross-attention trunk in which tactile
+tokens serve as spatial queries while RGB enters only as read-only context
+through a compact set of bottleneck tokens. Dense and pose prediction paths
+are architecturally decoupled: the DPT decoder taps the tactile encoder
+directly and receives 100\% of training steps, while modality dropout is
+confined to the pose path, enabling a single set of weights to operate in
+RGB+tactile, tactile-only, and RGB-only modes. This design yields a
+controlled ablation of each modality's contribution: tactile alone matches
+the fused model on depth (MAE 0.013) and normals ($1.21^{\circ}$) but
+cannot resolve pose ($89.9^{\circ}$); RGB alone resolves pose
+($2.18^{\circ}$) but lacks contact geometry (depth MAE 0.496); fusion
+recovers both ($2.21^{\circ}$ pose, 0.013 depth MAE). Co-trained on
+simulated and real data with frozen-encoder sim-to-real anchoring,
+\method{} transfers zero-shot to real tactile sensors.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{tex/introduction}
+\input{tex/related_work}
+\input{tex/method}
+\input{tex/experiments}
+\input{tex/conclusion}
+
+% \addtolength{\textheight}{-12cm}  % uncomment & tune on the page BEFORE the
+                                    % last page to balance final columns
+
+\section*{ACKNOWLEDGMENT}
+\todo{acknowledgments}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

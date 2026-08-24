@@ -1,0 +1,191 @@
+\section{METHOD}
+
+\begin{figure*}[t]
+  \centering
+  \input{figures/architecture}
+  \caption{\method{} architecture.
+  %
+  Frozen modality-specific encoders (T3 for tactile, MAE for RGB) extract
+  features at 1024 dimensions. The \textbf{DPT path} (top): multiscale
+  encoder taps feed directly into the DPT decoder for depth and normal
+  prediction; optional RGB injection via ReZero-gated cross-attention
+  ($\alpha$ init${}=0$) from the trunk's bottleneck adds visual context.
+  %
+  The \textbf{Pose path} (bottom): tactile tokens are projected to 768-dim
+  and initialize 197 queries (196 spatial + 1 pose); RGB tokens form the
+  read-only memory. A 4-layer asymmetric fusion trunk fuses them through 16
+  learnable bottleneck tokens. The resulting pose token feeds an MLP that
+  predicts SE(2) pose.
+  %
+  The decoder receives identical inputs regardless of which modalities are
+  present, enabling a single model to serve three inference modes via
+  modality dropout.}
+  \label{fig:architecture}
+\end{figure*}
+
+\subsection{Problem Formulation}
+Given a paired but non-pixel-aligned RGB image $I_r$ and vision-based tactile
+image $I_t$, \method{} predicts, in the tactile frame: per-pixel depth $D$,
+surface normals $\mathbf{N}$, and the object's planar pose
+$(\theta, t_x, t_y) \in SE(2)$.
+
+\subsection{Frozen Modality-Specific Encoders}
+\label{sec:encoders}
+
+Each modality is encoded by a frozen pretrained ViT-L encoder selected through
+systematic ablation (Sec.~\ref{sec:encoder_ablation}): T3~\cite{zhao2024transferable}
+for tactile and MAE~\cite{he2022mae} for RGB, both producing 1024-dim features
+with 196 patch tokens ($14{\times}14$ grid at patch size 16).
+
+Freezing serves two purposes.
+First, it \emph{anchors sim-to-real transfer}: because the encoder weights are
+never updated on simulated data, the feature space inherits the pretraining
+distribution, bridging the sim-real domain gap without explicit adaptation.
+Second, it ensures \emph{ablation fairness}: the trainable parameter count is
+identical across all modality configurations, so no encoder capacity can shift
+between modes.
+
+Using separate, modality-matched encoders rather than a single shared backbone
+yields an additional benefit: each encoder's inductive bias is tailored to its
+input domain. T3's sensor-specific front-end captures gel-deformation patterns
+that a generic vision encoder may overlook, while MAE's reconstruction-based
+pretraining produces features well-suited to appearance-based recognition.
+
+\subsection{Asymmetric Bottleneck Fusion Trunk}
+\label{sec:trunk}
+
+The fusion trunk operates at $D{=}768$ dimensions after a learned linear
+projection from the encoder's native 1024-dim space. A separate
+\texttt{BranchProjection} (linear + learned modality embedding) is applied to
+each modality's tokens.
+
+Tactile is the spatial anchor: its 196 projected patch tokens, augmented with
+a learned spatial positional embedding, initialize the \emph{spatial queries};
+its CLS token initializes the \emph{pose query} (197 queries total). RGB's
+projected patch and CLS tokens form the read-only \emph{memory}
+($197$ key-value tokens).
+
+Each of the $L{=}4$ fusion layers applies three sequential attention steps:
+\begin{enumerate}
+\item \textbf{Bottleneck $\leftarrow$ Memory} (cross-attention, no FFN):
+      $m{=}16$ learnable bottleneck tokens attend to the 197 RGB memory tokens,
+      compressing RGB context into a compact representation.
+\item \textbf{Queries $\leftarrow$ Bottleneck} (cross-attention + FFN):
+      the 197 queries read from the $m$ bottleneck tokens, gating how much RGB
+      information enters the tactile-anchored representation.
+\item \textbf{Queries $\leftarrow$ Queries} (self-attention + FFN):
+      queries refine amongst themselves.
+\end{enumerate}
+Because attention output length follows the query count, the trunk output is
+always 197 tokens at 768-dim regardless of whether RGB is present. The
+bottleneck tokens persist across layers (\emph{carry} mode), accumulating
+progressively refined RGB context.
+
+An optional per-object embedding $\mathbf{e}_{\mathrm{obj}} \in
+\mathbb{R}^{768}$ is added to all 197 queries to provide object identity for
+pose disambiguation across multiple objects.
+
+\subsection{Decoupled Dense and Pose Paths}
+\label{sec:decoupled}
+
+The dense prediction and pose estimation paths are architecturally decoupled
+to prevent modality dropout from diluting dense supervision.
+
+\paragraph{DPT path.}
+The DPT decoder~\cite{ranftl2021dpt} taps the \emph{tactile encoder}
+directly at its native 1024-dim multiscale features, extracted at four
+intermediate layers (layers 5, 11, 17, 23 of the 24-layer ViT). Each tap
+receives a learned positional embedding before entering the DPT reassembly
+($\text{Conv}_{1{\times}1}$: $1024 {\to} 256$, bilinear rescale) and
+fusion-upsampling pipeline, producing depth ($C{=}1$) and surface normals
+($C{=}3$) at the input resolution of $224{\times}224$.
+
+Because the DPT path bypasses the fusion trunk, it receives tactile features
+on \emph{every} training step, unaffected by modality dropout. This is
+critical: dense prediction is primarily a tactile task (Table~\ref{tab:modality_ablation}).
+
+\paragraph{RGB injection via TapInjection.}
+When RGB is available, visual context is optionally injected into the DPT taps
+through a residual cross-attention mechanism with a ReZero gate:
+\begin{equation}
+  \mathbf{t}'_i = \mathbf{t}_i + \alpha_i \cdot
+    \mathrm{CrossAttn}(\mathbf{t}_i,\, \mathbf{b})
+  \label{eq:tap_inject}
+\end{equation}
+where $\mathbf{t}_i \in \mathbb{R}^{196 \times 1024}$ is the $i$-th encoder
+tap, $\mathbf{b} \in \mathbb{R}^{16 \times 768}$ is the trunk bottleneck
+(projected to 1024-dim for key/value), and $\alpha_i$ is a learnable scalar
+initialized to zero. This ensures the DPT path starts as a pure
+tactile-encoder pipeline and gradually learns to incorporate RGB context.
+Injection is independently sampled per training step ($p = 0.5$), further
+decoupling it from the pose path's modality dropout.
+
+\paragraph{Pose path.}
+After the fusion trunk, the pose token $\mathbf{p} \in \mathbb{R}^{768}$ and
+mean-pooled spatial queries $\bar{\mathbf{s}} \in \mathbb{R}^{768}$ are
+concatenated ($\mathbb{R}^{1536}$) and decoded by a 3-layer MLP to produce
+$(\cos\theta, \sin\theta, t_x, t_y)$. The first two outputs are
+L2-normalized to enforce unit-circle structure.
+
+\subsection{Three Configurations, One Shared Model}
+\label{sec:three_configs}
+
+The model is trained with modality dropout: each step randomly samples one of
+three input configurations with probabilities
+$p_{\text{both}}{=}0.55$, $p_{\text{tactile}}{=}0.35$,
+$p_{\text{rgb}}{=}0.10$.
+%
+At inference, these become three modes of the same trained weights:
+\begin{itemize}
+\item \textbf{RGB+tactile}: all three trunk steps run; DPT receives tactile
+      taps with optional RGB injection.
+\item \textbf{Tactile-only}: steps 1--2 are skipped (no RGB memory); only
+      self-attention (step 3) refines the queries. DPT receives pure tactile taps.
+\item \textbf{RGB-only}: learned mask tokens replace tactile queries; all
+      three trunk steps run.
+\end{itemize}
+Importantly, the decoder input shape is identical in all three modes, so the
+comparison is not confounded by architectural differences.
+
+\subsection{Loss Functions and Training}
+\label{sec:losses}
+
+\paragraph{Task losses.}
+Depth is supervised with MSE loss; surface normals with MSE loss; rotation
+with $\mathcal{L}_{\text{rot}} = 1 - (\cos\hat\theta \cos\theta^*
++ \sin\hat\theta \sin\theta^*)$ (equivalent to $1 - \cos(\Delta\theta)$);
+translation with L1 loss on $(t_x, t_y)$.
+
+\paragraph{Grouped uncertainty weighting.}
+Following~\cite{kendall2018multi}, we learn per-task homoscedastic uncertainty
+terms, but group them into a \emph{dense} group (depth + normals) and a
+\emph{pose} group (rotation + translation):
+\begin{equation}
+  \mathcal{L} = \lambda \sum_{i \in \text{dense}}
+    \bigl(e^{-s_i}\mathcal{L}_i + \tfrac{1}{2}s_i\bigr)
+  + \sum_{j \in \text{pose}}
+    \bigl(e^{-s_j}\mathcal{L}_j + \tfrac{1}{2}s_j\bigr)
+\end{equation}
+where $s_i$ are learned log-variances and $\lambda$ is a fixed ratio between
+groups. Grouping prevents pose improvements from starving dense gradients.
+
+\paragraph{Training details.}
+We train with AdamW ($\text{lr}{=}2 \times 10^{-4}$,
+$\text{wd}{=}0.05$), cosine schedule with 1000-step linear warmup, for 150
+epochs at batch size 64 per GPU on 2 GPUs (effective batch 128). Mixed
+precision (fp16) and gradient clipping ($\|\cdot\| \leq 1.0$) are used
+throughout. Only the projections, embeddings, bottleneck, fusion trunk, and
+heads are trainable (${\sim}95$M of ${\sim}398$M total parameters).
+
+\paragraph{Augmentation.}
+Tactile images undergo heavy photometric augmentation---per-channel gain/bias,
+directional gradients, residual noise, and Gaussian noise---to simulate sensor
+variability across gel specimens and lighting conditions. RGB images receive
+lighter, uniform-channel augmentation to preserve marker hue. Both modalities
+undergo a fixed $1/\sqrt{2}$ center crop (eliminating border artifacts under
+rotation augmentation) followed by a random gel-spin rotation
+$\phi \sim \mathcal{U}(-180^{\circ}, 180^{\circ})$.
+
+\paragraph{Sim+real co-training.}
+\todo{describe the sim+real co-training setup and the optimal real:sim ratio
+finding (1:2.7). This is your hardware/data section --- fill in when ready.}

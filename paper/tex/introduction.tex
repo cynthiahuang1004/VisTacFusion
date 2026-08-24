@@ -1,0 +1,64 @@
+\section{INTRODUCTION}
+
+Contact-rich manipulation requires understanding both the global scene and the
+local contact interface. An external RGB camera provides object identity,
+orientation context, and coarse spatial layout, but is occluded precisely where
+the gripper meets the object. A vision-based tactile sensor captures
+high-resolution contact geometry---depth and surface normals at sub-millimeter
+resolution---yet its field of view spans only the gel surface (${\sim}12$\,mm
+after cropping). Neither modality alone is sufficient: tactile images of
+geometrically symmetric objects (e.g.\ a circle, a square) are rotationally
+ambiguous, while RGB lacks the contact detail needed for dense surface
+reconstruction.
+
+Prior work on visuo-tactile fusion typically assumes pixel-aligned image pairs
+or operates separate, differently-sized models per modality configuration,
+making it difficult to isolate the benefit of fusion from capacity
+differences. Moreover, most methods share a single encoder for both
+modalities, overlooking the growing availability of modality-specific
+pretrained representations---tactile foundation models such as
+T3~\cite{zhao2024transferable} and Sparsh~\cite{higuera2024sparsh}, and
+self-supervised visual encoders such as MAE~\cite{he2022mae} and
+DINOv2~\cite{oquab2023dinov2}---that offer stronger inductive biases when
+matched to their respective domains.
+
+\method{} addresses these gaps with three design decisions.
+%
+First, each modality is encoded by a \emph{frozen, modality-specific} encoder
+selected through systematic ablation (T3 for tactile, MAE ViT-L for RGB);
+freezing anchors sim-to-real transfer and guarantees that no encoder capacity
+shifts between modality configurations.
+%
+Second, an \emph{asymmetric bottleneck fusion trunk} treats tactile tokens as
+spatial queries and RGB as read-only key/value context, funnelled through a
+small set of learnable bottleneck tokens. Because the output dimensionality
+follows the query count, the decoder input is invariant to which modalities
+are present.
+%
+Third, the dense prediction (DPT) and pose estimation paths are
+\emph{architecturally decoupled}: the DPT decoder taps the tactile encoder
+directly at its native 1024-dim multiscale features and trains on every step,
+while modality dropout is confined to the pose path through the 768-dim
+fusion trunk. This prevents dropout-induced dilution of dense supervision.
+
+A single model trained with modality dropout supports three inference
+modes---RGB+tactile, tactile-only, and RGB-only---with identical trainable
+parameters, enabling a fair ablation of each modality's contribution.
+Co-trained on simulated and real tactile data at an empirically optimized
+ratio, \method{} transfers to real sensors without fine-tuning.
+
+The contributions of this work are:
+\begin{itemize}
+\item An asymmetric bottleneck-attention architecture with decoupled dense and
+      pose paths for fusing non-aligned RGB and tactile images, producing
+      per-pixel depth, surface normals, and SE(2) pose in the tactile frame;
+\item A systematic encoder ablation across six pretrained backbones, showing
+      that modality-matched frozen encoders (T3 + MAE) outperform a single
+      shared encoder;
+\item A fair single-model ablation protocol---identical trainable parameters
+      and decoder input across three input configurations---that isolates each
+      modality's contribution and reveals complementary roles (tactile
+      $\rightarrow$ dense geometry, RGB $\rightarrow$ pose disambiguation);
+\item Sim-to-real transfer via frozen features and sim+real co-training,
+      validated on real vision-based tactile sensors. \todo{sensor name}
+\end{itemize}
