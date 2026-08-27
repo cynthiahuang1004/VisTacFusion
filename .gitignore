@@ -17,3 +17,8 @@ results/
 *.npy
 *.jpg
 .DS_Store
+workshop_abstract/
+*.aux
+*.log
+texput.log
+architecture_diagram.pdf
