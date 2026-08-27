@@ -321,6 +321,167 @@ def train_one(tac: str, rgb: str, transfilt: bool = False):
 
 
 # ============================================================
+# Ratio ladder (T3+MAE, transfilt + sim rgb_zoom 1.15 + fixed_crop 0.816)
+# ============================================================
+
+# name -> (train_samples_per_session, sim_oversample); sim count = name*36, real = 4197
+RATIO_POINTS = {
+    "sim34": (85, None), "sim68": (163, None), "sim120": (293, None), "sim148": (363, None),
+    "sim190": (459, None), "sim213": (520, None), "sim229": (556, None), "sim250": (606, None),
+    "sim279": (677, None), "sim315": (None, None), "sim348": (None, 1.11),
+    "sim380": (None, 1.214), "sim570": (None, 1.82), "sim760": (None, 2.427),
+}
+
+def ratio_run_name(name: str) -> str:
+    return f"ratio_g3s_{name}_transfilt_zoom115_crop816"
+
+
+@app.function(
+    image=image,
+    gpu=GPU_TYPE,
+    volumes={"/data": data_vol, "/results": results_vol},
+    timeout=3600 * TIMEOUT_HOURS,
+    memory=32768,
+)
+def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
+    """One ratio-ladder point (crop 0.816 world). Mirrors
+    ablation/simqty_gtac/data_ratio_g3s_<name>_transfilt_zoom115_crop816.yaml with Modal paths."""
+    import shutil, subprocess, yaml
+
+    spp, oversample = RATIO_POINTS[name]
+    run_name = ratio_run_name(name)
+    print(f"\n{'='*60}\n  {run_name}  (spp={spp}, oversample={oversample})\n{'='*60}\n")
+    os.chdir("/workspace")
+
+    sim_cfg = {
+        "tactile_subdir": "samples_g",
+        "include_objects": [
+            "pattern_01_2_lines_angle_1_2", "pattern_01_2_lines_angle_2",
+            "pattern_01_2_lines_angle_3", "pattern_04_3_lines_angle_1",
+            "pattern_04_3_lines_angle_2", "pattern_06_5_lines_angle_1",
+            "pattern_31_rod", "pattern_32", "pattern_33",
+            "pattern_35", "pattern_36", "pattern_37",
+        ],
+        "root": "/data/sim",
+        "mesh_dir": "/data/meshes",
+        "rgb_subdir": "rgb",
+        "rgb_zoom": 1.15,
+        "use_gt_depth": True,
+        "use_rendered_normals": True,
+        "gel_view_m": 0.017502,
+        "rot_augment": True,
+        "rot_augment_max_deg": 15.0,
+        "val_every": 20,
+        "align_real_rotation": True,
+        "rotation_windows": "/data/configs/real_rotation_windows.json",
+        "translation_bounds": "/data/configs/real_translation_bounds.json",
+        "translation_margin": 1.5,
+    }
+    if spp is not None:
+        sim_cfg["train_samples_per_session"] = spp
+    if oversample is not None:
+        sim_cfg["sim_oversample"] = oversample
+
+    data_cfg = {
+        "image_size": 224,
+        "fixed_crop": 0.816,
+        "dataset": "sim+real",
+        "synthetic": {"num_samples": 256, "num_objects": 8},
+        "sim": sim_cfg,
+        "real": {
+            "root": "/data/real", "mesh_dir": "/data/meshes", "rgb_subdir": "rgb",
+            "use_rendered_normals": False, "val_every": 10, "augment": False, "oversample": 1,
+        },
+        "loader": {"num_workers": 4, "pin_memory": True, "prefetch_factor": 4,
+                   "persistent_workers": True},
+        "norm": {"imagenet_mean": [123.675, 116.28, 103.53],
+                 "imagenet_std": [58.395, 57.12, 57.375]},
+    }
+    data_path = "/tmp/data_modal.yaml"
+    with open(data_path, "w") as f:
+        yaml.dump(data_cfg, f, default_flow_style=False, sort_keys=False)
+
+    with open(model_config(tac, rgb)) as f:
+        mcfg = yaml.safe_load(f)
+    for section in ["encoder", "rgb_encoder"]:
+        enc = mcfg.get(section)
+        if enc is None:
+            continue
+        if enc.get("checkpoint", "") in CKPT_REMAP:
+            enc["checkpoint"] = CKPT_REMAP[enc["checkpoint"]]
+        if enc.get("calibration_dir", ""):
+            enc["calibration_dir"] = SITR_CAL_DIR_MODAL
+            enc["fixed_crop"] = 0.816
+    model_path = "/tmp/model_modal.yaml"
+    with open(model_path, "w") as f:
+        yaml.dump(mcfg, f, default_flow_style=False, sort_keys=False)
+
+    output_dir = f"/workspace/outputs/{run_name}"
+    cmd = ["python", "-u", "-m", "vistacfusion.engine.train",
+           "--model", model_path, "--train", "configs/train_bs32.yaml",
+           "--data", data_path, "--output-dir", output_dir]
+    print(f"CMD: {' '.join(cmd)}\n")
+    proc = subprocess.run(cmd)
+
+    results_dir = f"/results/{run_name}"
+    if os.path.isdir(output_dir):
+        shutil.copytree(output_dir, results_dir, dirs_exist_ok=True)
+        results_vol.commit()
+        print(f"\nResults saved to {RESULTS_VOLUME}:/{run_name}")
+    return {"run_name": run_name, "returncode": proc.returncode}
+
+
+@app.local_entrypoint()
+def train_ratio_ladder(names: str):
+    """Run ratio-ladder points in parallel.
+    modal run modal_ablation.py::train_ratio_ladder --names sim34,sim68,sim120"""
+    pts = [n.strip() for n in names.split(",") if n.strip()]
+    bad = [n for n in pts if n not in RATIO_POINTS]
+    if bad:
+        raise SystemExit(f"unknown ratio points: {bad}; known: {list(RATIO_POINTS)}")
+    print(f"Launching {len(pts)} ratio runs: {pts}", flush=True)
+    handles = {n: train_ratio_one.spawn(n) for n in pts}
+    for n, h in handles.items():
+        try:
+            r = h.get()
+            print(f"  {r['run_name']}: {'OK' if r['returncode'] == 0 else 'FAIL'}", flush=True)
+        except Exception as e:
+            print(f"  {ratio_run_name(n)}: ERROR - {e}", flush=True)
+
+
+@app.local_entrypoint()
+def download_ratio(names: str = "", history_only: bool = False, dest: str = "outputs"):
+    """Download ratio-ladder results (history.json [+ checkpoints]) from the results volume."""
+    import time
+    vol = modal.Volume.from_name(RESULTS_VOLUME)
+    pts = [n.strip() for n in names.split(",") if n.strip()] or list(RATIO_POINTS)
+    for n in pts:
+        run = ratio_run_name(n)
+        local_dir = os.path.join(dest, run)
+        try:
+            files = list(vol.listdir(f"/{run}"))
+        except Exception as e:
+            print(f"  SKIP {run}: {e}")
+            continue
+        os.makedirs(local_dir, exist_ok=True)
+        for f in files:
+            fname = os.path.basename(f.path)
+            if history_only and fname != "history.json":
+                continue
+            if not fname.endswith((".pt", ".json", ".yaml")):
+                continue
+            local_path = os.path.join(local_dir, fname)
+            if fname.endswith(".pt") and os.path.exists(local_path):
+                continue
+            time.sleep(1)
+            with open(local_path, "wb") as fout:
+                for chunk in vol.read_file(f.path):
+                    fout.write(chunk)
+            print(f"  {run}/{fname}", flush=True)
+    print("Done.")
+
+
+# ============================================================
 # Entrypoints
 # ============================================================
 
