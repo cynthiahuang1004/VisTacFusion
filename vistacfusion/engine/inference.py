@@ -48,7 +48,7 @@ def load_model(cfg, checkpoint_path, device):
     return model
 
 
-def preprocess_image(img_path, image_size):
+def preprocess_image(img_path, image_size, fixed_crop=None):
     """Load image → same preprocessing as training: center square crop (non-square
     inputs), the FIXED 1/sqrt(2) crop the model was trained in, then ImageNet norm."""
     from ..data.transforms import fixed_center_crop
@@ -65,7 +65,9 @@ def preprocess_image(img_path, image_size):
         img = img[y0:y0 + s, x0:x0 + s]
 
     # the model lives in the fixed-crop world — apply the SAME crop as training
-    img = fixed_center_crop(img, out_size=image_size)
+    from ..data.transforms import FIXED_CROP
+    img = fixed_center_crop(img, out_size=image_size,
+                            crop=FIXED_CROP if fixed_crop is None else fixed_crop)
 
     t = torch.from_numpy(np.ascontiguousarray(img)).float().permute(2, 0, 1)
     mean = torch.tensor([123.675, 116.28, 103.53]).view(3, 1, 1)
@@ -177,8 +179,8 @@ def run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
                name="sample", pose_model=None, object_ids=None, **kwargs):
     """Run inference on a single pair with all 3 configs."""
     image_size = cfg.image_size
-    rgb_t = preprocess_image(rgb_path, image_size)
-    tac_t = preprocess_image(tactile_path, image_size)
+    rgb_t = preprocess_image(rgb_path, image_size, cfg.get("fixed_crop", None))
+    tac_t = preprocess_image(tactile_path, image_size, cfg.get("fixed_crop", None))
 
     results = {}
     for config in CONFIGS_3:
@@ -232,11 +234,12 @@ def run_session(model, session_dir, cfg, device, output_dir, max_samples=None,
         if osp.exists(gt_depth_path):
             from ..data.dataset import depth_to_normal
             from ..data.transforms import FIXED_CROP, fixed_center_crop
+            _crop = float(cfg.get("fixed_crop", FIXED_CROP))
             gt_depth_raw = fixed_center_crop(
-                np.load(gt_depth_path).astype(np.float32))
+                np.load(gt_depth_path).astype(np.float32), crop=_crop)
             gt_depth = gt_depth_raw * 1000.0
-            # fixed crop world: view = 17.5mm * (1/sqrt2), constant pixel size
-            px = cfg.sim.get("gel_view_m", 0.017502) * FIXED_CROP / cfg.image_size
+            # fixed crop world: view = 17.5mm * fixed_crop, constant pixel size
+            px = cfg.sim.get("gel_view_m", 0.017502) * _crop / cfg.image_size
             gt_normal = depth_to_normal(gt_depth_raw, px, px)
 
         run_single(model, rgb_path, tactile_path, cfg, device, output_dir,
@@ -395,10 +398,11 @@ def run_real_data_tree(model, real_root, cfg, device, output_dir,
             if osp.exists(gt_path):
                 from ..data.dataset import depth_to_normal
                 from ..data.transforms import FIXED_CROP, fixed_center_crop
+                _crop = float(cfg.get("fixed_crop", FIXED_CROP))
                 gt_depth_raw = fixed_center_crop(
-                    np.load(gt_path).astype(np.float32))
+                    np.load(gt_path).astype(np.float32), crop=_crop)
                 gt_depth = gt_depth_raw * 1000.0
-                px = cfg.sim.get("gel_view_m", 0.017502) * FIXED_CROP / cfg.image_size
+                px = cfg.sim.get("gel_view_m", 0.017502) * _crop / cfg.image_size
                 gt_normal = depth_to_normal(gt_depth_raw, px, px)
 
             if (osp.exists(pose_path) and obj_name in obj_pose_info

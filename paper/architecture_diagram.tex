@@ -8,6 +8,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{pifont}
 
 \usetikzlibrary{
   arrows.meta,
@@ -59,7 +60,7 @@
   darr/.default={black!50},
   lblsmall/.style={font=\scriptsize, text=black!60},
   lbltiny/.style={font=\tiny, text=black!50},
-  pathbox/.style={draw=#1, rounded corners=5pt, line width=1.0pt, dashed, inner sep=8pt},
+  pathbox/.style={draw=#1, rounded corners=5pt, line width=1.0pt, dashed, inner sep=10pt},
 }
 
 \begin{document}
@@ -150,25 +151,25 @@
 % ============================================================
 
 % Tactile projection
-\node[proj, right=1.0cm of tac_enc, yshift=-0.3cm] (tac_proj) {
+\node[proj, right=1.4cm of tac_enc, yshift=-0.3cm] (tac_proj) {
   \textbf{Proj}\\[-2pt]
   {\tiny $1024 \to 768$}
 };
 
 % RGB projection
-\node[proj, right=1.0cm of rgb_enc] (rgb_proj) {
+\node[proj, right=1.4cm of rgb_enc] (rgb_proj) {
   \textbf{Proj}\\[-2pt]
   {\tiny $1024 \to 768$}
 };
 
 % Queries
-\node[proj, right=0.6cm of tac_proj, minimum width=1.6cm] (queries) {
+\node[proj, right=0.8cm of tac_proj, minimum width=1.6cm] (queries) {
   \textbf{Queries}\\[-2pt]
   {\tiny $197 \times 768$}
 };
 
 % Memory
-\node[proj, right=0.6cm of rgb_proj, minimum width=1.6cm] (memory) {
+\node[proj, right=0.8cm of rgb_proj, minimum width=1.6cm] (memory) {
   \textbf{Memory}\\[-2pt]
   {\tiny $197 \times 768$}
 };
@@ -187,17 +188,24 @@
 % FUSION TRUNK
 % ============================================================
 
-\node[trunk, right=0.8cm of $(queries.east)!0.5!(memory.east)$] (trunk) {
-  \textbf{Fusion Trunk} $\times 4$\\[4pt]
-  {\scriptsize \ding{192} BN $\leftarrow$ Memory}\\[-1pt]
-  {\scriptsize \ding{193} Queries $\leftarrow$ BN}\\[-1pt]
-  {\scriptsize \ding{194} Queries self-attn}
-};
+\node[trunk, right=0.8cm of $(queries.east)!0.5!(memory.east)$,
+      minimum height=3.6cm] (trunk) {};
 
-% Bottleneck label inside trunk
-\node[bnblock, anchor=north] at ($(trunk.north)-(0, 0.2)$) (bn) {
+% Trunk title at top
+\node[font=\footnotesize\bfseries, anchor=north] at ($(trunk.north)-(0, 0.15)$)
+  {Fusion Trunk $\times 4$};
+
+% Bottleneck inside trunk (below title)
+\node[bnblock, anchor=north] at ($(trunk.north)-(0, 0.55)$) (bn) {
   \textbf{Bottleneck}\\[-2pt]
   {\tiny $m{=}16, 768$}
+};
+
+% Steps below bottleneck
+\node[font=\scriptsize, align=left, anchor=north] at ($(bn.south)-(0, 0.15)$) {
+  \ding{192} BN $\leftarrow$ Memory\\[-1pt]
+  \ding{193} Queries $\leftarrow$ BN\\[-1pt]
+  \ding{194} Queries self-attn
 };
 
 % Queries -> Trunk
@@ -211,13 +219,13 @@
 % ============================================================
 
 % Pose token
-\node[proj, right=0.8cm of trunk, yshift=0.0cm, minimum width=1.4cm] (pose_tok) {
+\node[proj, right=1.0cm of trunk, yshift=0.0cm, minimum width=1.4cm] (pose_tok) {
   \textbf{Pose}\\[-2pt]
   \textbf{token}
 };
 
 % Pose MLP
-\node[head, right=0.6cm of pose_tok, minimum width=1.6cm] (pose_mlp) {
+\node[head, right=1.2cm of pose_tok, minimum width=1.6cm] (pose_mlp) {
   \textbf{Pose}\\
   \textbf{MLP}
 };
@@ -231,15 +239,15 @@
 % Trunk -> Pose token -> Pose MLP -> SE(2)
 \draw[arr] (trunk.east |- pose_tok) -- (pose_tok);
 \draw[arr] (pose_tok) -- (pose_mlp)
-  node[midway, below, lbltiny] {+spatial pool};
+  node[midway, below=2pt, lbltiny] {+spatial pool};
 \draw[arr] (pose_mlp) -- (se2);
 
 % ============================================================
 % BOTTLENECK -> TAP INJECTION (cross-path connection)
 % ============================================================
 
-\draw[darr={black!50}] (bn.north) |- (tap_inject.south)
-  node[pos=0.75, right, lbltiny] {bottleneck};
+\draw[darr={black!50}] (bn.north) -- ++(0, 1.0) -| (tap_inject.south)
+  node[pos=0.25, right=2pt, lbltiny] {bottleneck};
 
 % ============================================================
 % DPT PATH BOX
@@ -264,13 +272,16 @@
 \end{scope}
 
 % ============================================================
-% MODALITY DROPOUT ANNOTATION
+% MODALITY DROPOUT ANNOTATION (right side of fusion trunk)
 % ============================================================
 
-\node[below=0.3cm of posebox, font=\scriptsize, text=black!60] {
-  Modality dropout: $p_{\mathrm{both}}{=}0.55$, \
-  $p_{\mathrm{tac}}{=}0.35$, \
-  $p_{\mathrm{rgb}}{=}0.10$
+\node[font=\tiny, text=black!45, align=left, anchor=north west,
+      inner sep=0pt]
+  at ($(trunk.north east)+(0.15, -0.15)$) {
+  modality\\dropout:\\[1pt]
+  $p_{\mathrm{both}}{=}.55$\\
+  $p_{\mathrm{tac}}{=}.35$\\
+  $p_{\mathrm{rgb}}{=}.10$
 };
 
 \end{tikzpicture}

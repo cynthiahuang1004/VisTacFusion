@@ -25,13 +25,16 @@ import torch.nn.functional as F
 
 # Fixed crop factor: worst-case (45 deg) inscribed square. Every sample lives in this
 # cropped world; effective view = gel_view * FIXED_CROP (17.5mm -> 12.37mm).
+# 1/sqrt(2) is the largest border-free square for ANY gel-spin angle; for a max spin of
+# 15 deg, 1/(cos15+sin15) = 0.816 suffices (data cfg `fixed_crop`, default = FIXED_CROP).
 FIXED_CROP = 1.0 / math.sqrt(2.0)
 
 
-def fixed_center_crop(img, out_size=None):
-    """Center-crop to FIXED_CROP of the side length, resize back to original (or out_size)."""
+def fixed_center_crop(img, out_size=None, crop=FIXED_CROP):
+    """Center-crop to `crop` of the side length (default FIXED_CROP), resize back to
+    original (or out_size). `crop` comes from data cfg `fixed_crop` (same for sim & real)."""
     H, W = img.shape[:2]
-    side = int(math.floor(min(H, W) * FIXED_CROP))
+    side = int(math.floor(min(H, W) * crop))
     off_y = (H - side) // 2
     off_x = (W - side) // 2
     crop = img[off_y:off_y + side, off_x:off_x + side]
@@ -46,7 +49,8 @@ def rotate_gel_spin(tactile, rgb, depth, angle_deg, normal=None):
 
     Simulates spinning the gel in place at the same press point: image content rotates,
     theta changes by -angle_deg (pose = sensor relative to object; verified on real
-    cross-session pairs), (x, y) unchanged.
+    cross-session pairs). Pose (x, y): unchanged for object-frame labels, rotated by
+    R(+angle_deg) for camera-frame labels — see dataset.rotate_pose_theta(rotate_xy).
     """
     H, W = tactile.shape[:2]
     M = cv2.getRotationMatrix2D((W / 2, H / 2), angle_deg, 1.0)

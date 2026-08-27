@@ -31,8 +31,19 @@ from .transforms import (FIXED_CROP, RGBPhotometricAug, TactileAugment,
                          ToTensorResize, fixed_center_crop, rotate_gel_spin)
 
 
-def rotate_pose_theta(pose, dtheta_rad):
-    """Shift the pose theta by dtheta_rad; (x, y) unchanged (gel spins in place).
+def zoom_center(img, zoom):
+    """Zoom a PIL image by `zoom` (>= 1): center-crop side/zoom and resize back (bilinear).
+
+    Used to align the sim RGB camera's mm->pixel scale to the real camera (sim.rgb_zoom).
+    """
+    w, h = img.size
+    c = int(round(w / zoom))
+    o = (w - c) // 2
+    return img.crop((o, o, o + c, o + c)).resize((w, h), Image.BILINEAR)
+
+
+def rotate_pose_theta(pose, dtheta_rad, rotate_xy=False):
+    """Shift the pose theta by dtheta_rad (gel spins in place around the press point).
 
     pose: tensor [4] = (cos θ, sin θ, x, y).
     Sign convention: image rotated by +φ (cv2) → θ' = θ − φ (pose is sensor-relative-
@@ -40,13 +51,23 @@ def rotate_pose_theta(pose, dtheta_rad):
     cross-session pairs of 5 asymmetric objects (hex_key/edge/patterns, 8/0 votes,
     100× MSE margins) using the corrected object-frame (x,y) for pairing.
     Caller passes dtheta_rad = −radians(φ_cv2).
+
+    rotate_xy: what to do with (x, y) depends on the label frame:
+      * object-frame label (legacy sim branch, R(delta_rz) applied in _load_pose):
+        the object does not move, so (x, y) is unchanged → rotate_xy=False.
+      * camera-frame label (real data / align_real_rotation, tx = sx/half):
+        (x, y) is the object centre seen in the camera; rotating the image by +φ
+        rotates that vector by R(+φ) = R(−dtheta) → rotate_xy=True.
+        Verified by mesh z-buffer reconstruction of rotated real GT depth:
+        IoU 0.95 with R(+φ)·t vs 0.03 with t unchanged (check_rotaug_xy.py).
     """
-    cos_t, sin_t = pose[0].item(), pose[1].item()
+    cos_t, sin_t, x, y = (v.item() for v in pose)
     c, s = math.cos(dtheta_rad), math.sin(dtheta_rad)
     cos_new = cos_t * c - sin_t * s
     sin_new = sin_t * c + cos_t * s
-    return torch.tensor([cos_new, sin_new, pose[2].item(), pose[3].item()],
-                        dtype=torch.float32)
+    if rotate_xy:  # R(−dtheta) = [[c, s], [−s, c]]
+        x, y = c * x + s * y, -s * x + c * y
+    return torch.tensor([cos_new, sin_new, x, y], dtype=torch.float32)
 
 
 def depth_to_normal(depth, pixel_size_x, pixel_size_y):
@@ -131,8 +152,20 @@ class SimVisuoTactileDataset(Dataset):
         # NOT the camera view — do not use it for pixel size.
         # Every sample gets the fixed 1/sqrt(2) center crop -> effective view 12.37mm,
         # constant pixel size for train/val/inference alike.
+        # Sim RGB zoom (sim-to-real camera scale alignment): center-crop 1/zoom of the
+        # sim RGB and resize back to the original size, so the sim RGB camera's mm->pixel
+        # scale matches the real camera. Applied on load, BEFORE the fixed 1/sqrt(2) crop
+        # and any augmentation. Labels unchanged (physical pose is the same). Sim only.
+        self.rgb_zoom = float(sim.get("rgb_zoom", 1.0))
+        if self.rgb_zoom < 1.0:
+            raise ValueError(f"{data_section}.rgb_zoom must be >= 1.0 (got {self.rgb_zoom})")
         gel_view_m = sim.get("gel_view_m", 0.017502)
-        self.pixel_size = gel_view_m * FIXED_CROP / image_size
+        # Fixed center-crop ratio (top-level data cfg, shared by sim and real so the
+        # mm->pixel scale is identical across domains). Default 1/sqrt(2).
+        self.fixed_crop = float(cfg_data.get("fixed_crop", FIXED_CROP))
+        if not (0.0 < self.fixed_crop <= 1.0):
+            raise ValueError(f"fixed_crop must be in (0, 1], got {self.fixed_crop}")
+        self.pixel_size = gel_view_m * self.fixed_crop / image_size
         # Gel-spin rotation augmentation (train only): rotate tactile+rgb+depth by a
         # random angle, shift GT theta by the same angle (sign verified), (x,y) unchanged.
         self.rot_aug = augment and sim.get("rot_augment", True)
@@ -146,10 +179,26 @@ class SimVisuoTactileDataset(Dataset):
         # (matching real data convention) and keep only sessions whose base rotation
         # falls inside the object's real rotation window (rotation_windows json).
         self.align_real_rotation = sim.get("align_real_rotation", False)
+        # Label frame of (tx, ty): camera frame for real data and rotation-aligned sim
+        # (tx = sx/half in _load_pose); object frame for the legacy sim branch. Gel-spin
+        # rot aug must rotate (x, y) together with the image ONLY for camera-frame labels.
+        self._xy_is_camera_frame = (data_section == "real") or self.align_real_rotation
         # Window-targeted rotation aug: use ALL sessions; every sample is rotated
         # to a random angle inside the object's real rotation window (the session
         # filter below is skipped — out-of-window sessions become usable geometry).
         self.rot_target_window = sim.get("rot_target_window", False)
+        # Border-free bound: a square rotated by phi keeps a centred square of side
+        # 1/(cos phi + sin phi) free of padding. Warn if the crop is too large for the
+        # configured gel-spin range (rot_target_window can rotate by arbitrary angles).
+        if augment and self.rot_aug:
+            _phi = math.radians(45.0 if self.rot_target_window
+                                else min(abs(self.rot_aug_max_deg), 45.0))
+            _max_crop = 1.0 / (math.cos(_phi) + math.sin(_phi))
+            if self.fixed_crop > _max_crop + 1e-6:
+                print(f"[WARN] {data_section}: fixed_crop={self.fixed_crop:.3f} exceeds the "
+                      f"border-free bound {_max_crop:.3f} for gel-spin up to "
+                      f"{math.degrees(_phi):.0f} deg -> rotated samples will contain "
+                      f"reflect-padded corners")
         # Pre-rotated G renders (samples_gr): the tactile image was rendered from a
         # rotated depth (rotate-then-render, lighting stays fixed/correct). The dataset
         # applies the SAME stored phi to rgb/depth/normal GT + pose label — in train AND
@@ -356,10 +405,10 @@ class SimVisuoTactileDataset(Dataset):
             Image.open(osp.join(unit, self.tactile_subdir, f"{sample_idx:04d}.png")),
             dtype=np.float32,
         )
-        rgb = np.array(
-            Image.open(osp.join(unit, self.rgb_subdir, f"{sample_idx:04d}.png")),
-            dtype=np.float32,
-        )
+        rgb_img = Image.open(osp.join(unit, self.rgb_subdir, f"{sample_idx:04d}.png"))
+        if self.rgb_zoom != 1.0:
+            rgb_img = zoom_center(rgb_img.convert("RGB"), self.rgb_zoom)
+        rgb = np.array(rgb_img, dtype=np.float32)
 
         # --- Load depth (float32, H×W) ---
         suffix = "_gt" if self.use_gt_depth else ""
@@ -388,7 +437,8 @@ class SimVisuoTactileDataset(Dataset):
                                                         normal=normal)
             else:
                 rgb, _, depth = rotate_gel_spin(rgb, rgb, depth, phi_deg)
-            pose = rotate_pose_theta(pose, -math.radians(phi_deg))
+            pose = rotate_pose_theta(pose, -math.radians(phi_deg),
+                                     rotate_xy=self._xy_is_camera_frame)
         # --- Gel-spin rotation aug: tactile+rgb+depth+normal rotate together, θ -= φ ---
         elif self.rot_aug:
             obj_name = osp.basename(osp.dirname(osp.dirname(unit)))
@@ -407,14 +457,15 @@ class SimVisuoTactileDataset(Dataset):
                     tactile, rgb, depth, phi_deg, normal=normal)
             else:
                 tactile, rgb, depth = rotate_gel_spin(tactile, rgb, depth, phi_deg)
-            pose = rotate_pose_theta(pose, -math.radians(phi_deg))
+            pose = rotate_pose_theta(pose, -math.radians(phi_deg),
+                                     rotate_xy=self._xy_is_camera_frame)
 
         # --- Fixed 1/sqrt(2) center crop: EVERY sample (train/val, rotated or not) ---
-        tactile = fixed_center_crop(tactile)
-        rgb = fixed_center_crop(rgb)
-        depth = fixed_center_crop(depth)
+        tactile = fixed_center_crop(tactile, crop=self.fixed_crop)
+        rgb = fixed_center_crop(rgb, crop=self.fixed_crop)
+        depth = fixed_center_crop(depth, crop=self.fixed_crop)
         if normal is not None:
-            normal = fixed_center_crop(normal)
+            normal = fixed_center_crop(normal, crop=self.fixed_crop)
 
         # --- Photometric augmentation ---
         if self.tactile_aug is not None:

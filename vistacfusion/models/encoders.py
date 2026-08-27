@@ -760,8 +760,11 @@ class SITREncoder(nn.Module):
     """
 
     def __init__(self, weights, calibration_dir=None, num_calibration=18,
-                 multiscale_layers=None, image_size=224):
+                 multiscale_layers=None, image_size=224, fixed_crop=None):
         super().__init__()
+        # Calibration images get the same fixed center crop as the data (data cfg
+        # `fixed_crop`); encoder cfg `fixed_crop` must match it. None -> FIXED_CROP.
+        self._fixed_crop = fixed_crop
         print(f"  [encoder] loading SITR from {weights}")
         sd = torch.load(weights, map_location="cpu", weights_only=False)
         if isinstance(sd, dict) and "model" in sd:
@@ -808,7 +811,8 @@ class SITREncoder(nn.Module):
     def _build_calib_cache(self, calib_dir, image_size):
         from PIL import Image
         import numpy as np
-        from ..data.transforms import fixed_center_crop, ToTensorResize
+        from ..data.transforms import FIXED_CROP, fixed_center_crop, ToTensorResize
+        crop = FIXED_CROP if self._fixed_crop is None else float(self._fixed_crop)
         xf = ToTensorResize((image_size, image_size),
                             mean=[123.675, 116.28, 103.53],
                             std=[58.395, 57.12, 57.375])
@@ -817,7 +821,7 @@ class SITREncoder(nn.Module):
         for i in ids:
             img = np.array(Image.open(os.path.join(calib_dir, f"{i:04d}.png")),
                            dtype=np.float32)
-            imgs.append(xf(fixed_center_crop(img)))
+            imgs.append(xf(fixed_center_crop(img, crop=crop)))
         calib_tensor = torch.cat(imgs, dim=0).unsqueeze(0)
         c_enc = self.c_patch_embed.proj(calib_tensor).flatten(2).transpose(1, 2)
         c_enc = c_enc + self.c_pos_embed
@@ -825,7 +829,9 @@ class SITREncoder(nn.Module):
         print(f"  [encoder] calibration cache built from {calib_dir} "
               f"-> {tuple(self._calib_cache.shape)}")
 
-    def set_calibration_dir(self, calib_dir, image_size=224):
+    def set_calibration_dir(self, calib_dir, image_size=224, fixed_crop=None):
+        if fixed_crop is not None:
+            self._fixed_crop = fixed_crop
         self._build_calib_cache(calib_dir, image_size)
 
     def train(self, mode=True):
@@ -907,7 +913,8 @@ def build_encoder(enc_cfg, image_size):
         num_calib = enc_cfg.get("num_calibration", 18)
         return SITREncoder(weights=checkpoint, calibration_dir=calib_dir,
                            num_calibration=num_calib, multiscale_layers=ms,
-                           image_size=image_size)
+                           image_size=image_size,
+                           fixed_crop=enc_cfg.get("fixed_crop", None))
 
     raise ValueError(
         f"Unknown encoder name {name!r}. Available: dinov3_vitl16, mae_vitl16, "
