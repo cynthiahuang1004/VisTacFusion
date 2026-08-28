@@ -417,15 +417,58 @@ def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
         yaml.dump(mcfg, f, default_flow_style=False, sort_keys=False)
 
     output_dir = f"/workspace/outputs/{run_name}"
+    results_dir = f"/results/{run_name}"
+    os.makedirs(output_dir, exist_ok=True)
     cmd = ["python", "-u", "-m", "vistacfusion.engine.train",
            "--model", model_path, "--train", "configs/train_bs32.yaml",
            "--data", data_path, "--output-dir", output_dir]
-    print(f"CMD: {' '.join(cmd)}\n")
-    proc = subprocess.run(cmd)
 
-    results_dir = f"/results/{run_name}"
+    # --- Preemption-safe resume: Modal restarts a preempted function with the same
+    # input. latest.pt + history.json are synced to the results volume every 15 min
+    # (below); on restart we pick them up and continue via --resume. ---
+    import threading, time
+    results_vol.reload()
+    if (os.path.exists(os.path.join(results_dir, "latest.pt"))
+            and not os.path.exists(os.path.join(results_dir, "DONE"))):
+        for fn in ("latest.pt", "history.json"):
+            src = os.path.join(results_dir, fn)
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(output_dir, fn))
+        cmd += ["--resume", os.path.join(output_dir, "latest.pt")]
+        print(f"[resume] found {results_dir}/latest.pt -> resuming", flush=True)
+
+    stop = threading.Event()
+    def _sync():
+        last = 0.0
+        while not stop.wait(900):
+            try:
+                lp = os.path.join(output_dir, "latest.pt")
+                if not os.path.exists(lp) or os.path.getmtime(lp) <= last:
+                    continue
+                sz = os.path.getsize(lp); time.sleep(5)
+                if os.path.getsize(lp) != sz:      # still being written
+                    continue
+                os.makedirs(results_dir, exist_ok=True)
+                for fn in ("latest.pt", "history.json"):
+                    src = os.path.join(output_dir, fn)
+                    if os.path.exists(src):
+                        tmp = os.path.join(results_dir, fn + ".tmp")
+                        shutil.copy(src, tmp); os.replace(tmp, os.path.join(results_dir, fn))
+                results_vol.commit()
+                last = os.path.getmtime(lp)
+                print(f"[sync] latest.pt -> {results_dir}", flush=True)
+            except Exception as e:
+                print(f"[sync] warn: {e}", flush=True)
+    threading.Thread(target=_sync, daemon=True).start()
+
+    print(f"CMD: {' '.join(cmd)}\n", flush=True)
+    proc = subprocess.run(cmd)
+    stop.set()
+
     if os.path.isdir(output_dir):
         shutil.copytree(output_dir, results_dir, dirs_exist_ok=True)
+        if proc.returncode == 0:
+            open(os.path.join(results_dir, "DONE"), "w").write("ok\n")
         results_vol.commit()
         print(f"\nResults saved to {RESULTS_VOLUME}:/{run_name}")
     return {"run_name": run_name, "returncode": proc.returncode}

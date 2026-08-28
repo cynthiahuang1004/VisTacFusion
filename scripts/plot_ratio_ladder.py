@@ -108,18 +108,19 @@ def gather(prefix):
     return data
 
 
-def plot_ladder(data, title, out_path):
+def plot_ladder(data, title, out_path, ratios=None):
+    ratios = ratios or RATIOS
     fig, axes = plt.subplots(3, 5, figsize=(24, 12), constrained_layout=True)
     fig.suptitle(title, fontsize=16, fontweight="bold")
 
-    x_labels = [r[0] for r in RATIOS]
+    x_labels = [r[0] for r in ratios]
     x_pos = np.arange(len(x_labels))
 
     for row, mode in enumerate(MODES):
         for col, (metric_key, metric_label) in enumerate(METRICS):
             ax = axes[row, col]
             vals = []
-            for label, _, _ in RATIOS:
+            for label, _, _ in ratios:
                 if label in data and mode in data[label]:
                     v = data[label][mode].get(metric_key, None)
                     vals.append(v)
@@ -194,3 +195,27 @@ for label, suffix, ratio_val in RATIOS:
         print(f"  MISSING: {hf}")
 plot_ladder(g3s_tf, "GAN (G-rendered) sim tactile + translation filter — real:sim ratio ladder  (dense: best depth epoch; pose: best pose epoch; dashed = real-only)",
             os.path.join(OUT_DIR, "ratio_ladder_gan_transfilt.png"))
+
+
+print("\n=== GAN 3-Session TransFilt + zoom1.15 + fixed_crop 0.816 ===")
+# (label, suffix, ratio) — sim count = suffix*36 (filtered pool), real = 4197
+RATIOS_C816 = [
+    ("1:0", "realonly", 0.0), ("1:0.3", "sim34", 0.30), ("1:0.58", "sim68", 0.58),
+    ("1:1.04", "sim120", 1.04), ("1:1.27", "sim148", 1.27), ("1:1.63", "sim190", 1.63),
+    ("1:1.83", "sim213", 1.83), ("1:1.97", "sim229", 1.97), ("1:2.15", "sim250", 2.15),
+    ("1:2.39", "sim279", 2.39), ("1:2.69", "sim315", 2.69), ("1:2.98", "sim348", 2.98),
+    ("1:3.26", "sim380", 3.26), ("1:4.89", "sim570", 4.89), ("1:6.52", "sim760", 6.52),
+]
+g3s_c816 = {}
+for label, suffix, ratio_val in RATIOS_C816:
+    if suffix == "realonly":
+        d = os.path.join(BASE, "ratio_realonly_crop816")
+    else:
+        d = os.path.join(BASE, f"ratio_g3s_{suffix}_transfilt_zoom115_crop816")
+    hf = os.path.join(d, "history.json")
+    if os.path.isfile(hf):
+        g3s_c816[label] = load_best_per_mode(hf)
+    else:
+        print(f"  MISSING: {hf}")
+plot_ladder(g3s_c816, "GAN sim tactile + translation filter + sim RGB zoom 1.15 + fixed crop 0.816 — real:sim ratio ladder  (dense: best depth epoch; pose: best pose epoch; dashed = real-only)",
+            os.path.join(OUT_DIR, "ratio_ladder_gan_transfilt_crop816.png"), ratios=RATIOS_C816)
