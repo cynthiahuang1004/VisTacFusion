@@ -332,8 +332,10 @@ RATIO_POINTS = {
     "sim380": (None, 1.214), "sim570": (None, 1.82), "sim760": (None, 2.427),
 }
 
-def ratio_run_name(name: str) -> str:
-    return f"ratio_g3s_{name}_transfilt_zoom115_crop816"
+def ratio_run_name(name: str, tac: str = "t3", rgb: str = "mae") -> str:
+    if (tac, rgb) == ("t3", "mae"):
+        return f"ratio_g3s_{name}_transfilt_zoom115_crop816"
+    return f"ablation_c816_{name}_{tac}_{rgb}"   # encoder ablation in the crop-0.816 world
 
 
 @app.function(
@@ -349,8 +351,8 @@ def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
     import shutil, subprocess, yaml
 
     spp, oversample = RATIO_POINTS[name]
-    run_name = ratio_run_name(name)
-    print(f"\n{'='*60}\n  {run_name}  (spp={spp}, oversample={oversample})\n{'='*60}\n")
+    run_name = ratio_run_name(name, tac, rgb)
+    print(f"\n{'='*60}\n  {run_name}  (tac={tac}, rgb={rgb}, spp={spp}, oversample={oversample})\n{'='*60}\n")
     os.chdir("/workspace")
 
     sim_cfg = {
@@ -490,6 +492,55 @@ def train_ratio_ladder(names: str):
             print(f"  {r['run_name']}: {'OK' if r['returncode'] == 0 else 'FAIL'}", flush=True)
         except Exception as e:
             print(f"  {ratio_run_name(n)}: ERROR - {e}", flush=True)
+
+
+@app.local_entrypoint()
+def train_ablation_c816(ratio: str = "sim148", combos: str = ""):
+    """Encoder ablation at one crop-0.816 ratio point. MAE-RGB combos are spawned first so
+    they occupy the first GPU slots. combos: optional 'tac:rgb,tac:rgb' subset.
+    modal run modal_ablation.py::train_ablation_c816 --ratio sim148"""
+    if combos:
+        pairs = [tuple(c.split(":")) for c in combos.split(",") if c.strip()]
+    else:
+        pairs = [(t, "mae") for t in TACTILE_KEYS] + \
+                [(t, r) for r in RGB_KEYS if r != "mae" for t in TACTILE_KEYS]
+    print(f"Launching {len(pairs)} ablation runs at {ratio}: {pairs}", flush=True)
+    handles = [(t, r, train_ratio_one.spawn(ratio, t, r)) for t, r in pairs]
+    for t, r, h in handles:
+        try:
+            res = h.get()
+            print(f"  {res['run_name']}: {'OK' if res['returncode'] == 0 else 'FAIL'}", flush=True)
+        except Exception as e:
+            print(f"  {ratio_run_name(ratio, t, r)}: ERROR - {e}", flush=True)
+
+
+@app.local_entrypoint()
+def download_runs(names: str, history_only: bool = False, dest: str = "outputs"):
+    """Download arbitrary run dirs from the results volume (comma-separated run names)."""
+    import time
+    vol = modal.Volume.from_name(RESULTS_VOLUME)
+    for run in [n.strip() for n in names.split(",") if n.strip()]:
+        local_dir = os.path.join(dest, run)
+        try:
+            files = list(vol.listdir(f"/{run}"))
+        except Exception as e:
+            print(f"  SKIP {run}: {e}"); continue
+        os.makedirs(local_dir, exist_ok=True)
+        for f in files:
+            fname = os.path.basename(f.path)
+            if history_only and fname != "history.json":
+                continue
+            if not fname.endswith((".pt", ".json", ".yaml")):
+                continue
+            local_path = os.path.join(local_dir, fname)
+            if fname.endswith(".pt") and os.path.exists(local_path):
+                continue
+            time.sleep(1)
+            with open(local_path, "wb") as fout:
+                for chunk in vol.read_file(f.path):
+                    fout.write(chunk)
+            print(f"  {run}/{fname}", flush=True)
+    print("Done.")
 
 
 @app.local_entrypoint()
