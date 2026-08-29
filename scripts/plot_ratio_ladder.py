@@ -56,39 +56,47 @@ def _get(v, key):
     return None
 
 
-def load_best_per_mode(history_path):
+# Epoch-selection rule ("B"): the best-depth epoch and the best-pose (rot_deg) epoch are
+# chosen on the deployed config (`both`, same as best_depth.pt / best_pose.pt), and ALL modes
+# are reported from those two epochs. select_by=None restores the old per-mode rule ("A").
+SELECT_BY = "both"
+
+
+def load_best_per_mode(history_path, select_by=SELECT_BY):
     with open(history_path) as f:
         hist = json.load(f)
 
-    results = {}
-    for mode in MODES:
-        # Find best depth epoch and best pose epoch separately
+    def _best_epochs(mode):
         best_depth_e, best_depth_val = None, 1e9
         best_pose_e, best_pose_val = None, 1e9
-
         for i, rec in enumerate(hist):
             v = rec.get("val", {}).get(mode, {})
             d = _get(v, "depth_mse")
             r = _get(v, "rot_deg")
             if d is not None and d < best_depth_val:
-                best_depth_val = d
-                best_depth_e = i
+                best_depth_val, best_depth_e = d, i
             if r is not None and r < best_pose_val:
-                best_pose_val = r
-                best_pose_e = i
+                best_pose_val, best_pose_e = r, i
+        return best_depth_e, best_pose_e
 
+    shared = _best_epochs(select_by) if select_by else None
+    results = {}
+    for mode in MODES:
+        best_depth_e, best_pose_e = shared if shared else _best_epochs(mode)
         if best_depth_e is None or best_pose_e is None:
             continue
-
-        bd = hist[best_depth_e]["val"][mode]
-        bp = hist[best_pose_e]["val"][mode]
-
+        bd = hist[best_depth_e].get("val", {}).get(mode)
+        bp = hist[best_pose_e].get("val", {}).get(mode)
+        if not bd or not bp:
+            continue
         results[mode] = {
             "depth_mse":  _get(bd, "depth_mse"),
             "normal_mse": _get(bd, "normal_mse"),
             "rot_l1":     _get(bp, "rot_l1"),
             "rot_deg":    _get(bp, "rot_deg"),
             "trans_l1":   _get(bp, "trans_l1"),
+            "depth_epoch": best_depth_e,
+            "pose_epoch": best_pose_e,
         }
     return results
 
