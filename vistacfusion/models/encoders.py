@@ -876,6 +876,96 @@ class SITREncoder(nn.Module):
 #  Factory
 # ──────────────────────────────────────────────────────────────────────
 
+
+class SparshXEncoder(nn.Module):
+    """Frozen Sparsh-X (image-only, base) tactile encoder pretrained with the official
+    ``sparsh-multisensory-touch`` DINO code on the VisTacFusion co-training images.
+
+    The architecture is instantiated from the Sparsh-X repo itself (``repo_path`` on
+    sys.path): ``dit_base`` = 8 per-modality ViT blocks + 4 bottleneck-fusion blocks
+    (embed 768, 12 heads, 1 register token, 4 bottleneck tokens, sinusoidal pos-embed).
+    With a single modality the fusion blocks reduce to plain ViT blocks with 4 extra
+    bottleneck tokens, i.e. a 12-layer ViT-B/16 -> 196 patch tokens of dim 768.
+    Weights: EMA teacher backbone (``teacher_encoder.backbone.*``) of the DINO checkpoint,
+    as is standard for DINO downstream use. Input: ImageNet-normalized [B,3,H,W] (as all
+    VisTacFusion encoders); it is mapped back to [0,1] and normalized with the encoder's
+    own stored ``img_avg/img_div`` buffers. ``forward`` returns cls=None.
+    """
+
+    def __init__(self, weights, multiscale_layers=None, image_size=224,
+                 repo_path="/media/hdd/ihsuan/sparsh-multisensory-touch",
+                 which="teacher", img_avg=None, img_std=None):
+        super().__init__()
+        import sys as _sys
+        if repo_path not in _sys.path:
+            _sys.path.insert(0, repo_path)
+        from tactile_ssl.model.d360_transformer import dit_base
+        from tactile_ssl.model.layers import Attention
+        from omegaconf import OmegaConf
+        print(f"  [encoder] loading Sparsh-X ({which}) from {weights}")
+        norm = OmegaConf.create({"img": {"avg": list(img_avg or [0.5, 0.5, 0.5]),
+                                         "std": list(img_std or [0.25, 0.25, 0.25]), "div": 1}})
+        self.model = dit_base(
+            use_img=True, use_mic=False, use_imu=False, use_pressure=False,
+            sensor_sizes={"img": [image_size, image_size]}, sensor_chans={"img": 3},
+            patch_sizes={"img": 16}, num_register_tokens=1, fusion_type="bottleneck",
+            fusion_layer=8, num_bottlenecks=4, drop_path_rate=0.0, pos_embed_fn="sinusoidal",
+            normalization=norm, attn_class=Attention)
+        ckpt = torch.load(weights, map_location="cpu", weights_only=False)
+        raw = ckpt.get("model", ckpt)
+        prefix = f"{which}_encoder.backbone."
+        sd = {k[len(prefix):]: v for k, v in raw.items() if k.startswith(prefix)}
+        if not sd:                                   # bare backbone state dict
+            sd = raw
+        res = self.model.load_state_dict(sd, strict=True)
+        self.embed_dim = 768
+        self.num_patches = (image_size // 16) ** 2
+        self._n_reg = 1
+        self._n_bn = 4
+        depth = len(self.model.blocks) + len(self.model.fusion_blocks)
+        self.multiscale_layers = _resolve_multiscale(multiscale_layers, depth)
+        self.register_buffer("_in_mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.register_buffer("_in_std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
+        for p in self.parameters():
+            p.requires_grad = False
+        self.model.eval()
+
+    def train(self, mode=True):
+        super().train(False)
+        return self
+
+    def _layers(self, x):
+        """Yield per-layer token states (register + patches, bottleneck stripped)."""
+        m = self.model
+        x01 = (x * self._in_std + self._in_mean).clamp(0, 1)
+        xs = m.pre_embed({"img": x01})
+        xs = m.embed(xs)
+        xs = m.prepare_tokens(xs, None)
+        h = xs["img"]
+        outs = []
+        for blk in m.blocks:
+            h = blk["img"](h)
+            outs.append(h)
+        bn = m.bottleneck.expand(h.shape[0], -1, -1)
+        for blk in m.fusion_blocks:
+            h = blk["img"](torch.cat([bn, h], dim=1))
+            bn = h[:, : self._n_bn]
+            h = h[:, self._n_bn:]
+            outs.append(h)
+        return outs
+
+    @torch.no_grad()
+    def forward(self, x):
+        outs = self._layers(x)
+        h = self.model.norm["img"](outs[-1])
+        return h[:, self._n_reg:], None
+
+    @torch.no_grad()
+    def forward_multiscale(self, x):
+        outs = self._layers(x)
+        return [outs[i][:, self._n_reg:] for i in self.multiscale_layers]
+
+
 def build_encoder(enc_cfg, image_size):
     """Dispatch on ``enc_cfg["name"]``; fall back to MockEncoder without a checkpoint."""
     checkpoint = enc_cfg.get("checkpoint", None)
@@ -908,6 +998,11 @@ def build_encoder(enc_cfg, image_size):
                              ssl_name=ssl_name)
     if name == "tvl_vitb16":
         return TVLEncoder(weights=checkpoint, multiscale_layers=ms, image_size=image_size)
+    if name == "sparshx_base":
+        return SparshXEncoder(weights=checkpoint, multiscale_layers=ms, image_size=image_size,
+                              repo_path=enc_cfg.get("repo_path", "/media/hdd/ihsuan/sparsh-multisensory-touch"),
+                              which=enc_cfg.get("which", "teacher"),
+                              img_avg=enc_cfg.get("img_avg", None), img_std=enc_cfg.get("img_std", None))
     if name == "sitr_b18":
         calib_dir = enc_cfg.get("calibration_dir", None)
         num_calib = enc_cfg.get("num_calibration", 18)
@@ -919,5 +1014,5 @@ def build_encoder(enc_cfg, image_size):
     raise ValueError(
         f"Unknown encoder name {name!r}. Available: dinov3_vitl16, mae_vitl16, "
         f"siglip_vitl16, clip_vitl14, dav2_vitl14, t3_large, sparsh_dino_base, "
-        f"tvl_vitb16, sitr_b18"
+        f"tvl_vitb16, sitr_b18, sparshx_base"
     )
