@@ -478,6 +478,10 @@ class SingleEncoderModel(nn.Module):
         dpt_taps = [self.dpt_pos(t) for t in ms]
         depth, normal = self.dpt(dpt_taps, out_hw=(self.image_size, self.image_size))
 
+        if tac_cls is None:
+            # encoders without a usable CLS token (keep_cls: false, e.g. Sparsh):
+            # mean-pooled patch tokens stand in for the pose token
+            tac_cls = tac_patch.mean(dim=1, keepdim=True)
         pose = self.pose_head(tac_cls, spatial_queries=tac_patch)
 
         out = {"depth": depth, "normal": normal}
