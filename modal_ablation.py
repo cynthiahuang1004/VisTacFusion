@@ -335,6 +335,8 @@ RATIO_POINTS = {
 def ratio_run_name(name: str, tac: str = "t3", rgb: str = "mae") -> str:
     if (tac, rgb) == ("t3", "mae"):
         return f"ratio_g3s_{name}_transfilt_zoom115_crop816"
+    if rgb == "single":                              # tactile-only single-encoder baseline
+        return f"base_{tac}_single_c816_{name}"
     return f"ablation_c816_{name}_{tac}_{rgb}"   # encoder ablation in the crop-0.816 world
 
 
@@ -403,7 +405,8 @@ def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
     with open(data_path, "w") as f:
         yaml.dump(data_cfg, f, default_flow_style=False, sort_keys=False)
 
-    with open(model_config(tac, rgb)) as f:
+    mcfg_path = f"ablation/encoder/tac_{tac}_single.yaml" if rgb == "single" else model_config(tac, rgb)
+    with open(mcfg_path) as f:
         mcfg = yaml.safe_load(f)
     for section in ["encoder", "rgb_encoder"]:
         enc = mcfg.get(section)
