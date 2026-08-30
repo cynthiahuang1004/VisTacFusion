@@ -17,6 +17,8 @@ Benefits:
 """
 from __future__ import annotations
 
+import sys
+
 import torch
 import torch.nn as nn
 
@@ -493,6 +495,20 @@ def build_model(cfg):
     model_type = cfg.get("model_type", "visuo_tactile")
     if model_type == "single_encoder":
         return SingleEncoderModel(cfg)
+    if model_type == "external":
+        # Architecture baselines living in another repo but trained with THIS pipeline
+        # (data, losses, modality dropout, optimizer, eval, checkpoints all identical).
+        # cfg.external.import_path = "package.module:callable"; callable(cfg) -> nn.Module
+        # with the VisuoTactileModel forward contract (config / inject_rgb_to_dpt /
+        # encoder_cache / object_ids / domain_ids -> {"depth", "normal", "se2"}).
+        import importlib
+        ext = cfg.external
+        for extra in ext.get("sys_path", []) or []:
+            if extra not in sys.path:
+                sys.path.insert(0, extra)
+        mod_name, fn_name = ext.import_path.split(":")
+        fn = getattr(importlib.import_module(mod_name), fn_name)
+        return fn(cfg)
     if model_type == "mvitac":
         from .mvitac import MViTacPoseModel
         mc = cfg.mvitac
