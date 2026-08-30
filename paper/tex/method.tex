@@ -1,3 +1,4 @@
+% !TEX root = ../main.tex
 \section{METHOD}
 
 \begin{figure*}[t]
@@ -22,6 +23,89 @@
   modality dropout.}
   \label{fig:architecture}
 \end{figure*}
+
+\subsection{Transparency-Switchable Visuo-Tactile Sensor}
+\label{sec:sensor}
+
+\begin{figure}[t]
+  \centering
+  \todo{Fig.: (a) cross-section of the layer stack (photochromic layer,
+  Solaris base, backing plate, UV LEDs, camera); (b) photo of the assembled
+  prototype; (c) the same scene imaged in transparent and opaque mode.}
+  \caption{Transparency-switchable sensor.
+  (a)~Layer stack.
+  (b)~Assembled prototype on the robot flange.
+  (c)~Transparent mode (UV off) and opaque mode (UV on) views of the same
+  contact.}
+  \label{fig:sensor}
+\end{figure}
+
+GelSight-family sensors~\cite{yuan2017gelsight,donlon2018gelslim} coat the
+gel with a permanent opaque reflective layer, which enables photometric
+depth reconstruction but blocks the camera's view beyond the contact surface.
+Prior dual-mode designs either keep the membrane semi-transparent and switch
+by illumination contrast~\cite{hogan2021sts,athar2023vistac,prince2026mvptac},
+or keep the gel transparent and track UV-excited
+markers~\cite{wang2022spectac,yang2026transtac}, sacrificing part of the
+reflective surface that dense reconstruction relies on.
+We instead make the reflective layer itself switchable.
+Building on the GelSlim~4.0~\cite{sipos2024gelslim4} body, we replace the
+blue LEDs of its RGB illumination with UV LEDs and its coated gel with a
+photochromic membrane that is transparent by default and turns opaque under
+UV (Fig.~\ref{fig:sensor}).
+
+The membrane is a two-layer Solaris\textsuperscript{TM} (Smooth-On) stack.
+The 5\,mm base layer is mixed 1:1 by weight, vacuum-degassed, and cast in a
+mold; it is optically clear once cured and serves as both the compliant
+contact body and the transparent window.
+The photochromic layer is spin-coated onto its outer face from 3\,g Solaris
+mixed with 0.3\,mL of invisible UV-reactive ink (United Nuclear).
+Because both layers are the same silicone, the film deforms with the base
+rather than delaminating from it.
+The photochromic layer is the outermost surface and contacts the object
+directly, with no protective overlayer~\cite{prince2026mvptac}.
+In opaque mode the reflective surface therefore coincides with the contact
+surface, so the observed shading is produced at the exact geometry being
+touched; in transparent mode the optical path contains only two
+index-matched silicone layers, avoiding extra interface reflections in the
+RGB view.
+Despite the exposed surface, the membrane survived more than 40{,}000
+contacts in durability testing without loss of switching function.
+
+With UV off, the sensor operates in \emph{transparent mode} and the internal
+camera images the external scene through the membrane, yielding $I_r$.
+With UV on, the layer switches to an opaque reflective state within
+\todo{xx}\,ms, and the remaining red and green LEDs illuminate it for
+photometric tactile imaging, yielding $I_t$; the transition reverses
+\todo{xx}\,s after UV is removed.
+Both images come from the same Raspberry~Pi Zero camera module
+(\todo{resolution}) through the same membrane, so they are paired by
+construction but not pixel-aligned: the RGB view sees the object and its
+surroundings beyond the gel, while the tactile view sees only the contact
+patch.
+\todo{active area diameter; housing; flange adapter; flex PCB role.}
+
+\subsection{Data Collection}
+\label{sec:data_collection}
+
+Each object is rigidly mounted on a square platform attached to a
+force--torque (FT) sensor.
+Using the robot flange as a probe, we detect sequential edge contacts from
+the FT signal, fit the four platform boundaries, and recover the platform
+center and in-plane orientation, which define the object frame $\{O\}$ with
+$0.1$--$0.2\,$mm in-plane accuracy.
+\todo{Add ${}^{W}T_O$, ${}^{O}T_S$ equations if space permits.}
+
+A KUKA LBR Med R820 arm then executes the same trajectory twice.
+In Pass~1 the gel is removed and the camera captures a clean reference image
+$I_{\text{clean}}^{(i)}$ with the robot pose $P_{\text{robot}}^{(i)}$ at each
+waypoint.
+In Pass~2 the switchable gel is installed and each waypoint yields a
+transparent-mode image $I_{\text{trans}}^{(i)}$ (UV off), an opaque
+non-contact background $I_{\text{bg}}^{(i)}$ (UV on), and a tactile image
+$I_{\text{tac}}^{(i)}$ (UV on, in contact).
+Repeating an identical trajectory maximizes spatial correspondence across
+modalities.
 
 \subsection{Problem Formulation}
 Given a paired but non-pixel-aligned RGB image $I_r$ and vision-based tactile
@@ -100,9 +184,14 @@ receives a learned positional embedding before entering the DPT reassembly
 fusion-upsampling pipeline, producing depth ($C{=}1$) and surface normals
 ($C{=}3$) at the input resolution of $224{\times}224$.
 
-Because the DPT path bypasses the fusion trunk, it receives tactile features
-on \emph{every} training step, unaffected by modality dropout. This is
-critical: dense prediction is primarily a tactile task (Table~\ref{tab:modality_ablation}).
+Because the DPT path bypasses the fusion trunk, the pose-path modality
+dropout never dilutes its tactile input: whenever the tactile image is
+present (the \emph{both} and \emph{tactile} configurations, 90\% of steps)
+the decoder sees pure tactile taps. In the RGB-only configuration the same
+decoder falls back to the RGB encoder's multiscale taps, which is possible
+because both encoders share the ViT-L token geometry (196 tokens, 1024-dim);
+this yields a coarse shape prior rather than contact geometry
+(Table~\ref{tab:modality_ablation}).
 
 \paragraph{RGB injection via TapInjection.}
 When RGB is available, visual context is optionally injected into the DPT taps
@@ -142,7 +231,7 @@ At inference, these become three modes of the same trained weights:
 \item \textbf{Tactile-only}: steps 1--2 are skipped (no RGB memory); only
       self-attention (step 3) refines the queries. DPT receives pure tactile taps.
 \item \textbf{RGB-only}: learned mask tokens replace tactile queries; all
-      three trunk steps run.
+      three trunk steps run. DPT falls back to RGB encoder taps.
 \end{itemize}
 Importantly, the decoder input shape is identical in all three modes, so the
 comparison is not confounded by architectural differences.
@@ -187,5 +276,5 @@ rotation augmentation) followed by a random gel-spin rotation
 $\phi \sim \mathcal{U}(-180^{\circ}, 180^{\circ})$.
 
 \paragraph{Sim+real co-training.}
-\todo{describe the sim+real co-training setup and the optimal real:sim ratio
-finding (1:2.7). This is your hardware/data section --- fill in when ready.}
+\todo{Describe the simulated dataset (TACTO / other sim, objects, number of
+samples) and the optimal real:sim ratio finding (1:2.7).}

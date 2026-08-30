@@ -32,7 +32,9 @@ Multi-Task Tactile Perception
 
 \author{Xiangdong Huang$^{1}$% <-this % stops a space
 \thanks{*This work was not supported by any organization.}%
-\thanks{$^{1}$Xiangdong Huang is with \todo{affiliation}%
+\thanks{$^{1}$Xiangdong Huang is with the University of Michigan,
+        Ann Arbor, MI, USA.
+        {\tt\small chatgpt8885huang@gmail.com}}%
 }
 
 \begin{document}
@@ -53,7 +55,7 @@ Features are combined by an asymmetric cross-attention trunk in which tactile
 tokens serve as spatial queries while RGB enters only as read-only context
 through a compact set of bottleneck tokens. Dense and pose prediction paths
 are architecturally decoupled: the DPT decoder taps the tactile encoder
-directly and receives 100\% of training steps, while modality dropout is
+directly whenever tactile input is present, while modality dropout is
 confined to the pose path, enabling a single set of weights to operate in
 RGB+tactile, tactile-only, and RGB-only modes. This design yields a
 controlled ablation of each modality's contribution: tactile alone matches

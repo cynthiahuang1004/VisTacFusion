@@ -18,7 +18,9 @@ Trained on sim, deployed on real (sim-to-real). RGB provides **pose disambiguati
 Two fully decoupled data paths share the same frozen encoder:
 
 - **DPT path**: encoder multiscale taps at **native 1024 dim** → DPT decoder.
-  Always receives tactile (100% steps, no modality dropout). Optional RGB injection
+  Receives tactile taps whenever tactile is present (both/tactile configs, 90% of
+  steps); in the `rgb` config it falls back to RGB encoder taps (same ViT-L token
+  geometry) and is still supervised. Optional RGB injection
   via ReZero-gated cross-attention through the fusion trunk's bottleneck.
 - **Pose path**: encoder → projection (1024→768) → fusion trunk (asymmetric
   cross-attention bottleneck) → Pose MLP. Modality dropout (both/tactile/rgb)
@@ -163,9 +165,9 @@ One model, three inference configs. Dropout probabilities: `p_both=0.55, p_tacti
 |---|---|---|---|---|
 | `both` | tactile-derived | RGB-derived | tactile encoder | Yes (via bottleneck) |
 | `tactile` | tactile-derived | None (①② skipped) | tactile encoder | No |
-| `rgb` | learned mask tokens | RGB-derived | tactile encoder* | Yes |
+| `rgb` | learned mask tokens | RGB-derived | RGB encoder (fallback)* | Yes |
 
-*DPT always uses tactile encoder taps (100% steps). Modality dropout only affects the pose path. RGB injection into DPT is independently sampled (`p_dpt_inject=0.5`).
+*DPT uses tactile encoder taps whenever tactile is present; in the `rgb` config (`use_tactile=False`) `model.py` falls back to `rgb_encoder.forward_multiscale` because T3 and MAE share dim/token count, and the depth loss is still applied. Modality dropout otherwise only affects the pose path. RGB injection into DPT is independently sampled (`p_dpt_inject=0.5`).
 
 ---
 
@@ -268,7 +270,7 @@ VisTacFusion/
 2. **No pixel alignment** — RGB↔tactile correspondence learned via cross-attention bottleneck.
 3. **Tactile is spatial anchor** — dense prediction in tactile frame; RGB is read-only K/V context.
 4. **One model, three configs** — modality dropout at training; any config at inference.
-5. **Decoupled DPT/Pose paths** — DPT gets 100% tactile training (no dropout dilution).
+5. **Decoupled DPT/Pose paths** — DPT gets tactile taps on every step tactile is present (no dropout dilution); RGB-only steps fall back to RGB taps.
 6. **Grouped uncertainty weighting** — dense and pose auto-balance independently.
 
 ---
