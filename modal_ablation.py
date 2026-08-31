@@ -81,6 +81,11 @@ image = image.add_local_dir(
         "eval_results/", "*.pyc", "__pycache__/",
     ],
 )
+# SparshX MBT-fusion baseline repo (model code only; trained through the VTF pipeline)
+image = image.add_local_dir(
+    "/media/hdd2/ihsuan/SparshXTwoStreamFusion", remote_path="/sparshx",
+    ignore=["outputs/", ".git/", "weights/", "*.pyc", "__pycache__/"],
+)
 
 # ============================================================
 # Helpers
@@ -198,6 +203,7 @@ CKPT_REMAP = {
     "pretrained_encoders/sparsh_mae_base.safetensors": "/data/weights/sparsh_mae_base.safetensors",
     "/media/hdd2/ihsuan/sparsh/weights/sparsh/mae_vitbase.ckpt": "/data/weights/sparsh_mae_base.safetensors",
     "/media/hdd2/ihsuan/gsrl/datasets/checkpoints/SITR_B18.pth": "/data/weights/SITR_B18.pth",
+    "pretrained_encoders/tvl_enc_vitb.pth": "/data/weights/tvl_enc_vitb.pth",
 }
 
 SITR_CAL_DIR_MODAL = "/data/sim/pattern_01_2_lines_angle_1_2/session_000/sensor_0000/calibration"
@@ -348,13 +354,14 @@ def ratio_run_name(name: str, tac: str = "t3", rgb: str = "mae") -> str:
     timeout=3600 * TIMEOUT_HOURS,
     memory=32768,
 )
-def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
+def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae", model_cfg: str = None,
+                    run_name: str = None):
     """One ratio-ladder point (crop 0.816 world). Mirrors
     ablation/simqty_gtac/data_ratio_g3s_<name>_transfilt_zoom115_crop816.yaml with Modal paths."""
     import shutil, subprocess, yaml
 
     spp, oversample = RATIO_POINTS[name]
-    run_name = ratio_run_name(name, tac, rgb)
+    run_name = run_name or ratio_run_name(name, tac, rgb)
     print(f"\n{'='*60}\n  {run_name}  (tac={tac}, rgb={rgb}, spp={spp}, oversample={oversample})\n{'='*60}\n")
     os.chdir("/workspace")
 
@@ -406,7 +413,7 @@ def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
     with open(data_path, "w") as f:
         yaml.dump(data_cfg, f, default_flow_style=False, sort_keys=False)
 
-    mcfg_path = f"ablation/encoder/tac_{tac}_single.yaml" if rgb == "single" else model_config(tac, rgb)
+    mcfg_path = model_cfg or (f"ablation/encoder/tac_{tac}_single.yaml" if rgb == "single" else model_config(tac, rgb))
     with open(mcfg_path) as f:
         mcfg = yaml.safe_load(f)
     for section in ["encoder", "rgb_encoder"]:
@@ -546,6 +553,15 @@ def download_runs(names: str, history_only: bool = False, dest: str = "outputs")
                     fout.write(chunk)
             print(f"  {run}/{fname}", flush=True)
     print("Done.")
+
+
+@app.local_entrypoint()
+def train_external(ratio: str, model_cfg: str, run_name: str):
+    """One run of an arbitrary (e.g. external / baseline) model config at a ratio point.
+    model_cfg is a path inside the image (e.g. /sparshx/configs/vtf_model_sparshx_sitrmae_modal.yaml
+    or ablation/encoder/tac_tvl_rgb_mae.yaml relative to /workspace)."""
+    res = train_ratio_one.remote(ratio, "t3", "mae", model_cfg=model_cfg, run_name=run_name)
+    print(f"  {res['run_name']}: {'OK' if res['returncode'] == 0 else 'FAIL'}", flush=True)
 
 
 @app.local_entrypoint()
