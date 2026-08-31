@@ -442,7 +442,11 @@ def main():
 
             both_metrics = val_metrics.get("both", {})
             depth_score = both_metrics.get("depth_mse", float("inf"))
-            pose_score = both_metrics.get("pose_rot", float("inf"))
+            # Select by mean angular error (deg) — the metric the tables report. The
+            # 1-cos loss is outlier-dominated and used to pick early epochs whose
+            # rot/trans are 1.5-2x worse than the best-rot_deg epoch.
+            pose_score = both_metrics.get("pose_rot_deg",
+                                          both_metrics.get("pose_rot", float("inf")))
 
             if depth_score < best_metric:
                 best_metric = depth_score
@@ -458,7 +462,7 @@ def main():
                     os.path.join(args.output_dir, "best_pose.pt"),
                     model, optimizer, scheduler, scaler, epoch, best_pose_metric,
                     criterion=criterion)
-                print(f"  ** new best pose: rot_1cos={best_pose_metric:.4f}")
+                print(f"  ** new best pose: rot_deg={best_pose_metric:.4f}")
 
             save_checkpoint(
                 os.path.join(args.output_dir, "latest.pt"),
