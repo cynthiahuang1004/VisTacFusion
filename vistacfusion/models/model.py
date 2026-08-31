@@ -42,6 +42,18 @@ def _config_flags(config):
     raise ValueError(f"config must be one of {VALID_CONFIGS}, got {config!r}")
 
 
+
+def _resample_tokens(tokens, num_target):
+    """Resample a [B, N, C] square token grid to num_target tokens (bilinear on the grid)."""
+    B, N, C = tokens.shape
+    if N == num_target:
+        return tokens
+    g_in, g_out = int(round(N ** 0.5)), int(round(num_target ** 0.5))
+    x = tokens.transpose(1, 2).reshape(B, C, g_in, g_in)
+    x = nn.functional.interpolate(x, size=(g_out, g_out), mode="bilinear", align_corners=False)
+    return x.reshape(B, C, g_out * g_out).transpose(1, 2)
+
+
 class TapInjection(nn.Module):
     """Per-tap residual RGB injection: tap += gate * CrossAttn(Q=tap, K=V=bottleneck).
 
@@ -383,10 +395,14 @@ class VisuoTactileModel(nn.Module):
             if self.coral_dpt_tac is not None and domain_ids is not None:
                 ms = self.coral_dpt_tac(ms, domain_ids, object_ids)
             dpt_taps = [self.dpt_pos(t) for t in ms]
-        elif self.rgb_enc_dim == self.enc_dim and self.rgb_encoder.num_patches == self.num_spatial:
+        elif self.rgb_enc_dim == self.enc_dim:
+            # rgb-only: DPT falls back to RGB encoder taps. Same dim is required; a
+            # different patch grid (e.g. MAE 14x14 vs DAv2 16x16) is bilinearly resampled
+            # to the tactile token grid so the DPT / dpt_pos see the expected layout.
             ms = rgb_ms if rgb_ms is not None else self.rgb_encoder.forward_multiscale(rgb)
             if self.coral_dpt_rgb is not None and domain_ids is not None:
                 ms = self.coral_dpt_rgb(ms, domain_ids, object_ids)
+            ms = [_resample_tokens(t, self.num_spatial) for t in ms]
             dpt_taps = [self.dpt_pos(t) for t in ms]
         else:
             dpt_taps = None
