@@ -326,6 +326,7 @@ def train_one(tac: str, rgb: str, transfilt: bool = False):
 
 # name -> (train_samples_per_session, sim_oversample); sim count = name*36, real = 4197
 RATIO_POINTS = {
+    "realonly": (0, None),   # sim=0 -> real-only (trained with configs/train_bs32_e100.yaml)
     "sim34": (85, None), "sim68": (163, None), "sim120": (293, None), "sim148": (363, None),
     "sim190": (459, None), "sim213": (520, None), "sim229": (556, None), "sim250": (606, None),
     "sim279": (677, None), "sim315": (None, None), "sim348": (None, 1.11),
@@ -424,8 +425,9 @@ def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae"):
     output_dir = f"/workspace/outputs/{run_name}"
     results_dir = f"/results/{run_name}"
     os.makedirs(output_dir, exist_ok=True)
+    train_cfg = "configs/train_bs32_e100.yaml" if name == "realonly" else "configs/train_bs32.yaml"
     cmd = ["python", "-u", "-m", "vistacfusion.engine.train",
-           "--model", model_path, "--train", "configs/train_bs32.yaml",
+           "--model", model_path, "--train", train_cfg,
            "--data", data_path, "--output-dir", output_dir]
 
     # --- Preemption-safe resume: Modal restarts a preempted function with the same
