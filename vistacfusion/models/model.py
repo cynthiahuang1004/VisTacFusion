@@ -269,6 +269,14 @@ class VisuoTactileModel(nn.Module):
 
         # ---- DPT path: direct encoder taps + RGB injection ----
         self.dpt_pos = SpatialPosEmbedding(self.num_spatial, self.enc_dim)
+        # rgb-only fallback: DPT runs on RGB encoder taps. If the RGB encoder dim differs
+        # from the tactile dim (e.g. SiTR/Sparsh 768 vs MAE 1024) a per-tap linear
+        # projection maps them to enc_dim; it is used ONLY in the rgb-only config, so the
+        # both / tactile paths are untouched. Same-dim pairs (T3/DAv2/DINOv3 + MAE) build none.
+        self.rgb_tap_proj = None
+        if self.rgb_enc_dim != self.enc_dim:
+            self.rgb_tap_proj = nn.ModuleList(
+                [nn.Linear(self.rgb_enc_dim, self.enc_dim) for _ in range(4)])
 
         self.tap_inject = nn.ModuleList([
             TapInjection(
@@ -395,17 +403,17 @@ class VisuoTactileModel(nn.Module):
             if self.coral_dpt_tac is not None and domain_ids is not None:
                 ms = self.coral_dpt_tac(ms, domain_ids, object_ids)
             dpt_taps = [self.dpt_pos(t) for t in ms]
-        elif self.rgb_enc_dim == self.enc_dim:
-            # rgb-only: DPT falls back to RGB encoder taps. Same dim is required; a
-            # different patch grid (e.g. MAE 14x14 vs DAv2 16x16) is bilinearly resampled
-            # to the tactile token grid so the DPT / dpt_pos see the expected layout.
+        else:
+            # rgb-only: DPT falls back to RGB encoder taps. A different patch grid (MAE
+            # 14x14 vs DAv2 16x16) is bilinearly resampled to the tactile token grid; a
+            # different dim (SiTR/Sparsh 768 vs MAE 1024) goes through rgb_tap_proj.
             ms = rgb_ms if rgb_ms is not None else self.rgb_encoder.forward_multiscale(rgb)
             if self.coral_dpt_rgb is not None and domain_ids is not None:
                 ms = self.coral_dpt_rgb(ms, domain_ids, object_ids)
+            if self.rgb_tap_proj is not None:
+                ms = [proj(t) for proj, t in zip(self.rgb_tap_proj, ms)]
             ms = [_resample_tokens(t, self.num_spatial) for t in ms]
             dpt_taps = [self.dpt_pos(t) for t in ms]
-        else:
-            dpt_taps = None
 
         if dpt_taps is not None:
             if inject_rgb_to_dpt and use_rgb:
