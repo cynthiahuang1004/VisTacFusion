@@ -440,7 +440,10 @@ def main():
                 json.dump(history, f, indent=2)
             save_loss_plots(history, plot_dir)
 
-            both_metrics = val_metrics.get("both", {})
+            # single-config models (single_encoder / mvitac / vital) have no "both" key:
+            # fall back to the only config they report so best ckpts are still tracked
+            both_metrics = val_metrics.get("both") or (
+                next(iter(val_metrics.values())) if val_metrics else {})
             depth_score = both_metrics.get("depth_mse", float("inf"))
             # Select by mean angular error (deg) — the metric the tables report. The
             # 1-cos loss is outlier-dominated and used to pick early epochs whose
