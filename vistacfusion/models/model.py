@@ -488,10 +488,12 @@ class SingleEncoderModel(nn.Module):
     def forward(self, rgb, tactile, config="both", inject_rgb_to_dpt=None,
                 encoder_cache=None, object_ids=None, domain_ids=None):
         # domain_ids accepted for interface parity with VisuoTactileModel (unused).
-        B, device = tactile.shape[0], tactile.device
+        inp = rgb if self.cfg.get("input_modality") == "rgb" else tactile
+        B, device = inp.shape[0], inp.device
 
-        tac_enc = encoder_cache.get("tactile") if encoder_cache else None
-        tac_patch, tac_cls = tac_enc if tac_enc else self.encoder(tactile)
+        cache_key = "rgb" if self.cfg.get("input_modality") == "rgb" else "tactile"
+        enc = encoder_cache.get(cache_key) if encoder_cache else None
+        tac_patch, tac_cls = enc if enc else self.encoder(inp)
 
         if self.use_obj_emb and object_ids is not None:
             obj_emb = self.obj_embedding(object_ids).unsqueeze(1)
@@ -499,8 +501,9 @@ class SingleEncoderModel(nn.Module):
             if tac_cls is not None:
                 tac_cls = tac_cls + obj_emb
 
-        tac_ms = encoder_cache.get("tactile_ms") if encoder_cache else None
-        ms = tac_ms if tac_ms is not None else self.encoder.forward_multiscale(tactile)
+        ms_key = "rgb_ms" if self.cfg.get("input_modality") == "rgb" else "tactile_ms"
+        cached_ms = encoder_cache.get(ms_key) if encoder_cache else None
+        ms = cached_ms if cached_ms is not None else self.encoder.forward_multiscale(inp)
         dpt_taps = [self.dpt_pos(t) for t in ms]
         depth, normal = self.dpt(dpt_taps, out_hw=(self.image_size, self.image_size))
 

@@ -355,7 +355,7 @@ def ratio_run_name(name: str, tac: str = "t3", rgb: str = "mae") -> str:
     memory=32768,
 )
 def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae", model_cfg: str = None,
-                    run_name: str = None):
+                    run_name: str = None, train_cfg: str = None):
     """One ratio-ladder point (crop 0.816 world). Mirrors
     ablation/simqty_gtac/data_ratio_g3s_<name>_transfilt_zoom115_crop816.yaml with Modal paths."""
     import shutil, subprocess, yaml
@@ -432,7 +432,7 @@ def train_ratio_one(name: str, tac: str = "t3", rgb: str = "mae", model_cfg: str
     output_dir = f"/workspace/outputs/{run_name}"
     results_dir = f"/results/{run_name}"
     os.makedirs(output_dir, exist_ok=True)
-    train_cfg = "configs/train_bs32_e100.yaml" if name == "realonly" else "configs/train_bs32.yaml"
+    train_cfg = train_cfg or ("configs/train_bs32_e100.yaml" if name == "realonly" else "configs/train_bs32.yaml")
     cmd = ["python", "-u", "-m", "vistacfusion.engine.train",
            "--model", model_path, "--train", train_cfg,
            "--data", data_path, "--output-dir", output_dir]
@@ -556,11 +556,13 @@ def download_runs(names: str, history_only: bool = False, dest: str = "outputs")
 
 
 @app.local_entrypoint()
-def train_external(ratio: str, model_cfg: str, run_name: str):
+def train_external(ratio: str, model_cfg: str, run_name: str, train_cfg: str = ""):
     """One run of an arbitrary (e.g. external / baseline) model config at a ratio point.
     model_cfg is a path inside the image (e.g. /sparshx/configs/vtf_model_sparshx_sitrmae_modal.yaml
-    or ablation/encoder/tac_tvl_rgb_mae.yaml relative to /workspace)."""
-    res = train_ratio_one.remote(ratio, "t3", "mae", model_cfg=model_cfg, run_name=run_name)
+    or ablation/encoder/tac_tvl_rgb_mae.yaml relative to /workspace). train_cfg optionally
+    overrides the train config (e.g. configs/train_bs32_seed1.yaml for a second seed)."""
+    res = train_ratio_one.remote(ratio, "t3", "mae", model_cfg=model_cfg, run_name=run_name,
+                                 train_cfg=train_cfg or None)
     print(f"  {res['run_name']}: {'OK' if res['returncode'] == 0 else 'FAIL'}", flush=True)
 
 

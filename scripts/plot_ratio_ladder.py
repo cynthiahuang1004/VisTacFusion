@@ -227,3 +227,35 @@ for label, suffix, ratio_val in RATIOS_C816:
         print(f"  MISSING: {hf}")
 plot_ladder(g3s_c816, "GAN sim tactile + translation filter + sim RGB zoom 1.15 + fixed crop 0.816 — real:sim ratio ladder  (dense: best depth epoch; pose: best pose epoch; dashed = real-only)",
             os.path.join(OUT_DIR, "ratio_ladder_gan_transfilt_crop816.png"), ratios=RATIOS_C816)
+
+
+print("\n=== SiTR + MAE (main encoder), TransFilt + zoom1.15 + fixed_crop 0.816 ===")
+RATIOS_SITR = [
+    ("1:0", "realonly", 0.0), ("1:0.3", "sim34", 0.30), ("1:0.58", "sim68", 0.58),
+    ("1:1.04", "sim120", 1.04), ("1:1.27", "sim148", 1.27), ("1:1.63", "sim190", 1.63),
+    ("1:1.97", "sim229", 1.97), ("1:2.98", "sim348", 2.98),
+    ("1:4.89", "sim570", 4.89), ("1:6.52", "sim760", 6.52),
+]
+sitr_c816 = {}
+for label, suffix, ratio_val in RATIOS_SITR:
+    if suffix == "realonly":
+        hf = os.path.join(BASE, "ablation_c816_realonly_sitr_mae_seed1", "history.json")
+    else:
+        hf = os.path.join(BASE, f"ablation_c816_{suffix}_sitr_mae", "history.json")
+    if os.path.isfile(hf):
+        sitr_c816[label] = load_best_per_mode(hf)
+    else:
+        print(f"  MISSING: {hf}")
+plot_ladder(sitr_c816, "SiTR + MAE — GAN sim tactile + translation filter + sim RGB zoom 1.15 + fixed crop 0.816 — real:sim ratio ladder  (rule B: epochs chosen on 'both'; dashed = real-only)",
+            os.path.join(OUT_DIR, "ratio_ladder_sitr_mae_crop816.png"), ratios=RATIOS_SITR)
+for label, _, _ in RATIOS_SITR:
+    r = sitr_c816.get(label)
+    if not r:
+        continue
+    for mode in ("both", "tactile", "rgb"):
+        m = r.get(mode)
+        if not m:
+            continue
+        print(f"  {label:7s} {mode:8s} depth {m['depth_mse']:.4f} normal {m['normal_mse']:.4f} "
+              f"rotL1 {m['rot_l1']:.4f} rot {m['rot_deg']:.3f} trans {m['trans_l1']:.4f} "
+              f"(ep d={m['depth_epoch']} p={m['pose_epoch']})")

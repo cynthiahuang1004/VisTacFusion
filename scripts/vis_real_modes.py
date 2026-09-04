@@ -46,6 +46,13 @@ def rot_err_deg(p, g):
     return torch.rad2deg(torch.acos(c))
 
 
+def half_of(ds, i):
+    """Object half-size (m) used to normalise (tx, ty) for sample i."""
+    unit = ds.samples[i][0]
+    obj_name = osp.basename(osp.dirname(osp.dirname(unit)))
+    return float(ds._obj_pose_info[obj_name]["half"])
+
+
 def sample_name(ds, i):
     for attr in ("samples", "items", "entries", "records", "_samples", "_items"):
         lst = getattr(ds, attr, None)
@@ -114,18 +121,25 @@ def main():
         per_cfg = {}
         for c in CONFIGS:
             d, n, p = run(models, batch, device, c)
+            gt_nn = gt_n / gt_n.norm(dim=1, keepdim=True).clamp_min(1e-8)
+            cosang = (n * gt_nn).sum(1).clamp(-1, 1)            # [B,H,W]
             per_cfg[c] = dict(
                 depth_mse=((d - gt_d) ** 2).flatten(1).mean(1).cpu().numpy(),
                 normal_mse=((n - gt_n) ** 2).flatten(1).mean(1).cpu().numpy(),
+                normal_deg=torch.rad2deg(torch.acos(cosang)).flatten(1).mean(1).cpu().numpy(),
                 rot_deg=rot_err_deg(p, gt_p).cpu().numpy(),
                 trans_l1=(p[:, 2:] - gt_p[:, 2:]).abs().mean(1).cpu().numpy(),
             )
         objs = batch["object"].numpy()
         for b in range(B):
-            r = {"idx": gi + b, "object": int(objs[b]), "name": sample_name(val_ds, gi + b)}
+            name = sample_name(val_ds, gi + b)
+            r = {"idx": gi + b, "object": int(objs[b]), "name": name}
+            half = half_of(val_ds, gi + b)
+            r["half_m"] = half
             for c in CONFIGS:
                 for k, v in per_cfg[c].items():
                     r[f"{c}_{k}"] = float(v[b])
+                r[f"{c}_trans_mm"] = float(per_cfg[c]["trans_l1"][b]) * half * 1000.0
             rows.append(r)
         gi += B
         print(f"  {gi}/{len(val_ds)}", end="\r")
@@ -140,10 +154,13 @@ def main():
 
     # summary per config (sanity check vs Table I)
     for c in CONFIGS:
-        print(f"  [{c:7s}] depth_mse={np.mean([r[f'{c}_depth_mse'] for r in rows]):.4f} "
+        dm = np.mean([r[f'{c}_depth_mse'] for r in rows])
+        print(f"  [{c:7s}] depth_mse={dm:.4f} depth_rmse_mm={np.sqrt(dm):.3f} "
               f"normal_mse={np.mean([r[f'{c}_normal_mse'] for r in rows]):.4f} "
+              f"normal_deg={np.mean([r[f'{c}_normal_deg'] for r in rows]):.2f} "
               f"rot={np.mean([r[f'{c}_rot_deg'] for r in rows]):.2f} "
-              f"trans={np.mean([r[f'{c}_trans_l1'] for r in rows]):.4f}")
+              f"trans_l1={np.mean([r[f'{c}_trans_l1'] for r in rows]):.4f} "
+              f"trans_mm={np.mean([r[f'{c}_trans_mm'] for r in rows]):.3f}")
 
     # ---------------- pick candidates ----------------
     if args.indices:

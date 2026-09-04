@@ -16,7 +16,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-COLS = [("rgb", "Transparent"), ("tactile", "Opaque"), ("both", "Both"), ("gt", "GT")]
+COLS = [("rgb", "Proximity"), ("tactile", "Opaque"), ("both", "Both"), ("gt", "GT")]
 
 
 def theta_deg(p):
@@ -38,11 +38,45 @@ def main():
     ap.add_argument("--indices", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--width-in", type=float, default=2.15, help="figure width (in)")
+    ap.add_argument("--pairs", action="store_true",
+                    help="single row of (Both, GT) pairs, one pair per sample")
+    ap.add_argument("--no-theta", action="store_true", help="omit the theta annotation")
     args = ap.parse_args()
 
     idxs = [int(x) for x in args.indices.split(",")]
     n = len(idxs)
     fs = args.width_in / 2.64          # font scale relative to the 2.64in reference layout
+
+    if args.pairs:
+        ncol = 2 * n
+        cell = args.width_in / ncol
+        fig, axes = plt.subplots(1, ncol, figsize=(args.width_in, cell + 0.12),
+                                 gridspec_kw=dict(wspace=0.04, left=0, right=1, bottom=0,
+                                                  top=1 - 0.12 / (cell + 0.12)))
+        for i, k in enumerate(idxs):
+            d = np.load(osp.join(args.src, f"sample_{k:04d}.npz"))
+            gt_d = d["gt_depth"]
+            vmax = float(gt_d.max()) if gt_d.max() > 0 else None
+            gt_th = theta_deg(d["gt_pose"])
+            th = theta_deg(d["both_pose"])
+            for j, (dep, txt, col, title) in enumerate([
+                    (d["both_depth"], f"θ={th:.0f}°", "white", "Both"),
+                    (gt_d, f"θ={gt_th:.0f}°", "#7CFC00", "GT")]):
+                ax = axes[2 * i + j]
+                ax.imshow(dep, cmap="viridis", vmin=0, vmax=vmax, interpolation="bilinear")
+                ax.set_xticks([]); ax.set_yticks([])
+                for s in ax.spines.values():
+                    s.set_linewidth(0.3); s.set_edgecolor("0.6")
+                if not args.no_theta:
+                    ax.text(0.03, 0.04, txt, transform=ax.transAxes, fontsize=5.2 * fs, color=col,
+                            ha="left", va="bottom",
+                            bbox=dict(boxstyle="round,pad=0.15", fc="black", ec="none", alpha=0.45))
+                ax.set_title(title, fontsize=6.2 * fs, pad=1.5 * fs)
+        fig.savefig(args.out, dpi=400)
+        fig.savefig(osp.splitext(args.out)[0] + ".png", dpi=400)
+        print(f"saved {args.out}")
+        return
+
     cell = args.width_in / 4
     fig, axes = plt.subplots(n, 4, figsize=(args.width_in, cell * n + 0.12),
                              gridspec_kw=dict(wspace=0.04, hspace=0.04,

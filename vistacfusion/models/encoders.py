@@ -283,7 +283,8 @@ class SigLIPEncoder(nn.Module):
     SigLIP uses global average pooling instead of a CLS token; ``forward`` returns cls=None.
     """
 
-    def __init__(self, model_name="google/siglip-large-patch16-224", multiscale_layers=None):
+    def __init__(self, model_name="google/siglip-large-patch16-224", multiscale_layers=None,
+                 image_size=224):
         super().__init__()
         from transformers import SiglipVisionModel
 
@@ -291,8 +292,22 @@ class SigLIPEncoder(nn.Module):
         self.vit = SiglipVisionModel.from_pretrained(model_name)
         cfg = self.vit.config
         self.embed_dim = cfg.hidden_size
-        grid = cfg.image_size // cfg.patch_size
-        self.num_patches = grid * grid
+        native_grid = cfg.image_size // cfg.patch_size
+        target_grid = image_size // cfg.patch_size
+        if native_grid != target_grid:
+            emb_mod = self.vit.embeddings
+            old_pe = emb_mod.position_embedding.weight.data
+            new_pe = old_pe.reshape(1, native_grid, native_grid, -1).permute(0, 3, 1, 2)
+            new_pe = torch.nn.functional.interpolate(
+                new_pe, size=(target_grid, target_grid), mode="bicubic", align_corners=False)
+            new_pe = new_pe.permute(0, 2, 3, 1).reshape(target_grid * target_grid, -1)
+            emb_mod.position_embedding = nn.Embedding(
+                target_grid * target_grid, self.embed_dim)
+            emb_mod.position_embedding.weight.data.copy_(new_pe)
+            emb_mod.register_buffer(
+                "position_ids", torch.arange(target_grid * target_grid).unsqueeze(0))
+            print(f"  [encoder] SigLIP pos embed interpolated {native_grid}²→{target_grid}²")
+        self.num_patches = target_grid * target_grid
         self.multiscale_layers = _resolve_multiscale(multiscale_layers, cfg.num_hidden_layers)
         for p in self.vit.parameters():
             p.requires_grad = False
@@ -984,7 +999,7 @@ def build_encoder(enc_cfg, image_size):
         return MAEEncoder(weights=checkpoint, multiscale_layers=ms, image_size=image_size)
     if name == "siglip_vitl16":
         model_id = enc_cfg.get("model_id", "google/siglip-large-patch16-256")
-        return SigLIPEncoder(model_name=model_id, multiscale_layers=ms)
+        return SigLIPEncoder(model_name=model_id, multiscale_layers=ms, image_size=image_size)
     if name == "clip_vitl14":
         model_id = enc_cfg.get("model_id", "openai/clip-vit-large-patch14")
         return CLIPEncoder(model_name=model_id, multiscale_layers=ms)
