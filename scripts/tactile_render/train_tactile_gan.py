@@ -41,19 +41,34 @@ def with_coords(d):
 
 
 class RealPairs(Dataset):
-    def __init__(self, root=REAL_ROOT, split="train"):
+    def __init__(self, root=REAL_ROOT, split="train", exclude_objects=(), per_object=None):
+        """exclude_objects: leave-object-out (held-out objects never seen by G).
+        per_object: keep K evenly spaced train pairs per session — the SAME linspace
+        rule as SimVisuoTactileDataset.train_samples_per_session, so G and the
+        downstream model see the identical K-shot real subset."""
         self.items = []
+        per_unit = {}
         for tac in sorted(glob.glob(f"{root}/*/session_*/sensor_0000/samples/*.png")):
             idx = int(osp.splitext(osp.basename(tac))[0])
             is_val = idx % VAL_EVERY == 0
             if (split == "train") == is_val:
                 continue
             unit = osp.dirname(osp.dirname(tac))
-            dep = osp.join(unit, "raw_data", f"{idx:04d}_gt.npy")
-            if not osp.exists(dep):
-                dep = osp.join(unit, "raw_data", f"{idx:04d}.npy")
-            if osp.exists(dep):
-                self.items.append((dep, tac))
+            obj = osp.basename(osp.dirname(osp.dirname(unit)))
+            if obj in exclude_objects:
+                continue
+            per_unit.setdefault(unit, []).append((idx, tac))
+        for unit, lst in per_unit.items():
+            lst.sort()
+            if split == "train" and per_object is not None and len(lst) > per_object:
+                pos = np.linspace(0, len(lst) - 1, per_object).round().astype(int)
+                lst = [lst[i] for i in sorted(set(pos.tolist()))]
+            for idx, tac in lst:
+                dep = osp.join(unit, "raw_data", f"{idx:04d}_gt.npy")
+                if not osp.exists(dep):
+                    dep = osp.join(unit, "raw_data", f"{idx:04d}.npy")
+                if osp.exists(dep):
+                    self.items.append((dep, tac))
 
     def __len__(self):
         return len(self.items)
@@ -152,14 +167,25 @@ def main():
     ap.add_argument("--epochs", type=int, default=200)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--l1", type=float, default=100.0)
+    ap.add_argument("--exclude-objects", nargs="*", default=[],
+                    help="leave-object-out: real objects G never sees")
+    ap.add_argument("--per-object", type=int, default=None,
+                    help="K-shot: evenly spaced K train pairs per object")
+    ap.add_argument("--min-steps", type=int, default=0,
+                    help="raise epochs so total G updates >= this (small K-shot sets)")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     dev = args.device
     torch.manual_seed(0); random.seed(0); np.random.seed(0)
 
-    tr = RealPairs(split="train")
-    va = RealPairs(split="val")
+    tr = RealPairs(split="train", exclude_objects=set(args.exclude_objects),
+                   per_object=args.per_object)
+    va = RealPairs(split="val", exclude_objects=set(args.exclude_objects))
     print(f"pairs: train={len(tr)} val={len(va)}", flush=True)
+    steps_per_epoch = max(1, len(tr) // args.batch)
+    if args.min_steps and args.epochs * steps_per_epoch < args.min_steps:
+        args.epochs = -(-args.min_steps // steps_per_epoch)
+        print(f"epochs raised to {args.epochs} (min_steps={args.min_steps})", flush=True)
     dl = DataLoader(tr, batch_size=args.batch, shuffle=True,
                     num_workers=8, pin_memory=True, drop_last=True)
 

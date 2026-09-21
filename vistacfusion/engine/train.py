@@ -391,6 +391,14 @@ def main():
         if is_main_process():
             print(f"  resumed at epoch {start_epoch}, best_metric={best_metric:.4f}")
 
+    # Held-out real objects (real.test_objects): evaluated every epoch, never used
+    # for checkpoint selection.
+    real_test = getattr(train_ds, "real_test", None)
+    test_loader = None
+    if real_test is not None and is_main_process():
+        test_loader = DataLoader(real_test, batch_size=cfg.batch_size, shuffle=False,
+                                 num_workers=lc.num_workers, pin_memory=lc.pin_memory)
+    test_enc_cache = None
     val_enc_cache = None
     writer = None
     history = []
@@ -401,6 +409,8 @@ def main():
         if hasattr(raw_model, 'tactile_encoder'):
             print("Pre-computing val encoder cache...")
             val_enc_cache = precompute_encoder_cache(raw_model, val_loader, device)
+            if test_loader is not None:
+                test_enc_cache = precompute_encoder_cache(raw_model, test_loader, device)
         writer = SummaryWriter(log_dir=os.path.join(args.output_dir, "tb"))
         plot_dir = os.path.join(args.output_dir, "plots")
         history_path = os.path.join(args.output_dir, "history.json")
@@ -435,7 +445,16 @@ def main():
                 for mk, mv in metrics.items():
                     writer.add_scalar(f"val_{config_name}/{mk}", mv, epoch)
 
-            history.append({"epoch": epoch, "train": train_metrics, "val": val_metrics})
+            entry = {"epoch": epoch, "train": train_metrics, "val": val_metrics}
+            if test_loader is not None:
+                test_metrics = evaluate(raw_model, test_loader, cfg, device,
+                                        encoder_cache=test_enc_cache)
+                print(f"[epoch {epoch:03d}] held-out test metrics: {test_metrics}")
+                for config_name, metrics in test_metrics.items():
+                    for mk, mv in metrics.items():
+                        writer.add_scalar(f"test_{config_name}/{mk}", mv, epoch)
+                entry["test"] = test_metrics
+            history.append(entry)
             with open(history_path, "w") as f:
                 json.dump(history, f, indent=2)
             save_loss_plots(history, plot_dir)

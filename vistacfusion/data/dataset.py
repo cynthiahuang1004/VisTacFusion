@@ -574,6 +574,13 @@ def build_datasets(cfg):
             sim_train = SimVisuoTactileDataset(cfg, image_size, augment=True, split="train",
                                                include_objects=sim_objects)
             shared_obj_map = sim_train._obj_to_id
+        # Held-out test objects may be absent from sim (sim.include_objects without
+        # them): give them fresh ids so the real-test dataset can still index the map.
+        missing = [o for o in test_objects if o not in shared_obj_map]
+        if missing:
+            shared_obj_map = dict(shared_obj_map)
+            for o in missing:
+                shared_obj_map[o] = len(shared_obj_map)
         real_augment = cfg.real.get("augment", True)
         rspp = cfg.real.get("train_samples_per_session", None)
         if rspp is not None and int(rspp) <= 0:

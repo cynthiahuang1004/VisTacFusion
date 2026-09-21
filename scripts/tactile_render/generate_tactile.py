@@ -37,6 +37,8 @@ def main():
     ap.add_argument("--preview", type=int, default=0,
                     help="if >0: only N imgs/object into samples_g_preview/")
     ap.add_argument("--batch", type=int, default=64)
+    ap.add_argument("--out-subdir", default="samples_g",
+                    help="output subdir next to samples/ (e.g. samples_g_loo)")
     ap.add_argument("--objects", nargs="*", default=None,
                     help="restrict to these object names")
     args = ap.parse_args()
@@ -44,7 +46,7 @@ def main():
     dev = args.device
     G = UNetG().to(dev).eval()
     G.load_state_dict(torch.load(args.ckpt, map_location="cpu", weights_only=True))
-    outdir_name = "samples_g_preview" if args.preview else "samples_g"
+    outdir_name = args.out_subdir + "_preview" if args.preview else args.out_subdir
 
     deps = sorted(glob.glob(f"{SIM_ROOT}/*/session_*/sensor_0000/raw_data/*_gt.npy"))
     if args.objects:
