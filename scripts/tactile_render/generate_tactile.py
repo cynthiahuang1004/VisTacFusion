@@ -37,6 +37,9 @@ def main():
     ap.add_argument("--preview", type=int, default=0,
                     help="if >0: only N imgs/object into samples_g_preview/")
     ap.add_argument("--batch", type=int, default=64)
+    ap.add_argument("--diff", action="store_true",
+                    help="G predicts a difference image: composite it onto the canonical "
+                         "no-contact reference (outputs/session_bg/ref.png)")
     ap.add_argument("--out-subdir", default="samples_g",
                     help="output subdir next to samples/ (e.g. samples_g_loo)")
     ap.add_argument("--objects", nargs="*", default=None,
@@ -88,6 +91,10 @@ def main():
         os.makedirs(osp.dirname(out), exist_ok=True)
         Image.fromarray(img.transpose(1, 2, 0)).save(out)
 
+    ref = None
+    if args.diff:
+        ref = np.array(Image.open("outputs/session_bg/ref.png").convert("RGB"), np.float32)
+        ref = torch.from_numpy(ref.transpose(2, 0, 1) / 127.5 - 1)[None].to(dev)
     prep_pool = ThreadPoolExecutor(max_workers=8)
     save_pool = ThreadPoolExecutor(max_workers=6)
     batches = [todo[i:i + args.batch] for i in range(0, len(todo), args.batch)]
@@ -99,6 +106,8 @@ def main():
                 pending = prep_pool.map(prep, batches[bi + 1])
             x = torch.stack(xs).to(dev)
             y = G(x)
+            if args.diff:
+                y = y + ref
             y = ((y.clamp(-1, 1) + 1) * 127.5).byte().cpu().numpy()
             list(save_pool.map(save, [(out, img) for (_, out), img in zip(chunk, y)]))
             if bi % 20 == 0:

@@ -147,6 +147,13 @@ class SimVisuoTactileDataset(Dataset):
         self.rgb_subdir = sim.get("rgb_subdir", "rgb")
         self.tactile_subdir = sim.get("tactile_subdir", "samples")
         self.use_gt_depth = sim.get("use_gt_depth", True)
+        # Session-background normalization (difference imaging): tactile <- tactile -
+        # session_bg + ref, mapping every session (real or sim) onto one canonical no-contact
+        # appearance. Value = subdir of outputs/session_bg (compute_session_bg.py), e.g.
+        # "real" / "sim_samples"; None = off.
+        self.bg_subtract = sim.get("bg_subtract", None)
+        self._bg_cache = {}
+        self._bg_root = cfg_data.get("session_bg_root", "outputs/session_bg")
         # Tactile camera view is fixed & square for ALL objects (fov=60, half-width
         # 0.008751m -> 17.5mm). session.json X_MIN/X_MAX is the press sampling range,
         # NOT the camera view — do not use it for pixel size.
@@ -396,6 +403,17 @@ class SimVisuoTactileDataset(Dataset):
                 index = random.randint(0, len(self.samples) - 1)
         return self._load_sample(index)
 
+    def _session_bg(self, unit):
+        """No-contact background of `unit`'s session; unit=None -> canonical ref image."""
+        if unit not in self._bg_cache:
+            if unit is None:
+                path = osp.join(self._bg_root, "ref.png")
+            else:
+                parts = unit.rstrip("/").split("/")
+                path = osp.join(self._bg_root, self.bg_subtract, f"{parts[-3]}__{parts[-2]}.png")
+            self._bg_cache[unit] = np.array(Image.open(path).convert("RGB"), dtype=np.float32)
+        return self._bg_cache[unit]
+
     def _load_sample(self, index):
         unit, sample_idx = self.samples[index]
         meta = self.unit_meta[unit]
@@ -405,6 +423,9 @@ class SimVisuoTactileDataset(Dataset):
             Image.open(osp.join(unit, self.tactile_subdir, f"{sample_idx:04d}.png")),
             dtype=np.float32,
         )
+        if self.bg_subtract:
+            tactile = np.clip(tactile[..., :3] - self._session_bg(unit) + self._session_bg(None),
+                              0.0, 255.0)
         rgb_img = Image.open(osp.join(unit, self.rgb_subdir, f"{sample_idx:04d}.png"))
         if self.rgb_zoom != 1.0:
             rgb_img = zoom_center(rgb_img.convert("RGB"), self.rgb_zoom)

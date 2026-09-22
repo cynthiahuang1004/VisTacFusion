@@ -27,6 +27,8 @@ from torch.nn.utils import spectral_norm
 from torch.utils.data import DataLoader, Dataset
 
 REAL_ROOT = "/media/hdd2/ihsuan/gs_blender/real_filtered"
+BG_ROOT = osp.join(osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__)))), "outputs", "session_bg")
+SIM_ROOT = "/media/hdd2/ihsuan/gs_blender/renders_v3"
 DEPTH_SCALE = 0.0012  # max press depth (m); normalizes depth to ~[0, 1]
 VAL_EVERY = 10
 
@@ -41,6 +43,19 @@ def with_coords(d):
 
 
 class RealPairs(Dataset):
+    diff = False      # True: target = tactile - session background (difference image)
+    bg_tag = "real"
+    _bg_cache = {}
+
+    def _bg(self, tac):
+        """Per-session no-contact background in [-1, 1] (compute_session_bg.py)."""
+        unit = osp.dirname(osp.dirname(tac))
+        key = f"{unit.split('/')[-3]}__{unit.split('/')[-2]}"
+        if key not in self._bg_cache:
+            im = Image.open(osp.join(BG_ROOT, self.bg_tag, key + ".png")).convert("RGB")
+            self._bg_cache[key] = np.array(im, np.float32) / 127.5 - 1
+        return self._bg_cache[key]
+
     def __init__(self, root=REAL_ROOT, split="train", exclude_objects=(), per_object=None):
         """exclude_objects: leave-object-out (held-out objects never seen by G).
         per_object: keep K evenly spaced train pairs per session — the SAME linspace
@@ -77,8 +92,27 @@ class RealPairs(Dataset):
         dep, tac = self.items[i]
         d = np.load(dep).astype(np.float32) / DEPTH_SCALE * 2 - 1
         t = np.array(Image.open(tac).convert("RGB"), np.float32) / 127.5 - 1
+        if self.diff:
+            t = np.clip(t - self._bg(tac), -1, 1)
         x = with_coords(torch.from_numpy(d)[None])
         return x, torch.from_numpy(t.transpose(2, 0, 1))
+
+
+class SimPairs(RealPairs):
+    """(Blender GT depth -> Blender-rendered tactile) pairs from the calibrated simulator.
+    Used to PRETRAIN G/D on the physics-based renderer (no real data needed); the real
+    K-shot pairs then only have to adapt appearance (hybrid renderer)."""
+
+    def __init__(self, root=SIM_ROOT, max_pairs=30000, seed=0):
+        items = []
+        for tac in glob.glob(f"{root}/pattern_*/session_*/sensor_0000/samples/*.png"):
+            unit = osp.dirname(osp.dirname(tac))
+            dep = osp.join(unit, "raw_data", osp.basename(tac).replace(".png", "_gt.npy"))
+            if osp.exists(dep):
+                items.append((dep, tac))
+        items.sort()
+        random.Random(seed).shuffle(items)
+        self.items = items[:max_pairs]
 
 
 def down(cin, cout, norm=True):
@@ -171,6 +205,13 @@ def main():
                     help="leave-object-out: real objects G never sees")
     ap.add_argument("--per-object", type=int, default=None,
                     help="K-shot: evenly spaced K train pairs per object")
+    ap.add_argument("--sim-pretrain", action="store_true",
+                    help="train on Blender (depth -> Blender tactile) pairs instead of real")
+    ap.add_argument("--init", default=None,
+                    help="dir with G_final.pt/D_final.pt to fine-tune from (hybrid renderer)")
+    ap.add_argument("--lr", type=float, default=2e-4)
+    ap.add_argument("--diff", action="store_true",
+                    help="learn depth -> (tactile - session background) difference images")
     ap.add_argument("--min-steps", type=int, default=0,
                     help="raise epochs so total G updates >= this (small K-shot sets)")
     args = ap.parse_args()
@@ -178,8 +219,12 @@ def main():
     dev = args.device
     torch.manual_seed(0); random.seed(0); np.random.seed(0)
 
-    tr = RealPairs(split="train", exclude_objects=set(args.exclude_objects),
-                   per_object=args.per_object)
+    RealPairs.diff = args.diff
+    if args.sim_pretrain:
+        tr = SimPairs()
+    else:
+        tr = RealPairs(split="train", exclude_objects=set(args.exclude_objects),
+                       per_object=args.per_object)
     va = RealPairs(split="val", exclude_objects=set(args.exclude_objects))
     print(f"pairs: train={len(tr)} val={len(va)}", flush=True)
     steps_per_epoch = max(1, len(tr) // args.batch)
@@ -190,8 +235,12 @@ def main():
                     num_workers=8, pin_memory=True, drop_last=True)
 
     G, D = UNetG().to(dev), PatchD().to(dev)
-    optG = torch.optim.Adam(G.parameters(), lr=2e-4, betas=(0.5, 0.999))
-    optD = torch.optim.Adam(D.parameters(), lr=2e-4, betas=(0.5, 0.999))
+    if args.init:
+        G.load_state_dict(torch.load(osp.join(args.init, "G_final.pt"), map_location=dev))
+        D.load_state_dict(torch.load(osp.join(args.init, "D_final.pt"), map_location=dev))
+        print(f"initialized G/D from {args.init}", flush=True)
+    optG = torch.optim.Adam(G.parameters(), lr=args.lr, betas=(0.5, 0.999))
+    optD = torch.optim.Adam(D.parameters(), lr=args.lr, betas=(0.5, 0.999))
     bce = nn.BCEWithLogitsLoss()
     l1 = nn.L1Loss()
 
@@ -210,7 +259,7 @@ def main():
             1.0 - (ep - args.epochs // 2) / max(1, args.epochs - args.epochs // 2)
         for opt in (optG, optD):
             for pg in opt.param_groups:
-                pg["lr"] = 2e-4 * max(scale, 0.02)
+                pg["lr"] = args.lr * max(scale, 0.02)
         gl = dl_ = l1l = 0.0
         for d, t in dl:
             d, t = d.to(dev), t.to(dev)
@@ -235,6 +284,7 @@ def main():
             save_grid(G, va, osp.join(args.out, f"val_ep{ep:03d}.png"), dev)
             torch.save(G.state_dict(), osp.join(args.out, "G_latest.pt"))
     torch.save(G.state_dict(), osp.join(args.out, "G_final.pt"))
+    torch.save(D.state_dict(), osp.join(args.out, "D_final.pt"))
     print("done", flush=True)
 
 
