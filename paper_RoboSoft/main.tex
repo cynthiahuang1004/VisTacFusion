@@ -1,0 +1,42 @@
+\documentclass[letterpaper,10pt,conference]{ieeeconf}
+\IEEEoverridecommandlockouts
+
+\usepackage{graphicx,amsmath,amssymb,booktabs,multirow,cite,url,array,xcolor,colortbl,tabularx}
+\usepackage[protrusion=false]{microtype}
+\usepackage{caption}
+\usepackage{hyperref}
+
+\newcommand{\ours}{TactiOS}
+\newcommand{\sensor}{GelSlim~5.0}
+\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+\newcommand{\tableformat}{\small\setlength{\tabcolsep}{3.0pt}\renewcommand{\arraystretch}{1.02}}
+\newcommand{\metrichead}[2]{\shortstack[c]{\strut#1\\\strut#2\,$\downarrow$}}
+\newcommand{\Kreal}{K}
+
+\title{\LARGE\bf How Much Real Data Does a Tactile Renderer Need?\\
+A Leakage-Controlled Real-to-Sim-to-Real Study of Tactile Depth and Pose Estimation}
+
+\author{I-Hsuan Huang$^{*}$, Xiaohao Xu$^{*}$, Xiangdong Wang, Xiaonan Huang, and Nima Fazeli%
+\thanks{$^{*}$Equal contribution. All authors are with the University of Michigan, Ann Arbor, MI, USA.
+Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
+}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+\begin{abstract}
+Vision-based tactile sensors image a deforming elastomer under internal illumination, so the mapping from contact geometry to appearance is sensor specific and dense real labels are expensive. Real-to-sim-to-real pipelines calibrate a tactile renderer on a little real data and train on its synthetic labels. We ask what such pipelines rarely control for: \emph{how much real data does the renderer itself consume, and does the downstream gain survive once that data is accounted for?} On one \sensor{} sensor and one downstream model (frozen sensor-invariant encoder with depth, normal and planar-pose heads) we compare a \emph{physically calibrated} Blender renderer, fitted by Bayesian optimization to a single no-contact image, with a \emph{learned} depth-to-image renderer trained on $\Kreal$ real pairs per object, under a leakage-controlled protocol in which the renderer never sees the frames used to test the downstream model. Simulation is decisive for \emph{pose transfer to new objects}: with no real data of three objects, rotation error drops from $48^\circ$ to $5.6^\circ$ once simulated contacts of their meshes are added, using the physical renderer and no real contact of the object; a control that removes the meshes from simulation shows the gain is geometric coverage, not appearance. For \emph{dense contact depth} the benefit is gated by appearance fidelity: the learned renderer needs $\Kreal\!\ge\!100$ pairs per object before synthetic data lowers real depth error ($-18\%$ MSE, $-15\%$ contact MAE), the physical renderer never does, and the common leaky practice of training the renderer on all real data overstates the gain by up to $2\times$. A contact-region L1 between rendered and real images predicts the downstream ranking, and physics pretraining, illumination normalization and difference-image rendering all fail to close the few-shot gap, locating the bottleneck in contact shading rather than illumination drift.
+\end{abstract}
+
+\input{sections/01_intro}
+\input{sections/02_related}
+\input{sections/03_method}
+\input{sections/04_experiments}
+\input{sections/05_discussion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}

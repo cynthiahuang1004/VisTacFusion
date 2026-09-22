@@ -1,0 +1,8 @@
+# scripts/tactile_render/eval_renderer.py --objects pattern_04_3_lines_angle_2 pattern_31_rod pattern_33
+# 126 real val pairs of the three held-out objects; images in [0,1]
+generator             L1  gradL1 L1_contact gradL1_contact
+full_leaky        0.0327  0.0092     0.0843         0.0302
+loo               0.0844  0.0107     0.1356         0.0327
+hyb_loo           0.0835  0.0106     0.1370         0.0317
+k100              0.0379  0.0095     0.0951         0.0308
+simpre            0.1236  0.0127     0.1734         0.0369

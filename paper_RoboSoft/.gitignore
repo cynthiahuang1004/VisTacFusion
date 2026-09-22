@@ -1,0 +1,8 @@
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.pdf
+page-*.png
+build.log
