@@ -44,6 +44,7 @@ def with_coords(d):
 
 class RealPairs(Dataset):
     diff = False      # True: target = tactile - session background (difference image)
+    bg_cond = False   # True: input = depth + xy + session background (6 ch); method "bg-conditioned"
     bg_tag = "real"
     _bg_cache = {}
 
@@ -95,6 +96,8 @@ class RealPairs(Dataset):
         if self.diff:
             t = np.clip(t - self._bg(tac), -1, 1)
         x = with_coords(torch.from_numpy(d)[None])
+        if self.bg_cond:
+            x = torch.cat([x, torch.from_numpy(self._bg(tac).transpose(2, 0, 1))], 0)
         return x, torch.from_numpy(t.transpose(2, 0, 1))
 
 
@@ -136,9 +139,9 @@ def up(cin, cout, drop=False):
 class UNetG(nn.Module):
     """224 -> 7 bottleneck, 5 levels."""
 
-    def __init__(self):
+    def __init__(self, in_ch=3):
         super().__init__()
-        self.d1 = down(3, 64, norm=False)   # 112  (depth + xy coords)
+        self.d1 = down(in_ch, 64, norm=False)   # 112  (depth + xy coords [+ bg])
         self.d2 = down(64, 128)             # 56
         self.d3 = down(128, 256)            # 28
         self.d4 = down(256, 512)            # 14
@@ -176,7 +179,7 @@ class PatchD(nn.Module):
         )
 
     def forward(self, d, img):
-        return self.net(torch.cat([d, img], 1))
+        return self.net(torch.cat([d[:, :3], img], 1))   # depth+xy only (bg channels dropped)
 
 
 def save_grid(G, ds, path, device, n=6):
@@ -210,6 +213,8 @@ def main():
     ap.add_argument("--init", default=None,
                     help="dir with G_final.pt/D_final.pt to fine-tune from (hybrid renderer)")
     ap.add_argument("--lr", type=float, default=2e-4)
+    ap.add_argument("--bg-cond", action="store_true",
+                    help="condition G on the session no-contact background (6-ch input)")
     ap.add_argument("--diff", action="store_true",
                     help="learn depth -> (tactile - session background) difference images")
     ap.add_argument("--min-steps", type=int, default=0,
@@ -220,6 +225,7 @@ def main():
     torch.manual_seed(0); random.seed(0); np.random.seed(0)
 
     RealPairs.diff = args.diff
+    RealPairs.bg_cond = args.bg_cond
     if args.sim_pretrain:
         tr = SimPairs()
     else:
@@ -234,7 +240,7 @@ def main():
     dl = DataLoader(tr, batch_size=args.batch, shuffle=True,
                     num_workers=8, pin_memory=True, drop_last=True)
 
-    G, D = UNetG().to(dev), PatchD().to(dev)
+    G, D = UNetG(in_ch=6 if args.bg_cond else 3).to(dev), PatchD().to(dev)
     if args.init:
         G.load_state_dict(torch.load(osp.join(args.init, "G_final.pt"), map_location=dev))
         D.load_state_dict(torch.load(osp.join(args.init, "D_final.pt"), map_location=dev))

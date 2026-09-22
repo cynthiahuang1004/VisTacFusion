@@ -141,6 +141,16 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
                   "pose": batch["pose"], "mask": batch.get("mask")}
             loss, comps = criterion(out, gt, supervise_dense=has_dense)
 
+            # L2-SP (Li et al., ICML 2018): pull trainable params toward their values at the
+            # start of fine-tuning (set in main() when --finetune and cfg.l2sp_weight > 0).
+            raw = model.module if isinstance(model, DDP) else model
+            l2sp_ref = getattr(raw, "_l2sp_ref", None)
+            if l2sp_ref is not None:
+                pen = sum(((p.float() - l2sp_ref[n]) ** 2).sum()
+                          for n, p in raw.named_parameters() if n in l2sp_ref)
+                loss = loss + cfg.l2sp_weight * pen
+                comps["l2sp"] = pen.detach()
+
             # Sim weight annealing: downweight sim samples' loss
             sim_anneal = cfg.get("sim_weight_annealing", None)
             if sim_anneal and domain_ids is not None:
@@ -383,6 +393,12 @@ def main():
                   f"{' (finetune: fresh optimizer/scheduler)' if args.finetune else ''}")
         if args.finetune:
             load_checkpoint(args.resume, model, device=device)
+            if cfg.get("l2sp_weight", 0.0) > 0:
+                raw = model.module if isinstance(model, DDP) else model
+                raw._l2sp_ref = {n: p.detach().float().clone()
+                                 for n, p in raw.named_parameters() if p.requires_grad}
+                if is_main_process():
+                    print(f"  L2-SP: weight={cfg.l2sp_weight}, {len(raw._l2sp_ref)} tensors anchored")
         else:
             start_epoch, best_metric = load_checkpoint(
                 args.resume, model, optimizer, scheduler, scaler,

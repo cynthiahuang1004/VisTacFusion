@@ -28,6 +28,8 @@ class MultiTaskLoss(nn.Module):
         self.uncertainty = loss_cfg.get("uncertainty_weighting", False)
         self.grouped = loss_cfg.get("grouped_uncertainty", False)
         self.dense_pose_ratio = loss_cfg.get("dense_pose_ratio", 1.0)
+        # Auxiliary contact-mask BCE (fixed weight, added to the dense group).
+        self.w_mask = loss_cfg.get("mask_weight", 0.0)
 
         self.depth_loss = DepthLoss(
             kind=loss_cfg.depth.type,
@@ -53,6 +55,11 @@ class MultiTaskLoss(nn.Module):
             l_normal = self.normal_loss(pred["normal"], gt["normal"])
             comps["depth"] = l_depth.detach()
             comps["normal"] = l_normal.detach()
+            l_mask = None
+            if self.w_mask > 0 and "mask_logits" in pred and gt.get("mask") is not None:
+                l_mask = nn.functional.binary_cross_entropy_with_logits(
+                    pred["mask_logits"].float(), gt["mask"].float())
+                comps["mask"] = l_mask.detach()
 
         l_rot, l_trans = self.pose_loss(pred, gt["pose"])
         comps["pose_rot"] = l_rot.detach()
@@ -69,6 +76,8 @@ class MultiTaskLoss(nn.Module):
                                + 0.5 * self.log_var_dense[0]
                                + torch.exp(-self.log_var_dense[1]) * l_normal
                                + 0.5 * self.log_var_dense[1])
+                if l_mask is not None:
+                    dense_total = dense_total + self.w_mask * l_mask
                 total = self.dense_pose_ratio * dense_total + pose_total
             else:
                 total = pose_total

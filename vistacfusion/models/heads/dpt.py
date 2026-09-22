@@ -66,7 +66,7 @@ class FeatureFusionBlock(nn.Module):
 
 class DPTHead(nn.Module):
     def __init__(self, embed_dim=768, features=256, dropout=0.0,
-                 out_depth_channels=1, out_normal_channels=3):
+                 out_depth_channels=1, out_normal_channels=3, predict_mask=False):
         super().__init__()
         self.reassemble = nn.ModuleList([
             Reassemble(embed_dim, features, scale_factor=4.0),
@@ -78,6 +78,8 @@ class DPTHead(nn.Module):
         self.drop = nn.Dropout2d(p=dropout)
         self.depth_head = self._make_head(features, out_depth_channels)
         self.normal_head = self._make_head(features, out_normal_channels)
+        # Optional contact-mask head (logits); auxiliary supervision of the contact region.
+        self.mask_head = self._make_head(features, 1) if predict_mask else None
 
     @staticmethod
     def _make_head(features, out_channels):
@@ -100,6 +102,12 @@ class DPTHead(nn.Module):
         x = self.drop(x)
         depth = self.depth_head(x)
         normal = self.normal_head(x)
+        self.last_mask_logits = None
+        if self.mask_head is not None:
+            m = self.mask_head(x)
+            if m.shape[2:] != tuple(out_hw):
+                m = F.interpolate(m, size=out_hw, mode="bilinear", align_corners=True)
+            self.last_mask_logits = m          # read by the model after this call
         if depth.shape[2:] != tuple(out_hw):
             depth = F.interpolate(depth, size=out_hw, mode="bilinear", align_corners=True)
             normal = F.interpolate(normal, size=out_hw, mode="bilinear", align_corners=True)

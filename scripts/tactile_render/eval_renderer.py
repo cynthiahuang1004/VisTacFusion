@@ -36,7 +36,9 @@ def main():
         tag, d = g.split("=")
         diff = tag.startswith("diff")          # diff generators predict tactile - session bg
         RealPairs.diff = diff
-        G = UNetG().to(args.device).eval()
+        RealPairs.bg_cond = "bgcond" in tag
+        dl = DataLoader(va, batch_size=64, num_workers=4)
+        G = UNetG(in_ch=6 if RealPairs.bg_cond else 3).to(args.device).eval()
         G.load_state_dict(torch.load(osp.join(d, "G_final.pt"), map_location=args.device))
         s = dict(l1=0.0, g=0.0, n=0, cl1=0.0, cg=0.0, nc=0)
         for x, t in dl:

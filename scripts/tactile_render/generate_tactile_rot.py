@@ -55,6 +55,8 @@ def main():
     ap.add_argument("--device", default="cuda:2")
     ap.add_argument("--depth-jitter", type=float, default=0.15)
     ap.add_argument("--batch", type=int, default=64)
+    ap.add_argument("--out-subdir", default="samples_gr")
+    ap.add_argument("--objects", nargs="*", default=None)
     args = ap.parse_args()
 
     with open(WINDOWS) as f:
@@ -75,7 +77,7 @@ def main():
         lo, hi = windows[obj]
         with open(osp.join(osp.dirname(unit), "session.json")) as f:
             theta_sess = math.degrees(json.load(f)["base_rotation"][2])
-        outdir = osp.join(unit, "samples_gr")
+        outdir = osp.join(unit, args.out_subdir)
         os.makedirs(outdir, exist_ok=True)
         meta_path = osp.join(outdir, "rot_meta.json")
         meta = {}

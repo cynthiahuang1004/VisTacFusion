@@ -246,8 +246,31 @@ class SimVisuoTactileDataset(Dataset):
             incl = set(include_objects)
             units = [u for u in units
                      if osp.basename(osp.dirname(osp.dirname(u))) in incl]
+        # Optional session subset (rotation-coverage ablation): keep only these session names.
+        include_sessions = sim.get("include_sessions", None)
+        if include_sessions:
+            keep = set(include_sessions)
+            units = [u for u in units if osp.basename(osp.dirname(u)) in keep]
 
         # Build flat sample index and per-unit metadata
+        # Rotation-coverage ablation: keep only the n sessions per object whose base rotation
+        # is closest to the centre of the object's real rotation window.
+        max_sess = sim.get("max_sessions_per_object", None)
+        if max_sess and self._rotation_windows is not None:
+            by_obj = {}
+            for u in units:
+                obj = osp.basename(osp.dirname(osp.dirname(u)))
+                if obj not in self._rotation_windows:
+                    by_obj.setdefault(obj, []).append((0.0, u))
+                    continue
+                with open(osp.join(osp.dirname(u), "session.json")) as f:
+                    base_deg = math.degrees(json.load(f)["base_rotation"][2])
+                lo, hi = self._rotation_windows[obj]
+                d = (base_deg - (lo + hi) / 2.0) % 360.0
+                by_obj.setdefault(obj, []).append((min(d, 360.0 - d), u))
+            units = sorted(u for lst in by_obj.values()
+                           for _, u in sorted(lst)[:int(max_sess)])
+
         self.samples = []
         self.unit_meta = {}
         for unit in units:

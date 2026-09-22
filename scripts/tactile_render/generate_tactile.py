@@ -37,6 +37,10 @@ def main():
     ap.add_argument("--preview", type=int, default=0,
                     help="if >0: only N imgs/object into samples_g_preview/")
     ap.add_argument("--batch", type=int, default=64)
+    ap.add_argument("--bg-cond", action="store_true",
+                    help="G takes the session background as input; uses the REAL session background "
+                         "of the same object (outputs/session_bg/real/<obj>__session_000.png) unless --bg-image")
+    ap.add_argument("--bg-image", default=None, help="single background image for all objects")
     ap.add_argument("--diff", action="store_true",
                     help="G predicts a difference image: composite it onto the canonical "
                          "no-contact reference (outputs/session_bg/ref.png)")
@@ -47,7 +51,16 @@ def main():
     args = ap.parse_args()
 
     dev = args.device
-    G = UNetG().to(dev).eval()
+    G = UNetG(in_ch=6 if args.bg_cond else 3).to(dev).eval()
+    bg_cache = {}
+
+    def bg_for(dp):
+        obj = dp.split(SIM_ROOT + "/")[1].split("/")[0]
+        path = args.bg_image or f"outputs/session_bg/real/{obj}__session_000.png"
+        if path not in bg_cache:
+            im = np.array(Image.open(path).convert("RGB"), np.float32) / 127.5 - 1
+            bg_cache[path] = torch.from_numpy(im.transpose(2, 0, 1))
+        return bg_cache[path]
     G.load_state_dict(torch.load(args.ckpt, map_location="cpu", weights_only=True))
     outdir_name = args.out_subdir + "_preview" if args.preview else args.out_subdir
 
@@ -84,7 +97,10 @@ def main():
             seed = int(hashlib.md5(dp.encode()).hexdigest()[:8], 16)
             rng = np.random.RandomState(seed)
             d = d * (1 + rng.uniform(-args.depth_jitter, args.depth_jitter))
-        return with_coords(torch.from_numpy(d / DEPTH_SCALE * 2 - 1)[None])
+        x = with_coords(torch.from_numpy(d / DEPTH_SCALE * 2 - 1)[None])
+        if args.bg_cond:
+            x = torch.cat([x, bg_for(dp)], 0)
+        return x
 
     def save(arg):
         out, img = arg

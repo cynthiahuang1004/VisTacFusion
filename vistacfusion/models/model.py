@@ -296,6 +296,7 @@ class VisuoTactileModel(nn.Module):
             dropout=cfg.heads.dpt.dropout,
             out_depth_channels=cfg.heads.dpt.out_depth_channels,
             out_normal_channels=cfg.heads.dpt.out_normal_channels,
+            predict_mask=cfg.heads.dpt.get("predict_mask", False),
         )
         self.pose_head = PoseHead(
             dim=self.trunk_dim,
@@ -425,6 +426,8 @@ class VisuoTactileModel(nn.Module):
             normal = torch.zeros(B, 3, self.image_size, self.image_size, device=device)
 
         out = {"depth": depth, "normal": normal}
+        if getattr(self.dpt, "last_mask_logits", None) is not None:
+            out["mask_logits"] = self.dpt.last_mask_logits
         out.update(pose)
         return out
 
@@ -467,6 +470,7 @@ class SingleEncoderModel(nn.Module):
             dropout=cfg.heads.dpt.dropout,
             out_depth_channels=cfg.heads.dpt.out_depth_channels,
             out_normal_channels=cfg.heads.dpt.out_normal_channels,
+            predict_mask=cfg.heads.dpt.get("predict_mask", False),
         )
         self.pose_head = PoseHead(
             dim=self.enc_dim,
@@ -514,6 +518,8 @@ class SingleEncoderModel(nn.Module):
         pose = self.pose_head(tac_cls, spatial_queries=tac_patch)
 
         out = {"depth": depth, "normal": normal}
+        if getattr(self.dpt, "last_mask_logits", None) is not None:
+            out["mask_logits"] = self.dpt.last_mask_logits
         out.update(pose)
         return out
 
