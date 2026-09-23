@@ -29,6 +29,7 @@ from torch.utils.data import DataLoader, Dataset
 REAL_ROOT = "/media/hdd2/ihsuan/gs_blender/real_filtered"
 BG_ROOT = osp.join(osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__)))), "outputs", "session_bg")
 SIM_ROOT = "/media/hdd2/ihsuan/gs_blender/renders_v3"
+PHYS_ROOT = "/media/hdd2/ihsuan/gs_blender/real_filtered_phys"  # Blender tactile rendered at the real GT poses
 DEPTH_SCALE = 0.0012  # max press depth (m); normalizes depth to ~[0, 1]
 VAL_EVERY = 10
 
@@ -45,6 +46,8 @@ def with_coords(d):
 class RealPairs(Dataset):
     diff = False      # True: target = tactile - session background (difference image)
     bg_cond = False   # True: input = depth + xy + session background (6 ch); method "bg-conditioned"
+    phys_cond = False # True: input also gets the physics (Blender) render of the same depth (+3 ch); method "physics-guided"
+    phys_root = PHYS_ROOT
     bg_tag = "real"
     _bg_cache = {}
 
@@ -56,6 +59,12 @@ class RealPairs(Dataset):
             im = Image.open(osp.join(BG_ROOT, self.bg_tag, key + ".png")).convert("RGB")
             self._bg_cache[key] = np.array(im, np.float32) / 127.5 - 1
         return self._bg_cache[key]
+
+    def _phys(self, tac):
+        """Physics render at the same pose: real_filtered_phys/<obj>/<session>/sensor_0000/samples/XXXX.png
+        (real pairs) or the Blender sample itself (sim pairs)."""
+        p = tac.replace(REAL_ROOT, self.phys_root) if tac.startswith(REAL_ROOT) else tac
+        return np.array(Image.open(p).convert("RGB"), np.float32) / 127.5 - 1
 
     def __init__(self, root=REAL_ROOT, split="train", exclude_objects=(), per_object=None):
         """exclude_objects: leave-object-out (held-out objects never seen by G).
@@ -83,7 +92,7 @@ class RealPairs(Dataset):
                 dep = osp.join(unit, "raw_data", f"{idx:04d}_gt.npy")
                 if not osp.exists(dep):
                     dep = osp.join(unit, "raw_data", f"{idx:04d}.npy")
-                if osp.exists(dep):
+                if osp.exists(dep) and (not self.phys_cond or osp.exists(tac.replace(REAL_ROOT, self.phys_root))):
                     self.items.append((dep, tac))
 
     def __len__(self):
@@ -98,6 +107,8 @@ class RealPairs(Dataset):
         x = with_coords(torch.from_numpy(d)[None])
         if self.bg_cond:
             x = torch.cat([x, torch.from_numpy(self._bg(tac).transpose(2, 0, 1))], 0)
+        if self.phys_cond:
+            x = torch.cat([x, torch.from_numpy(self._phys(tac).transpose(2, 0, 1))], 0)
         return x, torch.from_numpy(t.transpose(2, 0, 1))
 
 
@@ -138,6 +149,7 @@ def up(cin, cout, drop=False):
 
 class UNetG(nn.Module):
     """224 -> 7 bottleneck, 5 levels."""
+    residual = False  # True: output = tanh(physics render (last 3 input ch) + raw); set with --phys-residual
 
     def __init__(self, in_ch=3):
         super().__init__()
@@ -161,7 +173,10 @@ class UNetG(nn.Module):
         y = self.u2(torch.cat([y, e4], 1))
         y = self.u3(torch.cat([y, e3], 1))
         y = self.u4(torch.cat([y, e2], 1))
-        return self.out(torch.cat([y, e1], 1))
+        o = self.out(torch.cat([y, e1], 1))
+        if self.residual:
+            return torch.tanh(torch.atanh(x[:, -3:].clamp(-0.999, 0.999)) + torch.atanh(o.clamp(-0.999, 0.999)))
+        return o
 
 
 class PatchD(nn.Module):
@@ -213,6 +228,11 @@ def main():
     ap.add_argument("--init", default=None,
                     help="dir with G_final.pt/D_final.pt to fine-tune from (hybrid renderer)")
     ap.add_argument("--lr", type=float, default=2e-4)
+    ap.add_argument("--real-root", default=REAL_ROOT, help="real pairs root (sensor B: real_gelslim40_train)")
+    ap.add_argument("--phys-cond", action="store_true",
+                    help="condition G on the Blender render of the same depth (real_filtered_phys/); +3 input ch")
+    ap.add_argument("--phys-residual", action="store_true",
+                    help="with --phys-cond: G predicts a residual added to the physics render")
     ap.add_argument("--bg-cond", action="store_true",
                     help="condition G on the session no-contact background (6-ch input)")
     ap.add_argument("--diff", action="store_true",
@@ -226,12 +246,16 @@ def main():
 
     RealPairs.diff = args.diff
     RealPairs.bg_cond = args.bg_cond
+    RealPairs.phys_cond = args.phys_cond
+    if args.phys_residual:
+        assert args.phys_cond
+        UNetG.residual = True
     if args.sim_pretrain:
         tr = SimPairs()
     else:
-        tr = RealPairs(split="train", exclude_objects=set(args.exclude_objects),
+        tr = RealPairs(root=args.real_root, split="train", exclude_objects=set(args.exclude_objects),
                        per_object=args.per_object)
-    va = RealPairs(split="val", exclude_objects=set(args.exclude_objects))
+    va = RealPairs(root=args.real_root, split="val", exclude_objects=set(args.exclude_objects))
     print(f"pairs: train={len(tr)} val={len(va)}", flush=True)
     steps_per_epoch = max(1, len(tr) // args.batch)
     if args.min_steps and args.epochs * steps_per_epoch < args.min_steps:
@@ -240,7 +264,7 @@ def main():
     dl = DataLoader(tr, batch_size=args.batch, shuffle=True,
                     num_workers=8, pin_memory=True, drop_last=True)
 
-    G, D = UNetG(in_ch=6 if args.bg_cond else 3).to(dev), PatchD().to(dev)
+    G, D = UNetG(in_ch=3 + 3 * args.bg_cond + 3 * args.phys_cond).to(dev), PatchD().to(dev)
     if args.init:
         G.load_state_dict(torch.load(osp.join(args.init, "G_final.pt"), map_location=dev))
         D.load_state_dict(torch.load(osp.join(args.init, "D_final.pt"), map_location=dev))

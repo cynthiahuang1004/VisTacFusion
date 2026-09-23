@@ -41,6 +41,8 @@ def main():
                     help="G takes the session background as input; uses the REAL session background "
                          "of the same object (outputs/session_bg/real/<obj>__session_000.png) unless --bg-image")
     ap.add_argument("--bg-image", default=None, help="single background image for all objects")
+    ap.add_argument("--phys-cond", action="store_true", help="condition on the Blender sample of the same frame")
+    ap.add_argument("--phys-residual", action="store_true")
     ap.add_argument("--diff", action="store_true",
                     help="G predicts a difference image: composite it onto the canonical "
                          "no-contact reference (outputs/session_bg/ref.png)")
@@ -51,7 +53,9 @@ def main():
     args = ap.parse_args()
 
     dev = args.device
-    G = UNetG(in_ch=6 if args.bg_cond else 3).to(dev).eval()
+    if args.phys_residual:
+        UNetG.residual = True
+    G = UNetG(in_ch=3 + 3 * args.bg_cond + 3 * args.phys_cond).to(dev).eval()
     bg_cache = {}
 
     def bg_for(dp):
@@ -100,6 +104,10 @@ def main():
         x = with_coords(torch.from_numpy(d / DEPTH_SCALE * 2 - 1)[None])
         if args.bg_cond:
             x = torch.cat([x, bg_for(dp)], 0)
+        if args.phys_cond:
+            ph = dp.replace("/raw_data/", "/samples/").replace("_gt.npy", ".png")
+            ph = np.array(Image.open(ph).convert("RGB"), np.float32) / 127.5 - 1
+            x = torch.cat([x, torch.from_numpy(ph.transpose(2, 0, 1))], 0)
         return x
 
     def save(arg):

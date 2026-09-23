@@ -15,6 +15,7 @@ import argparse
 import contextlib
 import io
 import json
+import re
 import os.path as osp
 
 import torch
@@ -80,7 +81,8 @@ def main():
         if not osp.exists(ckpt):
             print(f"{run:24s} (no {args.ckpt})")
             continue
-        cfg = merge_configs(MODEL, TRAIN, f"ablation/pilot_robosoft/data_{run}.yaml")
+        base = re.sub(r'_seed\d+$', '', run)
+        cfg = merge_configs(MODEL, TRAIN, f"ablation/pilot_robosoft/data_{base}.yaml")
         with contextlib.redirect_stdout(io.StringIO()):
             train_ds, val_ds = build_datasets(cfg)
             model = build_model(cfg).to(args.device).eval()

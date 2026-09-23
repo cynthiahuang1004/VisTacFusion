@@ -10,6 +10,7 @@ import argparse
 import contextlib
 import io
 import json
+import re
 import os.path as osp
 
 import torch
@@ -32,6 +33,7 @@ IOU_THR = 0.05
 def evaluate(model, loader, device):
     s = dict(full_se=0.0, npix=0, c_ae=0.0, c_se=0.0, nc=0, bg_ae=0.0, nbg=0,
              iou=0.0, peak=0.0, rot_sum=0.0, rot_n=0, trans_sum=0.0, n=0, nang=0.0, nang_n=0)
+    signed, objs = [], []   # signed rotation error per sample + object id (for per-object offset removal)
     import torch.nn.functional as F
     import math
     for b in loader:
@@ -57,10 +59,21 @@ def evaluate(model, loader, device):
             cos_p, sin_p = se2[:, 0], se2[:, 1]; cos_g, sin_g = gt_p[:, 0], gt_p[:, 1]
             dcos = (cos_p * cos_g + sin_p * sin_g).clamp(-1 + 1e-6, 1 - 1e-6)
             s["rot_sum"] += (torch.acos(dcos) * 180 / math.pi).sum().item()
+            signed += (torch.atan2(sin_p * cos_g - cos_p * sin_g, dcos) * 180 / math.pi).tolist()
+            objs += b["object"].tolist() if "object" in b else [0] * se2.shape[0]
             s["trans_sum"] += F.l1_loss(se2[:, 2:], gt_p[:, 2:], reduction="sum").item()
             s["rot_n"] += se2.shape[0]
         s["n"] += pred.shape[0]
+    # rotation error after removing a per-object constant offset (unknown theta origin of another sensor /
+    # session): offset = circular median of the signed error per object
+    import numpy as np
+    calib = []
+    for o in set(objs):
+        e = np.array([v for v, oo in zip(signed, objs) if oo == o])
+        med = math.degrees(math.atan2(np.median(np.sin(np.radians(e))), np.median(np.cos(np.radians(e)))))
+        calib += [abs((v - med + 180) % 360 - 180) for v in e]
     return {
+        "rot_deg_calib": float(np.mean(calib)) if calib else 0.0,
         "full_mse": s["full_se"] / s["npix"],
         "c_mae": s["c_ae"] / max(1, s["nc"]),
         "c_rmse": (s["c_se"] / max(1, s["nc"])) ** 0.5,
@@ -80,10 +93,13 @@ def main():
     ap.add_argument("--ckpt", default="best_depth.pt")
     ap.add_argument("--json", default="ablation/pilot_robosoft/cross_session_results.json")
     ap.add_argument("--root", default=NEW_ROOT)
+    ap.add_argument("--fixed-crop", type=float, default=None, help="override fixed_crop for the eval root (sensor B: 1.0)")
+    ap.add_argument("--tag", default="cross_session_curated", help="result key suffix")
+    ap.add_argument("--batch", type=int, default=64)
     args = ap.parse_args()
 
     results = json.load(open(args.json)) if osp.exists(args.json) else {}
-    hdr = f"{'run':28s} {'prefix':10s} {'mse':>8s} {'c_mae':>7s} {'iou':>6s} {'peak':>6s} {'nrm':>6s} {'rot':>6s} {'trans':>6s} {'n':>4s}"
+    hdr = f"{'run':28s} {'prefix':10s} {'mse':>8s} {'c_mae':>7s} {'iou':>6s} {'peak':>6s} {'nrm':>6s} {'rot':>6s} {'rotC':>6s} {'trans':>6s} {'n':>4s}"
     print(hdr, flush=True)
 
     for spec in args.runs:
@@ -91,7 +107,8 @@ def main():
         ckpt = osp.join(OUT, prefix + run, args.ckpt)
         if not osp.exists(ckpt):
             print(f"{run:28s} {prefix:10s} (no {args.ckpt})"); continue
-        data_cfg = f"ablation/pilot_robosoft/data_{run}.yaml"
+        base = re.sub(r'_seed\d+$', '', run)
+        data_cfg = f"ablation/pilot_robosoft/data_{base}.yaml"
         if not osp.exists(data_cfg):
             data_cfg = f"ablation/pilot_robosoft/data_A_realonly.yaml"
         cfg = merge_configs(MODEL, TRAIN, data_cfg)
@@ -105,6 +122,8 @@ def main():
             cfg_new = copy.deepcopy(cfg)
             cfg_new["real"]["root"] = args.root
             cfg_new["real"]["val_every"] = 1  # all frames are "val" (no training on this data)
+            if args.fixed_crop is not None:
+                cfg_new["fixed_crop"] = args.fixed_crop
             cfg_new["real"].pop("test_objects", None)  # don't exclude any objects
             if cfg_new["real"].get("bg_subtract"):     # new-session backgrounds live in real_new/
                 cfg_new["real"]["bg_subtract"] = "real_new"
@@ -113,12 +132,12 @@ def main():
             model = build_model(cfg).to(args.device).eval()
             load_checkpoint(ckpt, model, device=args.device)
 
-        dl = DataLoader(new_ds, batch_size=64, shuffle=False, num_workers=4)
+        dl = DataLoader(new_ds, batch_size=args.batch, shuffle=False, num_workers=4)
         r = evaluate(model, dl, args.device)
-        key = f"{prefix}{run}/cross_session_curated"
+        key = f"{prefix}{run}/{args.tag}"
         results[key] = r
         print(f"{run:28s} {prefix:10s} {r['full_mse']:8.4f} {r['c_mae']:7.4f} {r['iou']:6.3f} "
-              f"{r['peak_err']:6.3f} {r['normal_deg']:6.2f} {r['rot_deg']:6.2f} {r['trans_l1']:6.4f} {r['n']:4d}", flush=True)
+              f"{r['peak_err']:6.3f} {r['normal_deg']:6.2f} {r['rot_deg']:6.2f} {r['rot_deg_calib']:6.2f} {r['trans_l1']:6.4f} {r['n']:4d}", flush=True)
         json.dump(results, open(args.json, "w"), indent=1)
 
 

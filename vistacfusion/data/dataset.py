@@ -169,7 +169,9 @@ class SimVisuoTactileDataset(Dataset):
         gel_view_m = sim.get("gel_view_m", 0.017502)
         # Fixed center-crop ratio (top-level data cfg, shared by sim and real so the
         # mm->pixel scale is identical across domains). Default 1/sqrt(2).
-        self.fixed_crop = float(cfg_data.get("fixed_crop", FIXED_CROP))
+        # A data section may override it (cross-sensor data whose stored field of view differs:
+        # e.g. GelSlim 4.0 stored at 12 mm -> real.fixed_crop 1.0, sim.fixed_crop 12/17.5).
+        self.fixed_crop = float(sim.get("fixed_crop", cfg_data.get("fixed_crop", FIXED_CROP)))
         if not (0.0 < self.fixed_crop <= 1.0):
             raise ValueError(f"fixed_crop must be in (0, 1], got {self.fixed_crop}")
         self.pixel_size = gel_view_m * self.fixed_crop / image_size
