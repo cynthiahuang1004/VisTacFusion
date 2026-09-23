@@ -1,0 +1,17 @@
+{
+ "keep_only": {
+  "pattern_01_2_lines_angle_2": [
+   49,
+   308
+  ],
+  "pattern_01_2_lines_angle_3": [
+   122,
+   273
+  ]
+ },
+ "drop_objects": [
+  "pattern_04_3_lines_angle_2"
+ ],
+ "reviewed_by": "I-Hsuan",
+ "date": "2026-09-23"
+}
