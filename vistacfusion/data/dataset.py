@@ -388,7 +388,13 @@ class SimVisuoTactileDataset(Dataset):
                           if osp.isdir(osp.join(self.root, d)))
         for obj_name in obj_dirs:
             mesh_path = osp.join(self.mesh_dir, f"{obj_name}.obj")
+            # Find the first available session for this object (usually session_000,
+            # but new_real_test runs start at session_001+).
             s0_path = osp.join(self.root, obj_name, "session_000", "session.json")
+            if not osp.exists(s0_path):
+                sess_dirs = sorted(d for d in os.listdir(osp.join(self.root, obj_name))
+                                   if d.startswith("session_"))
+                s0_path = osp.join(self.root, obj_name, sess_dirs[0], "session.json") if sess_dirs else ""
             if not osp.exists(mesh_path) or not osp.exists(s0_path):
                 continue
             mesh = __import__("trimesh").load(mesh_path, force="mesh")

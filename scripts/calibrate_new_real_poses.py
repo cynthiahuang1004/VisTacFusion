@@ -191,5 +191,110 @@ def main():
             json.dump(results, open(OUT_JSON, "w"), indent=1)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "--v2" not in sys.argv:
     main()
+
+
+# ---------------------------------------------------------------------------------------------
+# v2: per-object joint (theta, x, y) + per-run dz from contact onset
+# ---------------------------------------------------------------------------------------------
+def dz_from_onset(real_name, run, area_thr=0.004):
+    """contact_z correction (mm) from the first frame of each press whose ridge mask appears.
+    Returns median over iterations, or None."""
+    m = json.load(open(f"{T}/{real_name}/{run}/tactile_images/poses.json"))
+    cz = m["contact_z_m"]; by_it = {}
+    for f in m["frames"]:
+        if abs(f["pose_ros_timestamp_sec"] - f["image_ros_timestamp_sec"]) > 0.5:
+            continue
+        by_it.setdefault(f["iteration"], []).append(f)
+    dzs = []
+    for it, fr in by_it.items():
+        fr.sort(key=lambda f: f["frame_id"])
+        zs = [f["robot_pose_xyz_xyzw"][2] for f in fr]
+        lo = int(np.argmin(zs))                          # deepest frame of the press
+        if (cz - zs[lo]) * 1000 < 0.3:
+            continue
+        onset = None
+        for f in fr[: lo + 1]:                           # descent: first frame with visible ridges
+            im = np.asarray(Image.open(f"{T}/{real_name}/{run}/tactile_images/{f['filename']}").convert("RGB"))
+            if blackhat_mask(im).mean() > area_thr:
+                onset = f; break
+        if onset is not None:
+            dzs.append((onset["robot_pose_xyz_xyzw"][2] - cz) * 1000)
+    return (float(np.median(dzs)), len(dzs)) if dzs else (None, 0)
+
+
+def calibrate_object(args):
+    real_name, runs, n_per_run, dz_map = args
+    sim_name, th_off, bx, by = OBJ_MAP[real_name]
+    get_zmap(sim_name)
+    masks, poses = [], []
+    for run in runs:
+        frames, cz = frames_of(real_name, run, n_per_run)
+        dz = dz_map.get(f"{real_name}/{run}", 0.0) or 0.0
+        for f in frames:
+            im = np.asarray(Image.open(f"{T}/{real_name}/{run}/tactile_images/{f['filename']}").convert("RGB"))
+            m = blackhat_mask(im)
+            if m.mean() < 0.01:
+                continue
+            ee = f["robot_pose_xyz_xyzw"]
+            th, x, y, p = robot_to_gt(ee[3:], ee[:2], th_off, bx, by, cz, ee[2])
+            if p + dz < 0.3:
+                continue
+            masks.append(m); poses.append((th, x, y, p + dz))
+    if len(masks) < 4:
+        return real_name, None
+
+    def score(dth, dx, dy):
+        s = 0.0
+        for m, (th, x, y, p) in zip(masks, poses):
+            s += iou(m, gt_depth_mm(sim_name, th + math.radians(dth), x + dx, y + dy, p))
+        return s / len(masks)
+
+    before = score(0, 0, 0); best, bs = (0.0, 0.0, 0.0), before
+    for dth in np.arange(-45, 46, 3.0):
+        for dx in np.arange(-10, 10.1, 1.0):
+            for dy in np.arange(-10, 10.1, 1.0):
+                s = score(dth, dx, dy)
+                if s > bs:
+                    bs, best = s, (dth, dx, dy)
+    for step in (0.5, 0.25):
+        dth0, dx0, dy0 = best
+        for dth in np.arange(dth0 - 2, dth0 + 2.01, step):
+            for dx in np.arange(dx0 - 1, dx0 + 1.01, step):
+                for dy in np.arange(dy0 - 1, dy0 + 1.01, step):
+                    s = score(dth, dx, dy)
+                    if s > bs:
+                        bs, best = s, (dth, dx, dy)
+    return real_name, dict(dtheta_deg=float(best[0]), dx_mm=float(best[1]), dy_mm=float(best[2]),
+                           iou_before=float(before), iou_after=float(bs), n=len(masks))
+
+
+def main_v2(out_json, workers=12, n_per_run=5):
+    objs = {}
+    for real_name in sorted(OBJ_MAP):
+        if not osp.isdir(f"{T}/{real_name}"):
+            continue
+        runs = [r for r in sorted((d for d in os.listdir(f"{T}/{real_name}") if d.isdigit()), key=int)
+                if osp.exists(f"{T}/{real_name}/{r}/tactile_images/poses.json")]
+        if runs:
+            objs[real_name] = runs
+    # dz: the membrane is semi-transparent, so ridges are visible before contact and onset
+    # detection is unusable; trust the robot contact_z (dz = 0).
+    dz_map = {f"{o}/{r}": 0.0 for o, rs in objs.items() for r in rs}
+    # per-object joint theta/x/y
+    results = {}
+    with ProcessPoolExecutor(workers) as ex:
+        for o, res in ex.map(calibrate_object, [(o, rs, n_per_run, dz_map) for o, rs in objs.items()]):
+            if res is None:
+                print(o, "not enough frames", flush=True); continue
+            print(f"{o:30s} IoU {res['iou_before']:.3f} -> {res['iou_after']:.3f}  dth={res['dtheta_deg']:+6.1f} "
+                  f"dx={res['dx_mm']:+5.2f} dy={res['dy_mm']:+5.2f} n={res['n']}", flush=True)
+            for r in objs[o]:
+                results[f"{o}/{r}"] = dict(res, dz_mm=0.0)
+            json.dump(results, open(out_json, "w"), indent=1)
+
+
+if __name__ == "__main__" and "--v2" in sys.argv:
+    sys.argv.remove("--v2")
+    main_v2(OUT_JSON, workers=14)
