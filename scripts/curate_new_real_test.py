@@ -30,6 +30,17 @@ from build_real_filtered_new import OBJ_MAP, T, Z_ANCHOR, get_zmap, gt_depth_mm,
 from calibrate_new_real_poses import blackhat_mask, iou  # noqa: E402
 
 VAL = f"{T}/validation"
+PRED_ROOT = f"{T}/output"          # user's VisTacFusion inference on the new session (depth/ = viridis-coloured pred)
+_VIRIDIS_BG = np.array([68, 1, 84], np.float32)
+
+
+def pred_mask(real_name, run, frame):
+    """Contact mask from the model's predicted depth (colour distance from the viridis background)."""
+    p = f"{PRED_ROOT}/{real_name}/{run}/depth/{frame:06d}.png"
+    if not osp.exists(p):
+        return None
+    im = np.asarray(Image.open(p).convert("RGB"), np.float32)
+    return (np.abs(im - _VIRIDIS_BG).sum(-1) > 60)
 
 
 def parse_log(path):
@@ -52,7 +63,7 @@ def start_calib(real_name, run, v1, v2):
 
 
 def refine_run(args):
-    real_name, run, calib, min_press, stride, max_lag = args
+    real_name, run, calib, min_press, stride, max_lag, mask_kind = args
     sim_name, th_off, bx, by = OBJ_MAP[real_name]
     get_zmap(sim_name)
     m = json.load(open(f"{T}/{real_name}/{run}/tactile_images/poses.json")); cz = m["contact_z_m"]
@@ -69,8 +80,8 @@ def refine_run(args):
         if k % stride:
             continue
         im = np.asarray(Image.open(f"{T}/{real_name}/{run}/tactile_images/{f['filename']}").convert("RGB"))
-        mask = blackhat_mask(im)
-        if mask.mean() < 0.01:
+        mask = pred_mask(real_name, run, f["frame_id"]) if mask_kind == "pred" else blackhat_mask(im)
+        if mask is None or mask.mean() < 0.01:
             continue                                   # no visible contact -> unusable
         # local refinement around the run calibration
         best, bs = (0.0, 0.0, 0.0), iou(mask, gt_depth_mm(sim_name, th, x, y, p))
@@ -98,11 +109,15 @@ def main():
     ap.add_argument("--out", default="/media/hdd2/ihsuan/gs_blender/real_filtered_new_curated")
     ap.add_argument("--per-obj", type=int, default=10)
     ap.add_argument("--per-run", type=int, default=3)
+    ap.add_argument("--per-iter", type=int, default=1, help="frames kept per press iteration (different press depths)")
     ap.add_argument("--min-iou", type=float, default=0.25, help="absolute IoU floor")
     ap.add_argument("--rel-iou", type=float, default=0.75, help="keep frames >= rel * best IoU of the object")
     ap.add_argument("--min-press", type=float, default=0.4)
     ap.add_argument("--stride", type=int, default=3)
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--mask", choices=["blackhat", "pred"], default="blackhat",
+                    help="contact evidence: image black-hat ridges, or the predicted depth of new_real_test/output")
+    ap.add_argument("--grid-dir", default=None, help="per-object review grids go here (default validation/curated_<mask>/)")
     args = ap.parse_args()
 
     v1 = parse_log(f"{VAL}/calibration_blackhat.log")
@@ -113,7 +128,7 @@ def main():
             continue
         for run in sorted((d for d in os.listdir(f"{T}/{real_name}") if d.isdigit()), key=int):
             if osp.exists(f"{T}/{real_name}/{run}/tactile_images/poses.json"):
-                jobs.append((real_name, run, start_calib(real_name, run, v1, v2), args.min_press, args.stride, 0.5))
+                jobs.append((real_name, run, start_calib(real_name, run, v1, v2), args.min_press, args.stride, 0.5, args.mask))
     cands = {}
     with ProcessPoolExecutor(args.workers) as ex:
         for res in ex.map(refine_run, jobs):
@@ -127,17 +142,18 @@ def main():
         thr = max(args.min_iou, args.rel_iou * top)
         lst = [r for r in lst if r["iou"] >= thr]
         lst.sort(key=lambda r: -r["iou"])
-        per_run, per_iter, keep = {}, set(), []
+        per_run, per_iter, keep = {}, {}, []
         for r in lst:
             key_it = (r["run"], r["iteration"])
-            if per_run.get(r["run"], 0) >= args.per_run or key_it in per_iter:
+            if per_run.get(r["run"], 0) >= args.per_run or per_iter.get(key_it, 0) >= args.per_iter:
                 continue
-            keep.append(r); per_run[r["run"]] = per_run.get(r["run"], 0) + 1; per_iter.add(key_it)
+            keep.append(r); per_run[r["run"]] = per_run.get(r["run"], 0) + 1; per_iter[key_it] = per_iter.get(key_it, 0) + 1
             if len(keep) >= args.per_obj:
                 break
         selected[real_name] = keep
         print(f"{real_name:30s} candidates={len(cands[real_name]):4d}  best IoU={top:.2f} thr={thr:.2f} pass={len(lst):4d}  kept={len(keep)}", flush=True)
-    json.dump(selected, open(f"{VAL}/curated_selection.json", "w"), indent=1)
+    json.dump(selected, open(f"{VAL}/curated_selection_{args.mask}.json", "w"), indent=1)
+    grid_dir = args.grid_dir or f"{VAL}/curated_{args.mask}"; os.makedirs(grid_dir, exist_ok=True)
 
     # write dataset (one session per real run, only selected frames) + review grid
     if osp.exists(args.out):
@@ -181,12 +197,16 @@ def main():
                        "OBJ_DEPTH_MIN": 0.0008, "OBJ_DEPTH_MAX": 0.0012, "z_anchor": -Z_ANCHOR,
                        "capture": "new_real_test 2026-09-22 (curated)", "source_run": run, "valid_cells": cells},
                       open(f"{args.out}/{sim_name}/session_{int(run):03d}/session.json", "w"), indent=1)
-    cols = 5; rows = -(-len(tiles) // cols)
-    fig, axes = plt.subplots(rows, cols, figsize=(cols * 4.0, rows * 2.25))
-    for ax in np.array(axes).flat: ax.axis("off")
-    for ax, (t, im) in zip(np.array(axes).flat, tiles): ax.imshow(im); ax.set_title(t, fontsize=7)
-    fig.tight_layout(h_pad=0.3, w_pad=0.2); fig.savefig(f"{VAL}/curated_review.png", dpi=110)
-    print(f"total curated frames: {len(tiles)} -> {args.out}; review grid {VAL}/curated_review.png")
+    by_obj = {}
+    for t, im in tiles:
+        by_obj.setdefault(t.split(" r")[0], []).append((t, im))
+    for obj, ts in by_obj.items():
+        cols = 5; rows = -(-len(ts) // cols)
+        fig, axes = plt.subplots(rows, cols, figsize=(cols * 4.0, rows * 2.25), squeeze=False)
+        for ax in axes.flat: ax.axis("off")
+        for ax, (t, im) in zip(axes.flat, ts): ax.imshow(im); ax.set_title(t, fontsize=7)
+        fig.tight_layout(h_pad=0.3, w_pad=0.2); fig.savefig(f"{grid_dir}/{obj}.png", dpi=100); plt.close(fig)
+    print(f"total curated frames: {len(tiles)} -> {args.out}; review grids in {grid_dir}/")
 
 
 if __name__ == "__main__":

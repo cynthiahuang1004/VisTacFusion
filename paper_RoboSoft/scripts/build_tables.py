@@ -148,7 +148,7 @@ for K in (25, 100):
 T["seeds"] = "\n".join(sd)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
-    r = CROSS.get(f"{pre}{run}/cross_session_curated") or CROSS.get(f"pilot_{run}/cross_session_curated")
+    r = CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854")
     return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib")) if r else None
 cross = [
     ("Real only (all objects, session 1)", cs("A_realonly"), {}),
@@ -160,8 +160,10 @@ cross = [
     ("", None, {"sep": r"\midrule"}),
     ("Blender only ($\\Kreal=0$)", cs("B_k0_blender"), {}),
     ("$\\Kreal=25$ real only", cs("B_k25_realonly"), {}),
+    ("$\\Kreal=25$ + Blender", cs("B_k25_blender"), {}),
     ("$\\Kreal=25$ + GAN-25", cs("B_k25_gank"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
+    ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))

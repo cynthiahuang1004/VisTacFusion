@@ -129,6 +129,65 @@ class SimPairs(RealPairs):
         self.items = items[:max_pairs]
 
 
+SITR_ROOT = "/media/hdd2/ihsuan/gsrl/datasets/renders"
+SITR_PRESS_M = 0.001   # SITR dmaps are per-frame min-max normalised PNGs; assume a 1 mm indentation
+
+
+class SitrPairs(RealPairs):
+    """(depth, image) pairs from the 100 simulated SITR sensors, each with its own calibration/0000.png
+    background -> multi-sensor training of the background-conditioned renderer. `per_sensor` pairs
+    per sensor, evenly spaced, so every sensor has the same weight."""
+
+    def __init__(self, sensors=100, per_sensor=300, seed=0):
+        self.items = []
+        for si in range(sensors):
+            d = f"{SITR_ROOT}/sensor_{si:04d}"
+            if not osp.isdir(f"{d}/dmaps"):
+                continue
+            n = len(glob.glob(f"{d}/dmaps/*.png"))
+            pos = np.linspace(0, n - 1, min(per_sensor, n)).round().astype(int)
+            self.items += [(f"{d}/dmaps/{i:04d}.png", f"{d}/samples/{i:04d}.png") for i in sorted(set(pos.tolist()))]
+
+    def _bg(self, tac):
+        # NOTE: renders/sensor_XXXX/calibration/ was overwritten with sensor_0000's images by an earlier
+        # experiment (datasets/change_training_cal.py); the per-sensor background is the backup
+        # calibration_XXXX/0000.png if present, else the per-sensor median of samples (compute once:
+        # outputs/session_bg/sitr/sensor_XXXX.png).
+        key = tac.split("/")[-3]
+        if key not in self._bg_cache:
+            sdir = osp.dirname(osp.dirname(tac))
+            cands = [osp.join(sdir, f"calibration_{key[-4:]}", "0000.png"), osp.join(BG_ROOT, "sitr", key + ".png")]
+            p = next((c for c in cands if osp.exists(c)), None)
+            if p is None:
+                raise FileNotFoundError(f"no per-sensor background for {key}: {cands}")
+            self._bg_cache[key] = np.array(Image.open(p).convert("RGB"), np.float32) / 127.5 - 1
+        return self._bg_cache[key]
+
+    def __getitem__(self, i):
+        dep, tac = self.items[i]
+        d = np.array(Image.open(dep), np.float32) / 255.0 * SITR_PRESS_M / DEPTH_SCALE * 2 - 1
+        t = np.array(Image.open(tac).convert("RGB"), np.float32) / 127.5 - 1
+        x = with_coords(torch.from_numpy(d)[None])
+        if self.bg_cond:
+            x = torch.cat([x, torch.from_numpy(self._bg(tac).transpose(2, 0, 1))], 0)
+        return x, torch.from_numpy(t.transpose(2, 0, 1))
+
+
+class MixPairs(Dataset):
+    def __init__(self, *ds):
+        self.ds = ds; self.n = [len(d) for d in ds]
+
+    def __len__(self):
+        return sum(self.n)
+
+    def __getitem__(self, i):
+        for d, n in zip(self.ds, self.n):
+            if i < n:
+                return d[i]
+            i -= n
+        raise IndexError
+
+
 def down(cin, cout, norm=True):
     layers = [nn.Conv2d(cin, cout, 4, 2, 1, bias=not norm)]
     if norm:
@@ -233,6 +292,10 @@ def main():
                     help="condition G on the Blender render of the same depth (real_filtered_phys/); +3 input ch")
     ap.add_argument("--phys-residual", action="store_true",
                     help="with --phys-cond: G predicts a residual added to the physics render")
+    ap.add_argument("--sitr-sensors", type=int, default=0,
+                    help="add pairs from this many simulated SITR sensors (multi-sensor bg-conditioned renderer)")
+    ap.add_argument("--sitr-per-sensor", type=int, default=300)
+    ap.add_argument("--no-real", action="store_true", help="with --sitr-sensors: train on SITR sensors only")
     ap.add_argument("--bg-cond", action="store_true",
                     help="condition G on the session no-contact background (6-ch input)")
     ap.add_argument("--diff", action="store_true",
@@ -256,6 +319,10 @@ def main():
         tr = RealPairs(root=args.real_root, split="train", exclude_objects=set(args.exclude_objects),
                        per_object=args.per_object)
     va = RealPairs(root=args.real_root, split="val", exclude_objects=set(args.exclude_objects))
+    if args.sitr_sensors:
+        sp = SitrPairs(args.sitr_sensors, args.sitr_per_sensor)
+        print(f"SITR pairs: {len(sp)} from {args.sitr_sensors} sensors", flush=True)
+        tr = sp if args.no_real else MixPairs(tr, sp)
     print(f"pairs: train={len(tr)} val={len(va)}", flush=True)
     steps_per_epoch = max(1, len(tr) // args.batch)
     if args.min_steps and args.epochs * steps_per_epoch < args.min_steps:

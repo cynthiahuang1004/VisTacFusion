@@ -24,7 +24,7 @@ from vistacfusion.utils.config import merge_configs
 OUT = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2"
 MODEL = "ablation/encoder/tac_sitr_single.yaml"
 TRAIN = "ablation/pilot_robosoft/train_pilot_e50.yaml"
-NEW_ROOT = "/media/hdd2/ihsuan/gs_blender/real_filtered_new_curated"
+NEW_ROOT = "/media/hdd2/ihsuan/gs_blender/real_filtered_new_curated_pred_r2"
 OLD_ROOT = "/media/hdd2/ihsuan/gs_blender/real_filtered"
 IOU_THR = 0.05
 
