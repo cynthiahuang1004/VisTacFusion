@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1790264086.83875 "main.aux" "main.bbl" "main" 1790264090.10266 0
+["bibtex main"] 1790266164.81191 "main.aux" "main.bbl" "main" 1790266168.90406 0
   "./refs.bib" 1790039325.81759 12582 3db63816c7f495760f0d41f35e812eca ""
   "/home/shared/.TinyTeX/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1790264089.81152 11906 ee4d200547f97dfb16c9c65871c67683 "pdflatex"
+  "main.aux" 1790266168.61818 11906 a0f6a852cd178e6b2f8409c8f333f2e0 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1790264086.93181 "main.tex" "main.pdf" "main" 1790264090.10298 0
+["pdflatex"] 1790266165.0066 "main.tex" "main.pdf" "main" 1790266168.90436 0
   "/home/shared/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/courier/pcrr8r.tfm" 1136768653 1292 bd42be2f344128bff6d35d98474adfe3 ""
@@ -134,19 +134,19 @@
   "/home/shared/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1786316193 336846 32c752561682a5c82d1eb57c40cf8597 ""
   "/home/shared/.TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1786246794 2250951 6eca1863878440fcc4e16403c05543fe ""
   "/home/shared/.TinyTeX/texmf.cnf" 1786246766 637 edd806fb06a89761a6034e1968af9017 ""
-  "data/tables.tex" 1790263477.80154 5838 79529a34e63bcb4b49f22f3d84a85678 ""
+  "data/tables.tex" 1790266000.40964 5975 745dcb386ff99c63a0000a80c7f58d0c ""
   "figures/fig_fidelity.pdf" 1790263953.60708 72659 7bda19095cacb4707295d30dd345fe01 ""
   "figures/fig_kshot.pdf" 1790263944.31105 45819 9e8ac8a099e405f197d6d852b81c0548 ""
   "figures/fig_renders.png" 1790263947.25906 587451 a81d07c8ca9f6ece84e637a9e5646b21 ""
   "ieeeconf.cls" 1790039325.81759 197574 c8a8a2004c9762153e255667fc17d954 ""
-  "main.aux" 1790264089.81152 11906 ee4d200547f97dfb16c9c65871c67683 "pdflatex"
-  "main.bbl" 1790264086.92351 8282 e010387576f7c5040d55b07f3e03a300 "bibtex main"
-  "main.out" 1790264089.81552 2830 6e3f6023cff0909fb967d410c1990b2f "pdflatex"
-  "main.tex" 1790263605.69795 3433 7471cf4ea7a2d50927bf8dce71f616c7 ""
-  "sections/01_intro.tex" 1790264083.4515 4796 8ead55458aecaaed291cde3e4345cfea ""
+  "main.aux" 1790266168.61818 11906 a0f6a852cd178e6b2f8409c8f333f2e0 "pdflatex"
+  "main.bbl" 1790266164.99017 8282 e010387576f7c5040d55b07f3e03a300 "bibtex main"
+  "main.out" 1790266168.62218 2830 6e3f6023cff0909fb967d410c1990b2f "pdflatex"
+  "main.tex" 1790266161.34215 3456 f64429983c688ebd15c41b235adc12ad ""
+  "sections/01_intro.tex" 1790266161.34215 4819 22c84c13847ab60b01ea8b8d904261e6 ""
   "sections/02_related.tex" 1790263940.25104 2479 5d4365cd49df1f1bd05f3c2cfa47be9c ""
   "sections/03_method.tex" 1790264083.4515 9201 419c999cdb07faa650604d821510906c ""
-  "sections/04_experiments.tex" 1790264083.4515 14257 5ccc4d83ddd778cabe8cb4dbd2e228c8 ""
+  "sections/04_experiments.tex" 1790266161.34215 14656 453f453c0f2d3337511de8885cfe9205 ""
   "sections/05_discussion.tex" 1790264083.4515 3080 0fc76617a447c3da7aca824d62112169 ""
   (generated)
   "main.aux"

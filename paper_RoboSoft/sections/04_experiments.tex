@@ -112,7 +112,7 @@ Table~\ref{tab:cross} evaluates the sensor-A models on the second capture. Dense
     \label{fig:fidelity}
 \end{figure}
 
-\noindent\textbf{A fidelity proxy.} Rendering the depth maps of the real validation pairs and comparing with the real images gives a contact-region L1 per renderer. Fig.~\ref{fig:fidelity} plots it against the downstream depth MSE for every learned-renderer variant: the ordering is preserved across variants and budgets (full-image L1 is dominated by the illumination field and less predictive). The proxy costs seconds and screened the variants below before downstream training.
+\noindent\textbf{A fidelity proxy.} Rendering the depth maps of the real validation pairs and comparing with the real images gives an image error per renderer. Fig.~\ref{fig:fidelity} plots the contact-region L1 against the downstream depth MSE for every learned-renderer variant: the ordering is preserved across variants and budgets. Over the nine strict renderers, pixel metrics predict downstream error best (Spearman $|\rho|$: contact L1 $0.97$, PSNR $0.98$, full-image L1 $0.95$), perceptual metrics worse (SSIM $0.87$, LPIPS $0.87$, contact-cropped $0.90$); adding the three leaky renderers, whose fidelity is identical while their downstream error varies with $\Kreal$, lowers every correlation to $0.75$--$0.82$, i.e.\ fidelity predicts the renderer's contribution, not the real budget. The proxy costs seconds and screened the variants below before downstream training.
 
 \begin{table}[t]
 \centering
