@@ -1,0 +1,6 @@
+#!/bin/bash
+cd /media/hdd2/ihsuan/VisTacFusion; PY=/home/shared/miniconda3/envs/vistacfusion/bin/python
+$PY ablation/pilot_robosoft/eval_masked.py --prefix pilot150_ --device cuda:1 A_realonly A_blender A_blender_bgsub A_ganloo A_ganloo_9obj A_ganfull A_bgcondloo A_blender_cov1 A_blender_cov2 A_ganloo_gr B_k0_blender B_k0_ganfull B_k10_realonly B_k10_blender B_k10_gank B_k25_realonly B_k25_blender B_k25_gank B_k25_ganfull B_k50_realonly B_k50_blender B_k50_gank B_k100_realonly B_k100_blender B_k100_gank B_k100_ganfull
+$PY ablation/pilot_robosoft/eval_masked.py --prefix pilot_ --device cuda:1 B_k10_ganfull B_k25_ganfull B_k100_ganfull B_k25_realonly_seed1 B_k25_realonly_seed2 B_k25_gank_seed1 B_k25_gank_seed2 B_k100_realonly_seed1 B_k100_realonly_seed2 B_k100_gank_seed1 B_k100_gank_seed2 B_k25_hyb B_k25_diff B_k25_bgcond B_k100_bgcond B_k100_hyb B_k100_diff A_hybloo A_diffloo A_realonly_bgsub B_k25_realonly_bgsub B_k25_blender_bgsub B_k25_ft B_k25_ft_l2sp B_k25_gank_maskgrad B_k25_realonly_maskgrad
+$PY ablation/pilot_robosoft/eval_masked.py --prefix pilot_ --device cuda:1 S_k10_realonly S_k10_blender S_k10_gan40 S_k25_realonly S_k25_blender S_k25_gan40 S_k100_realonly S_k100_blender S_k100_gan40
+echo "== masked all done =="

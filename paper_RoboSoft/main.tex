@@ -6,15 +6,15 @@
 \usepackage{caption}
 \usepackage{hyperref}
 
-\newcommand{\ours}{TactiOS}
 \newcommand{\sensor}{GelSlim~5.0}
-\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+\newcommand{\sensorB}{GelSlim~4.0}
 \newcommand{\tableformat}{\small\setlength{\tabcolsep}{3.0pt}\renewcommand{\arraystretch}{1.02}}
 \newcommand{\metrichead}[2]{\shortstack[c]{\strut#1\\\strut#2\,$\downarrow$}}
 \newcommand{\Kreal}{K}
+\input{data/tables}
 
 \title{\LARGE\bf How Much Real Data Does a Tactile Renderer Need?\\
-A Leakage-Controlled Real-to-Sim-to-Real Study of Tactile Depth and Pose Estimation}
+A Leakage-Controlled Real-to-Sim-to-Real Study of Tactile Depth, Normal and Pose Estimation}
 
 \author{I-Hsuan Huang$^{*}$, Xiaohao Xu$^{*}$, Xiangdong Wang, Xiaonan Huang, and Nima Fazeli%
 \thanks{$^{*}$Equal contribution. All authors are with the University of Michigan, Ann Arbor, MI, USA.
@@ -27,7 +27,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \pagestyle{empty}
 
 \begin{abstract}
-Vision-based tactile sensors image a deforming elastomer under internal illumination, so the mapping from contact geometry to appearance is sensor specific and dense real labels are expensive. Real-to-sim-to-real pipelines calibrate a tactile renderer on a little real data and train on its synthetic labels. We ask what such pipelines rarely control for: \emph{how much real data does the renderer itself consume, and does the downstream gain survive once that data is accounted for?} On one \sensor{} sensor and one downstream model (frozen sensor-invariant encoder with depth, normal and planar-pose heads) we compare a \emph{physically calibrated} Blender renderer, fitted by Bayesian optimization to a single no-contact image, with a \emph{learned} depth-to-image renderer trained on $\Kreal$ real pairs per object, under a leakage-controlled protocol in which the renderer never sees the frames used to test the downstream model. Simulation is decisive for \emph{pose transfer to new objects}: with no real data of three objects, rotation error drops from $48^\circ$ to $5.6^\circ$ once simulated contacts of their meshes are added, using the physical renderer and no real contact of the object; a control that removes the meshes from simulation shows the gain is geometric coverage, not appearance. For \emph{dense contact depth} the benefit is gated by appearance fidelity: the learned renderer needs $\Kreal\!\ge\!100$ pairs per object before synthetic data lowers real depth error ($-18\%$ MSE, $-15\%$ contact MAE), the physical renderer never does, and the common leaky practice of training the renderer on all real data overstates the gain by up to $2\times$. A contact-region L1 between rendered and real images predicts the downstream ranking, and physics pretraining, illumination normalization and difference-image rendering all fail to close the few-shot gap, locating the bottleneck in contact shading rather than illumination drift.
+Vision-based tactile sensors image a deforming elastomer under internal illumination, so the mapping from contact geometry to appearance is sensor specific and dense real labels are expensive. Real-to-sim-to-real pipelines calibrate a tactile renderer on a little real data and train on its synthetic labels. We ask what such pipelines rarely control for: \emph{how much real data does the renderer itself consume, and does the downstream gain survive once that data is accounted for and the renderer is barred from the test frames?} On a \sensor{} fingertip sensor and one downstream model (frozen sensor-invariant encoder with depth, normal and planar-pose heads) we compare a \emph{physically calibrated} Blender renderer, fitted to a single no-contact image, with a \emph{learned} depth-to-image renderer trained on $\Kreal$ real pairs per object, and evaluate on held-out objects, on a second capture session and on a second sensor (\sensorB{}). The answer depends on the task and on $\Kreal$. Pose transfers to objects with no real data through geometric coverage alone ($65^\circ\!\to\!5$--$7^\circ$ with a renderer that never saw a contact); dense depth and normals improve only once the learned renderer has $\Kreal\!\gtrsim\!50$ pairs per object ($-11\%$ MSE at $\Kreal=50$, $-16\%$ at $\Kreal=100$, three seeds), and the physical renderer never helps them. Two cheap fixes extend the useful range: conditioning the learned renderer on the session background improves depth on unseen objects by $13\%$ at the cost of one background frame, and covering the rotation range in simulation halves unseen-object pose error. The same recipe transfers to \sensorB{} with the sensor's own $\Kreal$ pairs ($-29\%$ contact MAE at $\Kreal=25$). Across a second session, every model trained on more session-1 real data localizes contact worse, while simulation halves the pose error. Finally, the common practice of training the renderer on all real data overstates the depth gain by $2$--$4\times$, and a contact-region image error predicts the downstream ranking of nineteen renderer variants, including four physics-guided ones that do not help.
 \end{abstract}
 
 \input{sections/01_intro}

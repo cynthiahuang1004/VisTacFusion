@@ -10,23 +10,28 @@ Title (working): *How Much Real Data Does a Tactile Renderer Need? A Leakage-Con
 Real-to-Sim-to-Real Study of Tactile Depth and Pose Estimation.* Earlier draft under the name
 TactiOS (Overleaf `6a342fc902f6a42d1376e4f0`) — inverse-rendering framing, no data.
 
-## Status (2026-09-22)
+## Status (2026-09-24)
 
-- All tables/figures use the **50-epoch pilot** runs (`pilot_*`). Formal **150-epoch** reruns
-  (`pilot150_*`) are in progress; four of them (A_realonly, A_ganloo, B_k100_realonly,
-  B_k100_gank) are done and changed no conclusion. When the rest finish, regenerate
-  `data/` and `figures/` and drop the red `\todo` in Sec. III-E.
-- 8 pages; RoboSoft limit is 6 (+ paid extra pages, check the CFP). Needs ~1.5 pages of cuts.
-- Single seed everywhere.
+- Rewritten around depth / normal / pose with equal weight. All main tables use the **150-epoch**
+  runs (`pilot150_*`, 26 configs); the K=10 leaky row and the variants table use 50-epoch pilots.
+  Seeds (3, 50 ep) at K=25/100 are quoted in the text.
+- New sections: rotation coverage + background-conditioned GAN (methods 6 and 1), cross-session
+  (curated 68 frames + reference-free IoU on 1,109 frames), cross-sensor (GelSlim 4.0, zero-shot +
+  K-shot with its own pairs), physics-guided GAN negative results.
+- Tables are generated: `python paper_RoboSoft/scripts/build_tables.py` -> `data/tables.tex`
+  (`\tabloo`, `\tabkshot`, `\tabseeds`, `\tabcross`, `\tabsensorb`, `\tabvariants`).
+  Figures: `python paper_RoboSoft/scripts/make_paper_figs.py paper_RoboSoft/figures`.
+- 8 pages incl. references (RoboSoft: 6 + up to 2 paid extra pages). Candidates for further cuts:
+  Table V (variants) -> text, Sec. II, the Q5 paragraph.
+- Not yet pushed to Overleaf (needs `OVERLEAF_TOKEN`): `./sync_overleaf.sh push "150-ep rewrite"`.
 
 ## Layout
 
 ```
 main.tex, sections/*.tex, refs.bib, ieeeconf.cls   Overleaf sources
-figures/            fig_renders.png, fig_kshot.pdf, fig_loo.pdf, fig_fidelity.pdf
-data/               results_50ep.txt (all runs), masked_results.json (contact metrics),
-                    renderer_fidelity*.txt (renderer L1 on real pairs)
-scripts/            make_paper_figs.py (run from repo root: python paper_RoboSoft/scripts/make_paper_figs.py paper_RoboSoft/figures)
+figures/            fig_renders.png, fig_kshot.pdf, fig_fidelity.pdf (+ fig_loo/fig_cross/fig_sensorb, unused)
+data/               tables.tex (generated), results_50ep.txt, masked_results.json, renderer_fidelity*.txt
+scripts/            build_tables.py, make_paper_figs.py (run from the repo root)
 ```
 
 ## Runs

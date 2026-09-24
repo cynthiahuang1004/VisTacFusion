@@ -35,7 +35,9 @@ IOU_THR = 0.05  # mm
 @torch.no_grad()
 def masked_metrics(model, loader, device):
     s = dict(full_se=0.0, npix=0, c_ae=0.0, c_se=0.0, nc=0, bg_ae=0.0, nbg=0,
-             iou=0.0, peak=0.0, n=0)
+             iou=0.0, peak=0.0, n=0, nang=0.0, nang_n=0, nang_all=0.0, nang_all_n=0)
+    import math
+    import torch.nn.functional as F
     for b in loader:
         b = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in b.items()}
         out = model(b["rgb"], b["tactile"], config="tactile", object_ids=b.get("object"))
@@ -46,6 +48,11 @@ def masked_metrics(model, loader, device):
         s["c_ae"] += err[m].abs().sum().item(); s["c_se"] += (err[m] ** 2).sum().item()
         s["nc"] += int(m.sum())
         s["bg_ae"] += err[~m].abs().sum().item(); s["nbg"] += int((~m).sum())
+        if "normal" in out and "normal" in b:   # angular error of the predicted normal, contact region + all pixels
+            pn = F.normalize(out["normal"].float(), dim=1); gn = F.normalize(b["normal"].float(), dim=1)
+            ang = torch.acos((pn * gn).sum(1).clamp(-1 + 1e-6, 1 - 1e-6)) * 180 / math.pi
+            s["nang"] += ang[m[:, 0]].sum().item(); s["nang_n"] += int(m.sum())
+            s["nang_all"] += ang.sum().item(); s["nang_all_n"] += ang.numel()
         pm = pred > IOU_THR
         inter = (pm & m).flatten(1).sum(1).float()
         union = (pm | m).flatten(1).sum(1).float().clamp(min=1)
@@ -59,6 +66,8 @@ def masked_metrics(model, loader, device):
         "bg_mae": s["bg_ae"] / max(1, s["nbg"]),
         "iou": s["iou"] / s["n"],
         "peak_err": s["peak"] / s["n"],
+        "normal_deg": s["nang"] / max(1, s["nang_n"]),
+        "normal_deg_all": s["nang_all"] / max(1, s["nang_all_n"]),
         "contact_frac": s["nc"] / s["npix"],
         "n": s["n"],
     }
