@@ -107,7 +107,9 @@ class RealUnlabeled(Dataset):
         return len(self.items)
 
     def __getitem__(self, i):
-        return load_img(self.items[i])
+        tac = self.items[i]
+        obj = tac.split("/")[-5]
+        return load_img(tac), session_bg(obj)
 
 
 class PhysVal(Dataset):
@@ -221,7 +223,7 @@ def save_grid(G, sim, real, phys, path, dev, n=5):
     for i in np.linspace(0, len(sim) - 1, n).astype(int):
         b, bg, m = (t[None].to(dev) for t in sim[int(i)])
         y, _ = refine(G, b, bg, m)
-        r = real[int(i) % len(real)][None].to(dev)
+        r = real[int(i) % len(real)][0][None].to(dev)
         row = [b, bg, m.expand(-1, 3, -1, -1) * 2 - 1, y, r]
         if len(phys):
             p, pbg, pm, pr, _ = (t[None].to(dev) for t in phys[int(i) % len(phys)])
@@ -245,6 +247,8 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--nce", type=float, default=1.0, help="PatchNCE weight (CUT)")
     ap.add_argument("--reg", type=float, default=0.0, help="SimGAN self-regularization: masked gradient L1 to the Blender render")
+    ap.add_argument("--diff-d", action="store_true",
+                    help="discriminator sees difference images (image - session background): judges the contact response only")
     ap.add_argument("--dilate", type=int, default=4)
     ap.add_argument("--feather", type=int, default=2)
     ap.add_argument("--eval-only", action="store_true")
@@ -281,10 +285,12 @@ def main():
         except StopIteration:
             it_sim = iter(dl_sim); blender, bg, m = next(it_sim)
         try:
-            r = next(it_real)
+            r, rbg = next(it_real)
         except StopIteration:
-            it_real = iter(dl_real); r = next(it_real)
-        blender, bg, m, r = blender.to(dev), bg.to(dev), m.to(dev), r.to(dev)
+            it_real = iter(dl_real); r, rbg = next(it_real)
+        blender, bg, m, r, rbg = blender.to(dev), bg.to(dev), m.to(dev), r.to(dev), rbg.to(dev)
+        dfake = (lambda img: (img - bg).clamp(-1, 1)) if args.diff_d else (lambda img: img)
+        dreal = (lambda img: (img - rbg).clamp(-1, 1)) if args.diff_d else (lambda img: img)
         scale = 1.0 if step < args.steps // 2 else 1.0 - (step - args.steps // 2) / (args.steps - args.steps // 2)
         for opt in (optG, optD):
             for pg in opt.param_groups:
@@ -292,12 +298,12 @@ def main():
         y, x = refine(G, blender, bg, m)
         # D
         optD.zero_grad()
-        pr, pf = D(r), D(y.detach())
+        pr, pf = D(dreal(r)), D(dfake(y.detach()))
         lossD = 0.5 * (bce(pr, torch.ones_like(pr)) + bce(pf, torch.zeros_like(pf)))
         lossD.backward(); optD.step()
         # G
         optG.zero_grad()
-        pf = D(y)
+        pf = D(dfake(y))
         loss_adv = bce(pf, torch.ones_like(pf))
         loss_nce = nce(G.encode(x), G.encode(torch.cat([y, bg, m], 1)), m) if args.nce > 0 else torch.zeros((), device=dev)
         loss_reg = grad_l1_masked(y, blender, m) if args.reg > 0 else torch.zeros((), device=dev)
