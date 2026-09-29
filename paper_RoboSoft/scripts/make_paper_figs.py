@@ -110,24 +110,28 @@ def fig_fidelity(out):
         ("diff_k10", "B_k10_diff", "difference image", 10), ("diff_k25", "B_k25_diff", "difference image", 25),
         ("diff_k100", "B_k100_diff", "difference image", 100),
         ("bgcond_k25", "B_k25_bgcond", "bg-conditioned", 25), ("bgcond_k100", "B_k100_bgcond", "bg-conditioned", 100),
+        ("ref_k25", "B_k25_ref", "refiner (0 labels)", 25), ("ref_k100", "B_k100_ref", "refiner (0 labels)", 100),
+        ("ref_ufull", "B_k25_refufull", "refiner (0 labels)", 25), ("ref_ufull", "B_k100_refufull", "refiner (0 labels)", 100),
         ("full", "B_k10_ganfull", "GAN-full (leaky)", 10), ("full", "B_k25_ganfull", "GAN-full (leaky)", 25),
         ("full", "B_k100_ganfull", "GAN-full (leaky)", 100),
     ]
     sty = {"GAN-K": ("#eb6834", "^"), "Blender-pretrained": ("#2a78d6", "s"), "difference image": ("#8e5bd1", "v"),
-           "bg-conditioned": ("#d6a52a", "P"), "GAN-full (leaky)": ("#1baf7a", "D")}
+           "bg-conditioned": ("#d6a52a", "P"), "refiner (0 labels)": ("#c2372f", "*"), "GAN-full (leaky)": ("#1baf7a", "D")}
     fig, ax = plt.subplots(figsize=(3.3, 2.4))
     seen = set(); xs, ys = [], []
     for g, r, lab, K in pts:
         if g not in fid or not osp.exists(f"{OUT_RUNS}/{prefix_of(r)}{r}/history.json"):
             continue
-        c, m = sty[lab]; x, y = fid[g], best(r); xs.append(x); ys.append(y)
-        ax.scatter(x, y, color=c, marker=m, s=26, edgecolor="white", linewidth=0.6, label=None if lab in seen else lab, zorder=3)
+        c, m = sty[lab]; x, y = fid[g], best(r)
+        if "leaky" not in lab:       # rho over strict renderers only (the leaky one has one fidelity, many budgets)
+            xs.append(x); ys.append(y)
+        ax.scatter(x, y, color=c, marker=m, s=34 if m == "*" else 26, edgecolor="white", linewidth=0.6, label=None if lab in seen else lab, zorder=3)
         seen.add(lab)
         if lab == "GAN-K":
             ax.annotate(f"K={K}", (x, y), textcoords="offset points", xytext=(4, 2), fontsize=6, color="#52514e")
     from scipy.stats import spearmanr
     rho = spearmanr(xs, ys).correlation if len(xs) > 2 else float("nan")
-    ax.text(0.98, 0.04, f"Spearman $\\rho$ = {rho:.2f} (n={len(xs)})", transform=ax.transAxes, ha="right", fontsize=6.5, color="#52514e")
+    ax.text(0.98, 0.04, f"Spearman $\\rho$ = {rho:.2f} (strict, n={len(xs)})", transform=ax.transAxes, ha="right", fontsize=6.5, color="#52514e")
     ax.set_xlabel("Renderer error: contact-region L1 on real pairs")
     ax.set_ylabel("Downstream depth MSE [mm$^2$]")
     ax.legend(frameon=False, loc="upper left", fontsize=6)
