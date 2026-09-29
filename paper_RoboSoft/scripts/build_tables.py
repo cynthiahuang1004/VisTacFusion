@@ -102,7 +102,7 @@ T = {}
 loo = [
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}),
     ("+ Blender", row("A_blender", "TEST"), {}),
-    ("+ Blender (domain rand.)", row("A_dr", "TEST", prefix="pilot_"), {}),
+    ("+ Blender (domain rand.)", row("A_dr", "TEST"), {}),
     ("+ Blender, bg-norm.", row("A_blender_bgsub", "TEST"), {}),
     ("+ Blender, 1 rotation / object", row("A_blender_cov1", "TEST"), {}),
     ("+ Blender, 2 rotations / object", row("A_blender_cov2", "TEST"), {}),
@@ -155,7 +155,7 @@ def cs(run, pre="pilot150_"):
 cross = [
     ("Real only (all objects, session 1)", cs("A_realonly"), {}),
     ("+ Blender", cs("A_blender"), {}),
-    ("+ Blender (domain rand.)", cs("A_dr", pre="pilot_"), {}),
+    ("+ Blender (domain rand.)", cs("A_dr"), {}),
     ("+ Blender, bg-norm.", cs("A_blender_bgsub"), {}),
     ("+ GAN-LOO", cs("A_ganloo"), {}),
     ("+ bg-cond.\\ GAN-LOO", cs("A_bgcondloo"), {}),
@@ -210,7 +210,7 @@ variants = [
     var("\\quad physics residual", None, None, "physres_k25", None),
     var("\\quad physics + background", None, None, "physbgcond_k25", None),
     var("Blender (calibrated)", "B_k25_blender", "A_blender", None, None),
-    var("Blender (domain rand.)", "B_k25_dr", "A_dr", None, None, pre="pilot_"),
+    var("Blender (domain rand.)", "B_k25_dr", "A_dr", None, None),
     var("Blender, bg-norm.", "B_k25_blender_bgsub", "A_blender_bgsub", None, None),
     var("Real only, mask head + grad.\\ loss", "B_k25_realonly_maskgrad", None, None, None),
     var("GAN-$\\Kreal$, mask head + grad.\\ loss", "B_k25_gank_maskgrad", None, None, None),
