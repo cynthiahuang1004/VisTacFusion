@@ -3,6 +3,15 @@
 \noindent\textbf{What simulation buys, and for which task.}
 \emph{Pose} needs coverage of the object's contact silhouettes over the pose space, which the geometry stage provides regardless of appearance: a physical renderer fitted to one no-contact frame makes the pose of a new object estimable, covering the rotation range matters more than rendering quality, and simulation improves both pose and contact localization across sessions. \emph{Depth and normals} depend on the appearance inside the contact, which only a learned renderer reproduces, and only after $\approx\!25$--$50$ labeled contacts per object; below that nothing leakage-free helps, above $\approx\!100$ real data alone is already good. A domain-randomized physical renderer that uses no real data at all matches the calibrated one for depth but not pose, and is a practical zero-cost baseline when calibration is impractical. \emph{Classification} of unseen objects does not transfer through simulation, as the identity features in the contact appearance lie entirely in the appearance regime that no leakage-free renderer reproduces. Choose by task: for pose of known meshes, calibrate a physical renderer from a background frame and cover the rotations; for dense geometry, budget the real pairs the learned renderer needs, condition it on the session background so that new sessions and objects cost one frame, and account for those pairs when reporting.
 
+\noindent\textbf{Practical recipe.}
+Given a new sensor with CAD models of the target objects:
+\emph{(1)}~Capture one no-contact frame per session and calibrate the physical renderer (or use domain randomization if calibration is impractical).
+\emph{(2)}~For pose, render every object at every reachable rotation; this alone takes the unseen-object pose error from chance to $5$--$7^\circ$, and further improvement comes from covering more rotations, not from higher rendering quality.
+\emph{(3)}~For dense depth and normals, budget $\approx\!50$ labeled real contacts per object and train a background-conditioned learned renderer on those same pairs; below $25$ the renderer adds nothing leakage-free.
+\emph{(4)}~When adding the sensor to a new session, capture one background frame and condition the renderer on it---this is the cheapest extension that helps unseen-object depth ($-13\%$).
+\emph{(5)}~Report the renderer's real budget and keep it disjoint from the downstream test frames; on our data the common leaky protocol overstates the depth benefit by $2$--$4\times$.
+\emph{(6)}~Screen renderer variants with the contact-region fidelity proxy before committing to downstream training.
+
 \noindent\textbf{Reporting.}
 Learned-renderer results should state the renderer's real training set and keep it disjoint from the downstream test frames. On our data the leaky protocol overstates the depth benefit by $2$--$4\times$ where the pipeline is most attractive, and manufactures a $30\%$ gain on unseen objects that no leakage-free renderer reproduces. The contact-region fidelity proxy makes the strict protocol cheap: nineteen renderer variants were ranked without downstream training, and the ranking held.
 

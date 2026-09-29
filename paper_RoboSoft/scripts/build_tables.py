@@ -182,7 +182,7 @@ sbrows = [("0 & Sensor-A model, real only", xs("A_realonly", "pilot150_"), {"ref
           ("", None, {"sep": r"\midrule"})]
 for K in (10, 25, 50, 100):
     first = True
-    for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40")):
+    for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), ("+ Blender (domain rand.)", f"S_k{K}_dr"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40")):
         r = sb(run)
         if r is None:
             continue
