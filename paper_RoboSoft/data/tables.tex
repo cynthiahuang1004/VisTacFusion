@@ -2,6 +2,7 @@
 \newcommand{\tabloo}{%
 Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 + Blender & 0.0657 & 0.346 & 0.592 & 30.3 & 6.8 & \textbf{0.032} \\
++ Blender (domain rand.) & 0.0636 & 0.339 & 0.602 & 30.2 & 10.3 & 0.038 \\
 + Blender, bg-norm. & 0.0672 & 0.348 & 0.589 & 30.3 & 5.3 & 0.033 \\
 + Blender, 1 rotation / object & 0.0645 & 0.354 & 0.585 & 30.4 & 10.3 & 0.039 \\
 + Blender, 2 rotations / object & 0.0670 & 0.345 & 0.590 & 30.8 & 7.5 & 0.042 \\
@@ -9,6 +10,7 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 \quad w/o held-out meshes (control) & 0.0647 & 0.340 & 0.604 & 30.0 & 50.6 & 0.111 \\
 + bg-cond.\ GAN-LOO & \textbf{0.0581} & \textbf{0.323} & \textbf{0.633} & \textbf{29.1} & 4.8 & 0.038 \\
 + GAN-LOO, rotate-then-render & 0.0625 & 0.345 & 0.606 & 29.6 & \textbf{4.4} & 0.034 \\
++ multi-sensor GAN-LOO & 0.0695 & 0.358 & 0.579 & 30.9 & 8.6 & 0.039 \\
 \textit{+ GAN-full (leaky)} & \textit{0.0467} & \textit{0.277} & \textit{0.676} & \textit{25.8} & \textit{4.6} & \textit{0.035} \\
 }
 
@@ -49,6 +51,7 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 \newcommand{\tabcross}{%
 Real only (all objects, session 1) & 0.417 & 0.572 & 29.5 & 16.4 & 6.5 \\
 + Blender & 0.406 & 0.583 & 29.9 & 11.5 & 5.1 \\
++ Blender (domain rand.) & 0.407 & 0.580 & 30.4 & 13.6 & 5.7 \\
 + Blender, bg-norm. & 0.395 & 0.588 & 29.7 & \textbf{9.7} & \textbf{4.7} \\
 + GAN-LOO & 0.387 & 0.595 & 30.0 & 11.1 & 5.2 \\
 + bg-cond.\ GAN-LOO & 0.387 & 0.601 & 29.9 & 10.5 & 4.7 \\
@@ -76,6 +79,10 @@ $\Kreal=100$ + GAN-100 & 0.381 & 0.632 & 28.5 & 13.7 & 5.4 \\
   & + Blender (sensor-A calib.) & 0.0147 & 0.125 & 0.846 & 16.5 & 11.2 \\
   & + GAN-25 (sensor B) & 0.0107 & 0.100 & 0.846 & 14.6 & 10.4 \\
 \midrule
+50 & Real only & 0.0063 & 0.081 & 0.860 & 13.2 & 9.9 \\
+  & + Blender (sensor-A calib.) & 0.0058 & 0.077 & 0.858 & 12.8 & 9.7 \\
+  & + GAN-50 (sensor B) & 0.0045 & 0.068 & 0.866 & 12.1 & 10.1 \\
+\midrule
 100 & Real only & \textbf{0.0032} & 0.058 & 0.861 & \textbf{11.0} & \textbf{7.5} \\
   & + Blender (sensor-A calib.) & 0.0033 & \textbf{0.057} & 0.868 & 11.0 & 9.3 \\
   & + GAN-100 (sensor B) & 0.0034 & 0.060 & \textbf{0.870} & 11.2 & 10.1 \\
@@ -91,7 +98,8 @@ GAN-$\Kreal$ / GAN-LOO & 0.108 & 0.321 & 0.068 & 0.331 & 5.7 \\
 \quad physics-conditioned & 0.114 & -- & -- & -- & -- \\
 \quad physics residual & 0.119 & -- & -- & -- & -- \\
 \quad physics + background & 0.104 & -- & -- & -- & -- \\
-Blender & -- & 0.329 & -- & 0.346 & 6.8 \\
+Blender (calibrated) & -- & 0.329 & -- & 0.346 & 6.8 \\
+Blender (domain rand.) & -- & 0.320 & -- & 0.339 & 10.3 \\
 Blender, bg-norm. & -- & 0.338 & -- & 0.348 & 5.3 \\
 Real only, mask head + grad.\ loss & -- & 0.309 & -- & -- & -- \\
 GAN-$\Kreal$, mask head + grad.\ loss & -- & 0.302 & -- & -- & -- \\

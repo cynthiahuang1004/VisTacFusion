@@ -102,6 +102,7 @@ T = {}
 loo = [
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}),
     ("+ Blender", row("A_blender", "TEST"), {}),
+    ("+ Blender (domain rand.)", row("A_dr", "TEST", prefix="pilot_"), {}),
     ("+ Blender, bg-norm.", row("A_blender_bgsub", "TEST"), {}),
     ("+ Blender, 1 rotation / object", row("A_blender_cov1", "TEST"), {}),
     ("+ Blender, 2 rotations / object", row("A_blender_cov2", "TEST"), {}),
@@ -109,6 +110,7 @@ loo = [
     ("\\quad w/o held-out meshes (control)", row("A_ganloo_9obj", "TEST"), {}),
     ("+ bg-cond.\\ GAN-LOO", row("A_bgcondloo", "TEST"), {}),
     ("+ GAN-LOO, rotate-then-render", row("A_ganloo_gr", "TEST"), {}),
+    ("+ multi-sensor GAN-LOO", row("A_ms_sitr", "TEST", prefix="pilot_"), {}),
     ("+ GAN-full (leaky)", row("A_ganfull", "TEST"), {"leaky": True}),
 ]
 cols6 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans", 3)]
@@ -148,11 +150,12 @@ for K in (25, 100):
 T["seeds"] = "\n".join(sd)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
-    r = CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854")
+    r = CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated")
     return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib")) if r else None
 cross = [
     ("Real only (all objects, session 1)", cs("A_realonly"), {}),
     ("+ Blender", cs("A_blender"), {}),
+    ("+ Blender (domain rand.)", cs("A_dr", pre="pilot_"), {}),
     ("+ Blender, bg-norm.", cs("A_blender_bgsub"), {}),
     ("+ GAN-LOO", cs("A_ganloo"), {}),
     ("+ bg-cond.\\ GAN-LOO", cs("A_bgcondloo"), {}),
@@ -206,7 +209,8 @@ variants = [
     var("\\quad physics-conditioned", None, None, "physcond_k25", None),
     var("\\quad physics residual", None, None, "physres_k25", None),
     var("\\quad physics + background", None, None, "physbgcond_k25", None),
-    var("Blender", "B_k25_blender", "A_blender", None, None),
+    var("Blender (calibrated)", "B_k25_blender", "A_blender", None, None),
+    var("Blender (domain rand.)", "B_k25_dr", "A_dr", None, None, pre="pilot_"),
     var("Blender, bg-norm.", "B_k25_blender_bgsub", "A_blender_bgsub", None, None),
     var("Real only, mask head + grad.\\ loss", "B_k25_realonly_maskgrad", None, None, None),
     var("GAN-$\\Kreal$, mask head + grad.\\ loss", "B_k25_gank_maskgrad", None, None, None),

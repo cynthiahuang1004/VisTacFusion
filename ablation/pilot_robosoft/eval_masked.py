@@ -79,6 +79,7 @@ def main():
     ap.add_argument("--prefix", default="pilot_")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--ckpt", default="best_depth.pt")
+    ap.add_argument("--model", default=None, help="override model yaml")
     ap.add_argument("--json", default="ablation/pilot_robosoft/masked_results.json")
     args = ap.parse_args()
 
@@ -90,8 +91,10 @@ def main():
         if not osp.exists(ckpt):
             print(f"{run:24s} (no {args.ckpt})")
             continue
-        base = re.sub(r'_seed\d+$', '', run)
-        cfg = merge_configs(MODEL, TRAIN, f"ablation/pilot_robosoft/data_{base}.yaml")
+        base = re.sub(r'(_seed\d+|_cls)+$', '', run)
+        base = re.sub(r'^(dav2|t3|sitr)_', '', base)
+        model_yaml = args.model if args.model else MODEL
+        cfg = merge_configs(model_yaml, TRAIN, f"ablation/pilot_robosoft/data_{base}.yaml")
         with contextlib.redirect_stdout(io.StringIO()):
             train_ds, val_ds = build_datasets(cfg)
             model = build_model(cfg).to(args.device).eval()
