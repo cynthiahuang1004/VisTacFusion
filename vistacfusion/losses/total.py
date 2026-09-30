@@ -64,7 +64,11 @@ class MultiTaskLoss(nn.Module):
                     pred["mask_logits"].float(), gt["mask"].float())
                 comps["mask"] = l_mask.detach()
 
-        l_rot, l_trans = self.pose_loss(pred, gt["pose"], gt.get("pose_valid") if self.skip_pseudo_pose else None)
+        pose_valid = gt.get("pose_valid") if self.skip_pseudo_pose else None
+        l_rot, l_trans = self.pose_loss(pred, gt["pose"], pose_valid)
+        # a batch without any pose-supervised sample must not move the pose uncertainty (0.5*log_var has a
+        # constant gradient and would drive the pose weight up between labeled batches)
+        has_pose = 1.0 if pose_valid is None else (pose_valid.sum() > 0).to(l_rot.dtype)
         comps["pose_rot"] = l_rot.detach()
         comps["pose_trans"] = l_trans.detach()
         l_class = None
@@ -75,9 +79,9 @@ class MultiTaskLoss(nn.Module):
         if self.uncertainty and self.grouped:
             # --- Grouped uncertainty: dense and pose balanced independently ---
             pose_total = (torch.exp(-self.log_var_pose[0]) * l_rot
-                          + 0.5 * self.log_var_pose[0]
+                          + 0.5 * self.log_var_pose[0] * has_pose
                           + torch.exp(-self.log_var_pose[1]) * l_trans
-                          + 0.5 * self.log_var_pose[1])
+                          + 0.5 * self.log_var_pose[1] * has_pose)
             if l_class is not None:
                 pose_total = pose_total + self.w_class * l_class
             if supervise_dense:
