@@ -138,7 +138,8 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, criterion,
                         inject_rgb_to_dpt=inject_rgb, object_ids=obj_ids,
                         domain_ids=domain_ids)
             gt = {"depth": batch["depth"], "normal": batch["normal"],
-                  "pose": batch["pose"], "mask": batch.get("mask")}
+                  "pose": batch["pose"], "mask": batch.get("mask"), "object": batch.get("object"),
+                  "pose_valid": batch.get("pose_valid")}
             loss, comps = criterion(out, gt, supervise_dense=has_dense)
 
             # L2-SP (Li et al., ICML 2018): pull trainable params toward their values at the

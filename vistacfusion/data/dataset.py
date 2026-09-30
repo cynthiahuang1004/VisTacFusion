@@ -477,7 +477,7 @@ class SimVisuoTactileDataset(Dataset):
                 normal = np.array(Image.open(norm_path), dtype=np.float32)
 
         # --- Pose: SE(2) = (cos θ, sin θ, tx_norm, ty_norm) ---
-        pose = self._load_pose(unit, sample_idx, meta)
+        pose, pose_valid = self._load_pose(unit, sample_idx, meta)
 
         # --- Pre-rotated G renders: tactile is ALREADY at angle θ* (rendered from
         # rotated depth, lighting fixed/correct). Rotate rgb + depth/normal GT + pose
@@ -551,6 +551,7 @@ class SimVisuoTactileDataset(Dataset):
                       .permute(2, 0, 1),                         # (3, H, W)
             "mask": torch.from_numpy(mask).unsqueeze(0),          # (1, H, W)
             "pose": pose,                                         # (4,)
+            "pose_valid": torch.tensor(pose_valid, dtype=torch.float32),  # 0 for pseudo-labeled pose
             "object": obj_id,
             "domain": domain,                                     # 0=sim, 1=real
         }
@@ -579,10 +580,9 @@ class SimVisuoTactileDataset(Dataset):
             tx = (cos_rz * sx - sin_rz * sy) / max(half, 1e-8)
             ty = (sin_rz * sx + cos_rz * sy) / max(half, 1e-8)
 
-        return torch.tensor(
-            [cos_rz, sin_rz, tx, ty],
-            dtype=torch.float32,
-        )
+        # pseudo-labeled poses (pseudo_label.py) carry "pseudo": true; the pose loss skips them when
+        # train cfg loss.pose.skip_pseudo is set (pose_valid = 0)
+        return torch.tensor([cos_rz, sin_rz, tx, ty], dtype=torch.float32), (0.0 if data.get("pseudo") else 1.0)
 
 
 def build_datasets(cfg):
@@ -628,11 +628,13 @@ def build_datasets(cfg):
             shared_obj_map = sim_train._obj_to_id
         # Held-out test objects may be absent from sim (sim.include_objects without
         # them): give them fresh ids so the real-test dataset can still index the map.
-        missing = [o for o in test_objects if o not in shared_obj_map]
-        if missing:
+        # Held-out test objects AND real objects not present in sim: give them fresh ids
+        all_missing = [o for o in list(test_objects) + list(all_real_objects) if o not in shared_obj_map]
+        if all_missing:
             shared_obj_map = dict(shared_obj_map)
-            for o in missing:
-                shared_obj_map[o] = len(shared_obj_map)
+            for o in all_missing:
+                if o not in shared_obj_map:
+                    shared_obj_map[o] = len(shared_obj_map)
         real_augment = cfg.real.get("augment", True)
         rspp = cfg.real.get("train_samples_per_session", None)
         if rspp is not None and int(rspp) <= 0:
