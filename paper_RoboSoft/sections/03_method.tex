@@ -36,9 +36,42 @@ The learned renderer replaces $\mathcal{P}_\theta$ by a conditional GAN~\cite{is
 
 \noindent\textbf{Variants.} \emph{Background-conditioned}: the session's no-contact image is appended as three input channels, so a new session costs one background frame, as for the physical renderer. \emph{Physics-conditioned}: the physical renderer's image of the same contact is appended, optionally predicting only a residual on top of it, optionally with the background. \emph{Difference image}: the target is the image minus the session background. \emph{Blender-pretrained}: pretraining on $30$k (depth, Blender image) pairs, then fine-tuning on the real pairs. \emph{Multi-sensor}: the background-conditioned GAN is trained on 100 simulated sensor designs (random LED layouts and gel materials) plus optionally the target sensor's real pairs; this tests whether sensor diversity can replace sensor-specific real data. \emph{Rotation coverage} changes the geometry stage instead: we vary how many of an object's real rotations appear in simulation (1, 2 or all 12) and, for the learned renderer, rotate the depth map before rendering so that every rotation is covered.
 
-\subsection{Contact-Preserving Unpaired Refiner}
+\subsection{Pseudo-Pair Bootstrapping (PPB)}
+\label{sec:ppb}
+\begin{figure}[t]
+    \centering
+    \begin{tikzpicture}[font=\scriptsize, node distance=2.5mm and 3mm,
+        box/.style={draw, rounded corners=1pt, align=center, inner sep=2pt, minimum height=5mm, fill=white},
+        data/.style={box, fill=black!5}, model/.style={box, fill=blue!8}, rend/.style={box, fill=orange!12},
+        arr/.style={-{Latex[length=1.5mm]}, thick}]
+        \node[data, text width=31mm] (lab) {$\Kreal$ labeled frames per object (depth, pose)};
+        \node[data, text width=26mm, right=of lab] (mesh) {meshes + one background frame};
+        \node[rend, text width=26mm, below=of mesh] (gan0) {GAN-$\Kreal$ ($\Kreal$ true pairs)};
+        \node[model, text width=31mm, below=of lab] (f0) {$f_0$: $\Kreal$ real + GAN-$\Kreal$ synthetic};
+        \node[data, text width=31mm, below=4.5mm of f0] (unl) {unlabeled frames $U$};
+        \node[box, text width=26mm, right=of unl] (pl) {pseudo depth (5-window stitch, ridge gate) + pseudo pose};
+        \node[model, text width=31mm, below=of unl] (f1) {$f_1$: $\Kreal$ real + pseudo-labeled $U$ + synthetic; pose loss on $\Kreal$ only};
+        \node[rend, text width=26mm, right=of f1] (gan1) {self-trained GAN-$\Kreal$: $\Kreal$ true + pseudo pairs};
+        \draw[arr] (lab) -- (f0); \draw[arr] (lab) -- (gan0); \draw[arr] (mesh) -- (gan0); \draw[arr] (gan0) -- (f0);
+        \draw[arr] (f0) -- node[left, xshift=-1pt] {labels $U$} (unl);
+        \draw[arr] (unl) -- (pl); \draw[arr] (pl) -- (gan1); \draw[arr] (pl) -- (f1); \draw[arr] (gan1) -- (f1);
+        \draw[arr, dashed] (f1.west) -- ++(-2.5mm,0) |- node[pos=0.25, left, align=right] {round 2:\\relabel} (unl.west);
+    \end{tikzpicture}
+    \caption{\textbf{Pseudo-pair bootstrapping.} The $\Kreal$-shot model $f_0$ labels the unlabeled frames $U$; the pseudo pairs retrain the learned renderer and, together with its synthetic data, the model $f_1$. Pose supervision stays on the $\Kreal$ labeled frames. The loop can be iterated.}
+    \label{fig:ppb}
+\end{figure}
+
+The $\Kreal$-shot curves of Sec.~\ref{sec:kshot} say that the learned renderer needs $\Kreal\gtrsim50$ labeled pairs, and that what it learns from them is the appearance of real contacts. Unlabeled real frames contain exactly that appearance and cost nothing to capture (press the sensor anywhere, record nothing). We therefore propose to \emph{bootstrap} labeled pairs from unlabeled frames (Fig.~\ref{fig:ppb}):
+\begin{enumerate}
+    \item \textbf{Label.} The $\Kreal$-shot model $f_0$ (trained on the $\Kreal$ real frames and GAN-$\Kreal$ data) predicts depth and planar pose on every unlabeled training frame. Because $f_0$ sees a $0.816$ center crop, depth is predicted on five windows (center and four corners) and stitched back to the full frame, which the renderer needs. A frame is kept when the predicted contact ($>0.05\,$mm) overlaps the frame's own ridge mask (morphological black-hat; IoU $\ge0.2$) and its indentation is plausible ($0.2$--$1.6\,$mm); the $\Kreal$ labeled frames keep their true labels.
+    \item \textbf{Self-trained renderer.} GAN-$\Kreal$ is retrained on the $\Kreal$ true plus the pseudo pairs (30k updates) and re-renders the simulated contacts.
+    \item \textbf{Self-trained model.} $f_1$ is trained on the $\Kreal$ labeled frames, the pseudo-labeled frames and the synthetic data. Pseudo depth and normals are supervised; the pose loss (and its uncertainty weight) is applied only to frames with a true pose, since a predicted pose is a poorer target than no target.
+\end{enumerate}
+The loop can be iterated with $f_1$ as labeler. PPB adds no labeled data and no new architecture; it charges the budget one background frame per session and the unlabeled frames, and it is evaluated under the same leakage rule (validation and test frames are never pseudo-labeled). Its components are ablated in Sec.~\ref{sec:unlabeled}: renderer only, model only, both, pose masking, window stitching, and rounds.
+
+\subsection{Zero-Label Alternative: Contact-Preserving Unpaired Refiner}
 \label{sec:refiner}
-The findings of Sec.~\ref{sec:experiments} suggest a renderer that needs \emph{no labeled pair at all}: geometry transfers through the contact silhouette, which the physical renderer already provides, and what is missing is the shading inside the contact, which can be learned from unlabeled real frames. The refiner $\mathcal{F}$ takes the physical render $\hat I_{\mathrm{phys}}$, the session background $B$ and the contact mask $m$ (simulated depth $>0$, dilated by 4\,px and feathered) and outputs
+PPB needs $\Kreal$ labeled pairs to start. A renderer that needs \emph{no labeled pair at all} is conceivable: geometry transfers through the contact silhouette, which the physical renderer already provides, and what is missing is the shading inside the contact, which might be learned from unlabeled real frames alone, as in unpaired image translation~\cite{shrivastava2017simgan,park2020cut,chen2022cyclegan}. We test this alternative. The refiner $\mathcal{F}$ takes the physical render $\hat I_{\mathrm{phys}}$, the session background $B$ and the contact mask $m$ (simulated depth $>0$, dilated by 4\,px and feathered) and outputs
 \begin{equation}
     \hat I = m \odot \mathcal{F}(\hat I_{\mathrm{phys}}, B, m) + (1-m) \odot B ,
 \end{equation}
