@@ -35,7 +35,9 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
   & + refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.6 \\ % pilot150_B_k25_refufull (150 ep)
   & + self-trained GAN-25 & 0.0538 & 0.326 & 0.641 & 28.0 & 4.8 \\ % pilot150_B_k25_pseudo (150 ep)
   & + pseudo-labeled $U$ (self-trained model) & 0.0519 & 0.316 & 0.631 & 26.6 & 12.8 \\ % pilot150_B_k25_semi (150 ep)
+  & \quad pose loss on labeled frames only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.2 \\ % pilot150_B_k25_semipm (150 ep)
   & + pseudo-labeled $U$ + self-trained GAN-25 & \textbf{0.0507} & 0.299 & 0.621 & \textbf{26.2} & 10.6 \\ % pilot150_B_k25_semi_pseudo (150 ep)
+  & \quad pose loss on labeled frames only & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\ % pilot150_B_k25_ganfull (150 ep)
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & \textbf{4.3} \\ % pilot150_B_k50_realonly (150 ep)
@@ -50,7 +52,9 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
   & + refiner-U (0 labels, all unlabeled) & 0.0329 & 0.228 & 0.747 & 21.1 & 4.9 \\ % pilot150_B_k100_refufull (150 ep)
   & + self-trained GAN-100 & 0.0308 & \textbf{0.207} & \textbf{0.774} & 20.6 & 4.4 \\ % pilot150_B_k100_pseudo (150 ep)
   & + pseudo-labeled $U$ (self-trained model) & 0.0293 & 0.213 & 0.734 & 19.8 & 5.2 \\ % pilot150_B_k100_semi (150 ep)
+  & \quad pose loss on labeled frames only & 0.0290 & 0.221 & 0.744 & 19.8 & 4.5 \\ % pilot150_B_k100_semipm (150 ep)
   & + pseudo-labeled $U$ + self-trained GAN-100 & \textbf{0.0284} & 0.216 & 0.751 & \textbf{19.6} & 5.3 \\ % pilot150_B_k100_semi_pseudo (150 ep)
+  & \quad pose loss on labeled frames only & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\ % pilot150_B_k100_semipm_pseudo (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
@@ -66,27 +70,27 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 \newcommand{\tabcross}{%
 Real only (all objects, session 1) & 0.417 & 0.572 & 29.5 & 16.4 & 6.5 \\
 + Blender & 0.406 & 0.583 & 29.9 & 11.5 & 5.1 \\
-+ Blender (domain rand.) & 0.407 & 0.580 & 30.4 & 13.6 & 5.7 \\
++ Blender (domain rand.) & 0.405 & 0.580 & 30.0 & 12.3 & 5.9 \\
 + Blender, bg-norm. & 0.395 & 0.588 & 29.7 & \textbf{9.7} & \textbf{4.7} \\
 + GAN-LOO & 0.387 & 0.595 & 30.0 & 11.1 & 5.2 \\
 + bg-cond.\ GAN-LOO & 0.387 & 0.601 & 29.9 & 10.5 & 4.7 \\
-+ Blender $\oplus$ GAN-LOO & -- & -- & -- & -- & -- \\
-+ refiner (0 labels) & -- & -- & -- & -- & -- \\
++ Blender $\oplus$ GAN-LOO & 0.394 & 0.591 & 29.9 & 9.8 & 4.8 \\
++ refiner (0 labels) & 0.401 & 0.593 & 29.8 & 12.0 & 5.3 \\
 \textit{+ GAN-full (leaky)} & \textit{0.379} & \textit{0.613} & \textit{29.5} & \textit{10.1} & \textit{4.8} \\
 \midrule
 Blender only ($\Kreal=0$) & 0.479 & 0.515 & 48.5 & 25.2 & 5.6 \\
 $\Kreal=25$ real only & 0.426 & 0.561 & 30.5 & 20.8 & 5.4 \\
 $\Kreal=25$ + Blender & 0.443 & 0.578 & 29.3 & 23.0 & 5.4 \\
 $\Kreal=25$ + GAN-25 & 0.393 & 0.603 & 27.5 & 25.7 & 5.3 \\
-$\Kreal=25$ + refiner-25 (0 labels) & -- & -- & -- & -- & -- \\
-$\Kreal=25$ + self-trained GAN-25 & -- & -- & -- & -- & -- \\
-$\Kreal=25$ + pseudo-labeled $U$ (+ GAN-25) & -- & -- & -- & -- & -- \\
+$\Kreal=25$ + refiner-25 (0 labels) & 0.408 & 0.589 & 29.9 & 15.5 & 5.6 \\
+$\Kreal=25$ + self-trained GAN-25 & 0.429 & 0.585 & 28.7 & 20.4 & 5.5 \\
+$\Kreal=25$ + pseudo-labeled $U$ (+ GAN-25) & 0.389 & 0.607 & 27.6 & 13.1 & 5.5 \\
 $\Kreal=100$ real only & 0.418 & 0.597 & 28.2 & 17.5 & 5.5 \\
-$\Kreal=100$ + Blender & \textbf{0.370} & \textbf{0.641} & \textbf{26.4} & 16.4 & 5.1 \\
+$\Kreal=100$ + Blender & \textbf{0.370} & 0.641 & \textbf{26.4} & 16.4 & 5.1 \\
 $\Kreal=100$ + GAN-100 & 0.381 & 0.632 & 28.5 & 13.7 & 5.4 \\
-$\Kreal=100$ + refiner-100 (0 labels) & -- & -- & -- & -- & -- \\
-$\Kreal=100$ + self-trained GAN-100 & -- & -- & -- & -- & -- \\
-$\Kreal=100$ + pseudo-labeled $U$ (+ GAN-100) & -- & -- & -- & -- & -- \\
+$\Kreal=100$ + refiner-100 (0 labels) & 0.405 & 0.622 & 27.7 & 16.9 & 6.1 \\
+$\Kreal=100$ + self-trained GAN-100 & 0.393 & 0.623 & 29.1 & 12.1 & 4.9 \\
+$\Kreal=100$ + pseudo-labeled $U$ (+ GAN-100) & 0.381 & \textbf{0.661} & 27.3 & 11.0 & 4.9 \\
 }
 
 % ---- sensorb ----

@@ -162,7 +162,8 @@ for K in (25, 100):
 T["seeds"] = "\n".join(sd)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
-    r = CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated")
+    r = (CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854")
+         or CROSS.get(f"{pre}{run}/cross_session_curated") or CROSS.get(f"pilot_{run}/cross_session_curated"))  # newer evals: default tag, 854 frames
     return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib")) if r else None
 cross = [
     ("Real only (all objects, session 1)", cs("A_realonly"), {}),
