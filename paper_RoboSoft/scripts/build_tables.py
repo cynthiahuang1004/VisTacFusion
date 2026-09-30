@@ -128,6 +128,10 @@ for K in (0, 10, 25, 50, 100):
                               (f"+ refiner-{K} (0 labels)", f"B_k{K}_ref", {}),
                               ("+ refiner-U (0 labels, all unlabeled)", f"B_k{K}_refufull", {}),
                               (f"+ self-trained GAN-{K}", f"B_k{K}_pseudo", {}),
+                              ("+ pseudo-labeled $U$ (self-trained model)", f"B_k{K}_semi", {}),
+                              ("\\quad pose loss on labeled frames only", f"B_k{K}_semipm", {}),
+                              (f"+ pseudo-labeled $U$ + self-trained GAN-{K}", f"B_k{K}_semi_pseudo", {}),
+                              ("\\quad pose loss on labeled frames only", f"B_k{K}_semipm_pseudo", {}),
                               ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
@@ -177,11 +181,13 @@ cross = [
     ("$\\Kreal=25$ + GAN-25", cs("B_k25_gank"), {}),
     ("$\\Kreal=25$ + refiner-25 (0 labels)", cs("B_k25_ref"), {}),
     ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
+    ("$\\Kreal=25$ + pseudo-labeled $U$ (+ GAN-25)", cs("B_k25_semipm_pseudo") or cs("B_k25_semi_pseudo"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
     ("$\\Kreal=100$ + refiner-100 (0 labels)", cs("B_k100_ref"), {}),
     ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
+    ("$\\Kreal=100$ + pseudo-labeled $U$ (+ GAN-100)", cs("B_k100_semipm_pseudo") or cs("B_k100_semi_pseudo"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
