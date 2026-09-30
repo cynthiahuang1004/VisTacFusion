@@ -13,6 +13,7 @@ usage: python scripts/tactile_render/pseudo_label.py --run B_k25_gank --k 25 \
 """
 import argparse
 import contextlib
+import glob
 import io
 import json
 import math
@@ -61,6 +62,11 @@ def main():
     ap.add_argument("--max-depth", type=float, default=1.6, help="mm")
     ap.add_argument("--contact-thr", type=float, default=0.05, help="mm; pred below this is zeroed")
     ap.add_argument("--limit", type=int, default=0, help="debug: only this many frames")
+    ap.add_argument("--pose", action="store_true",
+                    help="also write pseudo _pose.json (predicted planar pose) so the root can train the downstream model")
+    ap.add_argument("--link-val", action="store_true",
+                    help="symlink val frames (true labels, validation only), rgb/, calibration/, id_map.json, session.json "
+                         "into the root so it can serve as real.root of a downstream run")
     args = ap.parse_args()
     os.chdir(ROOT)
     dev = args.device
@@ -100,7 +106,9 @@ def main():
             tac = torch.stack(wins).to(dev)
             rgb = b["rgb"].to(dev).repeat_interleave(len(offsets), 0)
             obj = b["object"].to(dev).repeat_interleave(len(offsets), 0) if torch.is_tensor(b.get("object")) else None
-            out = model(rgb, tac, config="tactile", object_ids=obj)["depth"][:, 0].float().clamp(min=0).cpu().numpy()
+            o = model(rgb, tac, config="tactile", object_ids=obj)
+            out = o["depth"][:, 0].float().clamp(min=0).cpu().numpy()
+            se2 = o["se2"].float().cpu().numpy()[::len(offsets)] if "se2" in o else None   # center window
             pred = np.zeros((B, 224, 224), np.float32)
             for j in range(B):
                 acc, cnt = np.zeros((224, 224), np.float32), np.zeros((224, 224), np.float32)
@@ -117,6 +125,14 @@ def main():
                 os.makedirs(osp.join(out_unit, "samples"), exist_ok=True); os.makedirs(osp.join(out_unit, "raw_data"), exist_ok=True)
                 dst_img = osp.join(out_unit, "samples", f"{sidx:04d}.png")
                 dst_dep = osp.join(out_unit, "raw_data", f"{sidx:04d}_gt.npy")
+                dst_pose = osp.join(out_unit, "raw_data", f"{sidx:04d}_pose.json")
+                if args.link_val:
+                    for name in ("rgb", "calibration", "id_map.json"):
+                        if osp.exists(osp.join(unit, name)) and not osp.lexists(osp.join(out_unit, name)):
+                            os.symlink(osp.join(unit, name), osp.join(out_unit, name))
+                    sj = osp.join(osp.dirname(unit), "session.json")
+                    if osp.exists(sj) and not osp.lexists(osp.join(osp.dirname(out_unit), "session.json")):
+                        os.symlink(sj, osp.join(osp.dirname(out_unit), "session.json"))
                 if tac in labeled:                                  # true label for the K budget frames
                     src = osp.join(unit, "raw_data", f"{sidx:04d}_gt.npy")
                     if not osp.exists(src):
@@ -124,6 +140,8 @@ def main():
                     np.save(dst_dep, np.load(src).astype(np.float32))
                     if not osp.lexists(dst_img):
                         os.symlink(tac, dst_img)
+                    if args.pose and not osp.lexists(dst_pose):
+                        os.symlink(osp.join(unit, "raw_data", f"{sidx:04d}_pose.json"), dst_pose)
                     stats["labeled"] += 1; manifest.append((tac, "labeled", 1.0)); continue
                 full = pred[j]                                       # mm, full frame (stitched)
                 mx = float(full.max())
@@ -138,10 +156,29 @@ def main():
                 np.save(dst_dep, (full / 1000.0).astype(np.float32))  # metres, like the real GT
                 if not osp.lexists(dst_img):
                     os.symlink(tac, dst_img)
+                if args.pose and se2 is not None:                    # pseudo planar pose from the center window
+                    half = ds.unit_meta[unit]["half"]
+                    c, s, tx, ty = (float(v) for v in se2[j])
+                    json.dump({"obj_name": obj, "sample_x": tx * half, "sample_y": ty * half, "sample_z": 0.001,
+                               "rotation_euler": [0.0, 0.0, math.atan2(s, c)], "pseudo": True}, open(dst_pose, "w"))
                 stats["kept"] += 1; manifest.append((tac, "pseudo", iou))
             i0 += len(pred)
             if (i0 // 32) % 20 == 0:
                 print(f"  {i0}/{n}", flush=True)
+    if args.link_val:   # validation frames with their TRUE labels (model selection only, as in every other run)
+        nval = 0
+        for unit in {u for u, _ in ds.samples}:
+            obj, sess = unit.split("/")[-3], unit.split("/")[-2]
+            out_unit = osp.join(args.out_root, obj, sess, "sensor_0000")
+            os.makedirs(osp.join(out_unit, "raw_data"), exist_ok=True); os.makedirs(osp.join(out_unit, "samples"), exist_ok=True)
+            for tac in sorted(glob.glob(osp.join(unit, "samples", "*.png"))):
+                sidx = int(osp.splitext(osp.basename(tac))[0])
+                if sidx % 10:
+                    continue
+                for name in (f"raw_data/{sidx:04d}_gt.npy", f"raw_data/{sidx:04d}_pose.json", f"samples/{sidx:04d}.png"):
+                    if osp.exists(osp.join(unit, name)) and not osp.lexists(osp.join(out_unit, name)):
+                        os.symlink(osp.join(unit, name), osp.join(out_unit, name)); nval += 1
+        stats["val_links"] = nval
     ious = np.array(stats.pop("iou"))
     stats["iou_mean"] = float(ious.mean()) if len(ious) else None
     stats["iou_median"] = float(np.median(ious)) if len(ious) else None

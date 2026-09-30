@@ -11,6 +11,9 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 + bg-cond.\ GAN-LOO & \textbf{0.0581} & \textbf{0.323} & \textbf{0.633} & \textbf{29.1} & 4.8 & 0.038 \\
 + GAN-LOO, rotate-then-render & 0.0625 & 0.345 & 0.606 & 29.6 & \textbf{4.4} & 0.034 \\
 + multi-sensor GAN-LOO & 0.0695 & 0.358 & 0.579 & 30.9 & 8.6 & 0.039 \\
++ Blender $\oplus$ GAN-LOO & 0.0661 & 0.349 & 0.601 & 30.7 & 5.6 & 0.034 \\
++ refiner (0 labels) & 0.0673 & 0.349 & 0.590 & 30.5 & 7.5 & 0.046 \\
++ refiner on domain rand.\ (0 labels, no calib.) & 0.0691 & 0.353 & 0.583 & 30.8 & 7.2 & 0.045 \\
 \textit{+ GAN-full (leaky)} & \textit{0.0467} & \textit{0.277} & \textit{0.676} & \textit{25.8} & \textit{4.6} & \textit{0.035} \\
 }
 
@@ -24,9 +27,13 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
   & + GAN-10 & \textbf{0.0624} & 0.354 & 0.597 & 30.6 & 5.9 \\ % pilot150_B_k10_gank (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\ % pilot_B_k10_ganfull (50 ep)
 \midrule
-25 & Real only & 0.0558 & \textbf{0.312} & \textbf{0.664} & 28.2 & 5.6 \\ % pilot150_B_k25_realonly (150 ep)
-  & + Blender & 0.0549 & 0.329 & 0.656 & \textbf{27.5} & \textbf{4.7} \\ % pilot150_B_k25_blender (150 ep)
-  & + GAN-25 & \textbf{0.0544} & 0.321 & 0.626 & 28.3 & 5.1 \\ % pilot150_B_k25_gank (150 ep)
+25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\ % pilot150_B_k25_realonly (150 ep)
+  & + Blender & 0.0549 & 0.329 & 0.656 & 27.5 & \textbf{4.7} \\ % pilot150_B_k25_blender (150 ep)
+  & + GAN-25 & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 \\ % pilot150_B_k25_gank (150 ep)
+  & + Blender $\oplus$ GAN-25 & 0.0554 & 0.324 & 0.667 & 27.4 & 4.8 \\ % pilot150_B_k25_mix (150 ep)
+  & + refiner-25 (0 labels) & 0.0551 & \textbf{0.297} & \textbf{0.672} & \textbf{27.1} & 5.5 \\ % pilot150_B_k25_ref (150 ep)
+  & + refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.6 \\ % pilot150_B_k25_refufull (150 ep)
+  & + self-trained GAN-25 & \textbf{0.0538} & 0.326 & 0.641 & 28.0 & 4.8 \\ % pilot150_B_k25_pseudo (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\ % pilot150_B_k25_ganfull (150 ep)
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & \textbf{4.3} \\ % pilot150_B_k50_realonly (150 ep)
@@ -35,7 +42,11 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 \midrule
 100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & \textbf{3.2} \\ % pilot150_B_k100_realonly (150 ep)
   & + Blender & 0.0350 & 0.232 & 0.727 & 22.0 & 4.0 \\ % pilot150_B_k100_blender (150 ep)
-  & + GAN-100 & \textbf{0.0311} & \textbf{0.210} & \textbf{0.773} & \textbf{20.8} & 4.5 \\ % pilot150_B_k100_gank (150 ep)
+  & + GAN-100 & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 \\ % pilot150_B_k100_gank (150 ep)
+  & + Blender $\oplus$ GAN-100 & 0.0329 & 0.213 & 0.760 & \textbf{20.5} & 4.2 \\ % pilot150_B_k100_mix (150 ep)
+  & + refiner-100 (0 labels) & 0.0340 & 0.224 & 0.761 & 21.1 & 4.9 \\ % pilot150_B_k100_ref (150 ep)
+  & + refiner-U (0 labels, all unlabeled) & 0.0329 & 0.228 & 0.747 & 21.1 & 4.9 \\ % pilot150_B_k100_refufull (150 ep)
+  & + self-trained GAN-100 & \textbf{0.0308} & \textbf{0.207} & \textbf{0.774} & 20.6 & 4.4 \\ % pilot150_B_k100_pseudo (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
@@ -55,15 +66,21 @@ Real only (all objects, session 1) & 0.417 & 0.572 & 29.5 & 16.4 & 6.5 \\
 + Blender, bg-norm. & 0.395 & 0.588 & 29.7 & \textbf{9.7} & \textbf{4.7} \\
 + GAN-LOO & 0.387 & 0.595 & 30.0 & 11.1 & 5.2 \\
 + bg-cond.\ GAN-LOO & 0.387 & 0.601 & 29.9 & 10.5 & 4.7 \\
++ Blender $\oplus$ GAN-LOO & -- & -- & -- & -- & -- \\
++ refiner (0 labels) & -- & -- & -- & -- & -- \\
 \textit{+ GAN-full (leaky)} & \textit{0.379} & \textit{0.613} & \textit{29.5} & \textit{10.1} & \textit{4.8} \\
 \midrule
 Blender only ($\Kreal=0$) & 0.479 & 0.515 & 48.5 & 25.2 & 5.6 \\
 $\Kreal=25$ real only & 0.426 & 0.561 & 30.5 & 20.8 & 5.4 \\
 $\Kreal=25$ + Blender & 0.443 & 0.578 & 29.3 & 23.0 & 5.4 \\
 $\Kreal=25$ + GAN-25 & 0.393 & 0.603 & 27.5 & 25.7 & 5.3 \\
+$\Kreal=25$ + refiner-25 (0 labels) & -- & -- & -- & -- & -- \\
+$\Kreal=25$ + self-trained GAN-25 & -- & -- & -- & -- & -- \\
 $\Kreal=100$ real only & 0.418 & 0.597 & 28.2 & 17.5 & 5.5 \\
 $\Kreal=100$ + Blender & \textbf{0.370} & \textbf{0.641} & \textbf{26.4} & 16.4 & 5.1 \\
 $\Kreal=100$ + GAN-100 & 0.381 & 0.632 & 28.5 & 13.7 & 5.4 \\
+$\Kreal=100$ + refiner-100 (0 labels) & -- & -- & -- & -- & -- \\
+$\Kreal=100$ + self-trained GAN-100 & -- & -- & -- & -- & -- \\
 }
 
 % ---- sensorb ----
@@ -100,7 +117,11 @@ GAN-$\Kreal$ / GAN-LOO & 0.108 & 0.321 & 0.068 & 0.331 & 5.7 \\
 \quad physics-conditioned & 0.114 & -- & -- & -- & -- \\
 \quad physics residual & 0.119 & -- & -- & -- & -- \\
 \quad physics + background & 0.104 & -- & -- & -- & -- \\
-Blender (calibrated) & -- & 0.329 & -- & 0.346 & 6.8 \\
+\quad self-trained (+ pseudo pairs) & 0.102 & 0.326 & -- & -- & -- \\
+Refiner, unpaired (0 labels) & 0.159 & 0.297 & 0.159 & 0.349 & 7.5 \\
+\quad + self-regularization & -- & -- & 0.156 & 0.360 & 7.4 \\
+\quad on domain-rand.\ render & -- & -- & 0.159 & 0.353 & 7.2 \\
+Blender (calibrated) & -- & 0.329 & 0.179 & 0.346 & 6.8 \\
 Blender (domain rand.) & -- & 0.320 & -- & 0.342 & 8.9 \\
 Blender, bg-norm. & -- & 0.338 & -- & 0.348 & 5.3 \\
 Real only, mask head + grad.\ loss & -- & 0.309 & -- & -- & -- \\

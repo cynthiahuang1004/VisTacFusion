@@ -319,6 +319,8 @@ def main():
         tr = RealPairs(root=args.real_root, split="train", exclude_objects=set(args.exclude_objects),
                        per_object=args.per_object)
     va = RealPairs(root=args.real_root, split="val", exclude_objects=set(args.exclude_objects))
+    if len(va) == 0:   # pseudo-labeled roots hold train frames only; preview on the real val split
+        va = RealPairs(root=REAL_ROOT, split="val", exclude_objects=set(args.exclude_objects))
     if args.sitr_sensors:
         sp = SitrPairs(args.sitr_sensors, args.sitr_per_sensor)
         print(f"SITR pairs: {len(sp)} from {args.sitr_sensors} sensors", flush=True)

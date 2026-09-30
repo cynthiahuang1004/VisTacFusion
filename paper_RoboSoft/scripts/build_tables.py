@@ -111,6 +111,9 @@ loo = [
     ("+ bg-cond.\\ GAN-LOO", row("A_bgcondloo", "TEST"), {}),
     ("+ GAN-LOO, rotate-then-render", row("A_ganloo_gr", "TEST"), {}),
     ("+ multi-sensor GAN-LOO", row("A_ms_sitr", "TEST", prefix="pilot_"), {}),
+    ("+ Blender $\\oplus$ GAN-LOO", row("A_mixloo", "TEST"), {}),
+    ("+ refiner (0 labels)", row("A_refloo", "TEST"), {}),
+    ("+ refiner on domain rand.\\ (0 labels, no calib.)", row("A_refdrloo", "TEST"), {}),
     ("+ GAN-full (leaky)", row("A_ganfull", "TEST"), {"leaky": True}),
 ]
 cols6 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans", 3)]
@@ -120,7 +123,12 @@ ks = []
 for K in (0, 10, 25, 50, 100):
     first = True
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ Blender", f"B_k{K}_blender", {}),
-                              (f"+ GAN-{K}", f"B_k{K}_gank", {}), ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
+                              (f"+ GAN-{K}", f"B_k{K}_gank", {}),
+                              (f"+ Blender $\\oplus$ GAN-{K}", f"B_k{K}_mix", {}),
+                              (f"+ refiner-{K} (0 labels)", f"B_k{K}_ref", {}),
+                              ("+ refiner-U (0 labels, all unlabeled)", f"B_k{K}_refufull", {}),
+                              (f"+ self-trained GAN-{K}", f"B_k{K}_pseudo", {}),
+                              ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
         r = row(run)
@@ -159,15 +167,21 @@ cross = [
     ("+ Blender, bg-norm.", cs("A_blender_bgsub"), {}),
     ("+ GAN-LOO", cs("A_ganloo"), {}),
     ("+ bg-cond.\\ GAN-LOO", cs("A_bgcondloo"), {}),
+    ("+ Blender $\\oplus$ GAN-LOO", cs("A_mixloo"), {}),
+    ("+ refiner (0 labels)", cs("A_refloo"), {}),
     ("+ GAN-full (leaky)", cs("A_ganfull"), {"leaky": True}),
     ("", None, {"sep": r"\midrule"}),
     ("Blender only ($\\Kreal=0$)", cs("B_k0_blender"), {}),
     ("$\\Kreal=25$ real only", cs("B_k25_realonly"), {}),
     ("$\\Kreal=25$ + Blender", cs("B_k25_blender"), {}),
     ("$\\Kreal=25$ + GAN-25", cs("B_k25_gank"), {}),
+    ("$\\Kreal=25$ + refiner-25 (0 labels)", cs("B_k25_ref"), {}),
+    ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
+    ("$\\Kreal=100$ + refiner-100 (0 labels)", cs("B_k100_ref"), {}),
+    ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
@@ -209,7 +223,11 @@ variants = [
     var("\\quad physics-conditioned", None, None, "physcond_k25", None),
     var("\\quad physics residual", None, None, "physres_k25", None),
     var("\\quad physics + background", None, None, "physbgcond_k25", None),
-    var("Blender (calibrated)", "B_k25_blender", "A_blender", None, None),
+    var("\\quad self-trained (+ pseudo pairs)", "B_k25_pseudo", None, "pseudo_k25", None),
+    var("Refiner, unpaired (0 labels)", "B_k25_ref", "A_refloo", "ref_k25", "ref_loo"),
+    var("\\quad + self-regularization", None, "A_refreg5loo", None, "ref_loo_reg5"),
+    var("\\quad on domain-rand.\\ render", None, "A_refdrloo", None, "ref_drloo"),
+    var("Blender (calibrated)", "B_k25_blender", "A_blender", None, "blender_phys"),
     var("Blender (domain rand.)", "B_k25_dr", "A_dr", None, None),
     var("Blender, bg-norm.", "B_k25_blender_bgsub", "A_blender_bgsub", None, None),
     var("Real only, mask head + grad.\\ loss", "B_k25_realonly_maskgrad", None, None, None),
