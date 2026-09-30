@@ -62,6 +62,11 @@ def main():
     ap.add_argument("--max-depth", type=float, default=1.6, help="mm")
     ap.add_argument("--contact-thr", type=float, default=0.05, help="mm; pred below this is zeroed")
     ap.add_argument("--limit", type=int, default=0, help="debug: only this many frames")
+    ap.add_argument("--real-root", default=None,
+                    help="real frames to label (default: the labeler's real root); e.g. real_filtered for a round-2 labeler "
+                         "whose own config points at a pseudo root, or real_gelslim40_train for sensor B")
+    ap.add_argument("--windows", type=int, default=5, choices=[1, 5], help="1 = center window only (ablation)")
+    ap.add_argument("--train-cfg", default=TRAIN)
     ap.add_argument("--pose", action="store_true",
                     help="also write pseudo _pose.json (predicted planar pose) so the root can train the downstream model")
     ap.add_argument("--link-val", action="store_true",
@@ -70,16 +75,18 @@ def main():
     args = ap.parse_args()
     os.chdir(ROOT)
     dev = args.device
-    cfg = merge_configs(MODEL, TRAIN, f"ablation/pilot_robosoft/data_{args.run}.yaml")
+    cfg = merge_configs(MODEL, args.train_cfg, f"ablation/pilot_robosoft/data_{args.run}.yaml")
     with contextlib.redirect_stdout(io.StringIO()):
         _, val_ds = build_datasets(cfg)
         model = build_model(cfg).to(dev).eval()
         load_checkpoint(osp.join(OUT, args.prefix + args.run, "best_depth.pt"), model, device=dev)
         cfg.real.train_samples_per_session = 10 ** 6            # all train-split frames, not only the K
+        if args.real_root:
+            cfg.real.root = args.real_root
         ds = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False, split="train", data_section="real",
                                     shared_obj_map=val_ds._obj_to_id)
     crop = float(cfg.real.get("fixed_crop", cfg.get("fixed_crop", 0.816)))
-    rp = RealPairs(split="train", per_object=args.k)
+    rp = RealPairs(root=cfg.real.root, split="train", per_object=args.k)
     labeled = {tac for _, tac in rp.items}
     print(f"labeler={args.prefix}{args.run}  frames={len(ds)}  labeled(K={args.k})={len(labeled)}  crop={crop}", flush=True)
 
@@ -92,7 +99,9 @@ def main():
     # The downstream model sees a `crop` center window; the renderer needs full-frame labels.  Predict on
     # five windows (center + four corners) and average them into the full frame.
     side = int(math.floor(224 * crop)); mx_off = 224 - side
-    offsets = [(mx_off // 2, mx_off // 2), (0, 0), (0, mx_off), (mx_off, 0), (mx_off, mx_off)]
+    offsets = [(mx_off // 2, mx_off // 2), (0, 0), (0, mx_off), (mx_off, 0), (mx_off, mx_off)][:args.windows]
+    if mx_off == 0:
+        offsets = offsets[:1]                                    # full-frame model (sensor B): one window
     with torch.no_grad():
         for b in dl:
             B = b["tactile"].shape[0]
