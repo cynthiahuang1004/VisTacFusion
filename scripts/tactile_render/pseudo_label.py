@@ -92,7 +92,7 @@ def main():
 
     n = len(ds) if not args.limit else min(args.limit, len(ds))
     idxs = list(range(n))
-    dl = DataLoader(torch.utils.data.Subset(ds, idxs), batch_size=32, shuffle=False, num_workers=6)
+    dl = DataLoader(torch.utils.data.Subset(ds, idxs), batch_size=8, shuffle=False, num_workers=6)   # 8 x 5 windows
     stats = dict(kept=0, dropped_iou=0, dropped_depth=0, labeled=0, iou=[])
     manifest = []
     i0 = 0

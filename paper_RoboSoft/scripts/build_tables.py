@@ -130,8 +130,10 @@ for K in (0, 10, 25, 50, 100):
                               (f"+ self-trained GAN-{K}", f"B_k{K}_pseudo", {}),
                               ("+ pseudo-labeled $U$ (self-trained model)", f"B_k{K}_semi", {}),
                               ("\\quad pose loss on labeled frames only", f"B_k{K}_semipm", {}),
+                              ("\\quad\\quad center window only (no stitching)", f"B_k{K}_semipm_c1", {}),
                               (f"+ pseudo-labeled $U$ + self-trained GAN-{K}", f"B_k{K}_semi_pseudo", {}),
                               ("\\quad pose loss on labeled frames only", f"B_k{K}_semipm_pseudo", {}),
+                              ("\\quad\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
                               ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
@@ -203,7 +205,8 @@ sbrows = [("0 & Sensor-A model, real only", xs("A_realonly", "pilot150_"), {"ref
           ("", None, {"sep": r"\midrule"})]
 for K in (10, 25, 50, 100):
     first = True
-    for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), ("+ Blender (domain rand.)", f"S_k{K}_dr"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40")):
+    for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), ("+ Blender (domain rand.)", f"S_k{K}_dr"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40"),
+                       ("+ PPB, model only", f"S_k{K}_semipm"), (f"+ PPB, model + GAN-{K}", f"S_k{K}_semipm_pseudo")):
         r = sb(run)
         if r is None:
             continue

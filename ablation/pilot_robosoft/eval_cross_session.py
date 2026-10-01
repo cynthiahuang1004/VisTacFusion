@@ -107,7 +107,7 @@ def main():
         ckpt = osp.join(OUT, prefix + run, args.ckpt)
         if not osp.exists(ckpt):
             print(f"{run:28s} {prefix:10s} (no {args.ckpt})"); continue
-        base = re.sub(r'_seed\d+$', '', run)
+        base = re.sub(r'(_seed\d+|_cls)+$', '', run)
         data_cfg = f"ablation/pilot_robosoft/data_{base}.yaml"
         if not osp.exists(data_cfg):
             data_cfg = f"ablation/pilot_robosoft/data_A_realonly.yaml"
