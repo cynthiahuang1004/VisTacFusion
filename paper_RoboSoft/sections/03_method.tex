@@ -49,25 +49,28 @@ The learned renderer replaces $\mathcal{P}_\theta$ by a conditional GAN~\cite{is
         \node[rend, text width=26mm, below=of mesh] (gan0) {GAN-$\Kreal$ ($\Kreal$ true pairs)};
         \node[model, text width=31mm, below=of lab] (f0) {$f_0$: $\Kreal$ real + GAN-$\Kreal$ synthetic};
         \node[data, text width=31mm, below=4.5mm of f0] (unl) {unlabeled frames $U$};
-        \node[box, text width=26mm, right=of unl] (pl) {pseudo depth (5-window stitch, ridge gate) + pseudo pose};
-        \node[model, text width=31mm, below=of unl] (f1) {$f_1$: $\Kreal$ real + pseudo-labeled $U$ + synthetic; pose loss on $\Kreal$ only};
-        \node[rend, text width=26mm, right=of f1] (gan1) {self-trained GAN-$\Kreal$: $\Kreal$ true + pseudo pairs};
+        \node[box, text width=26mm, right=of unl] (pl) {\textbf{label}: teacher depth (5-window stitch) + pose};
+        \node[box, text width=26mm, below=of pl] (rc) {\textbf{verify}: fit mesh pose, render with GAN-$\Kreal$, compare with the frame};
+        \node[model, text width=31mm, below=of unl] (f1) {$f_1$: $\Kreal$ real + verified $U$ + synthetic};
+        \node[rend, text width=26mm, below=of rc] (gan1) {self-trained GAN-$\Kreal$};
         \draw[arr] (lab) -- (f0); \draw[arr] (lab) -- (gan0); \draw[arr] (mesh) -- (gan0); \draw[arr] (gan0) -- (f0);
-        \draw[arr] (f0) -- node[left, xshift=-1pt] {labels $U$} (unl);
-        \draw[arr] (unl) -- (pl); \draw[arr] (pl) -- (gan1); \draw[arr] (pl) -- (f1); \draw[arr] (gan1) -- (f1);
-        \draw[arr, dashed] (f1.west) -- ++(-2.5mm,0) |- node[pos=0.25, left, align=right] {round 2:\\relabel} (unl.west);
+        \draw[arr] (f0) -- (unl);
+        \draw[arr] (unl) -- (pl); \draw[arr] (pl) -- (rc); \draw[arr] (rc) -- (f1); \draw[arr] (rc) -- (gan1);
+        \draw[arr] (gan1.west) -| (f1.south);
+        \draw[arr, dashed] (gan0.east) -- ++(2.5mm,0) |- (rc.east);
     \end{tikzpicture}
-    \caption{\textbf{Pseudo-pair bootstrapping.} The $\Kreal$-shot model $f_0$ labels the unlabeled frames $U$; the pseudo pairs retrain the learned renderer and, together with its synthetic data, the model $f_1$. Pose supervision stays on the $\Kreal$ labeled frames. The loop can be iterated.}
+    \caption{\textbf{Pseudo-pair bootstrapping.} The $\Kreal$-shot model $f_0$ labels the unlabeled frames $U$. Each label is then verified by render-and-compare: the object mesh is fitted to the label, rendered by the $\Kreal$-shot learned renderer and compared with the real frame (dashed), which replaces the blurred teacher label by exact mesh geometry at a refined pose. The verified pairs retrain the renderer and the model $f_1$.}
     \label{fig:ppb}
 \end{figure}
 
 The $\Kreal$-shot curves of Sec.~\ref{sec:kshot} say that the learned renderer needs $\Kreal\gtrsim50$ labeled pairs, and that what it learns from them is the appearance of real contacts. Unlabeled real frames contain exactly that appearance and cost nothing to capture (press the sensor anywhere, record nothing). We therefore propose to \emph{bootstrap} labeled pairs from unlabeled frames (Fig.~\ref{fig:ppb}):
 \begin{enumerate}
-    \item \textbf{Label.} The $\Kreal$-shot model $f_0$ (trained on the $\Kreal$ real frames and GAN-$\Kreal$ data) predicts depth and planar pose on every unlabeled training frame. Because $f_0$ sees a $0.816$ center crop, depth is predicted on five windows (center and four corners) and stitched back to the full frame, which the renderer needs. A frame is kept when the predicted contact ($>0.05\,$mm) overlaps the frame's own ridge mask (morphological black-hat; IoU $\ge0.2$) and its indentation is plausible ($0.2$--$1.6\,$mm); the $\Kreal$ labeled frames keep their true labels. On sensor B, whose marker array defeats the ridge mask, only the indentation test is applied.
+    \item \textbf{Label.} The $\Kreal$-shot model $f_0$ (trained on the $\Kreal$ real frames and GAN-$\Kreal$ data) predicts depth and planar pose on every unlabeled training frame (depth from the checkpoint with the best validation depth, pose from the one with the best validation pose). Because $f_0$ sees a $0.816$ center crop, depth is predicted on five windows (center and four corners) and stitched back to the full frame, which the renderer needs. A frame is kept when the predicted contact ($>0.05\,$mm) overlaps the frame's own ridge mask (morphological black-hat; IoU $\ge0.2$) and its indentation is plausible ($0.2$--$1.6\,$mm); the $\Kreal$ labeled frames keep their true labels. On sensor B, whose marker array defeats the ridge mask, only the indentation test is applied.
+    \item \textbf{Verify by render-and-compare.} The teacher's depth is as blurred and as mislocalized as the teacher, but the object mesh is known, so the true label is the mesh depth at \emph{some} planar pose $(\theta,x,y)$ and indentation $z$. We search for it in two stages. \emph{Coarse:} starting from the teacher pose, with $z$ the maximum of the teacher depth, a grid search ($\pm12^\circ$, $\pm1.5\,$mm, then $\pm1.5^\circ$, $\pm0.4\,$mm) finds the pose whose mesh depth agrees best (L1) with the teacher depth. \emph{Fine:} the mesh depth of $567$ poses around it ($\pm3^\circ$ in $1^\circ$ steps, $\pm0.6\,$mm in $0.15\,$mm steps) is rendered by GAN-$\Kreal$, and the pose whose render is closest to the real frame (image L1) is kept. The renderer trained on $\Kreal$ pairs thus verifies the labels of frames it has never seen, as in analysis-by-synthesis pose refinement~\cite{li2018deepim,wang2020self6d}. The fitted pose replaces the teacher pose on every frame. The mesh depth at that pose replaces the teacher depth on the half of each object's frames with the lowest render error; the fit fails on some frames (e.g.\ by one period of a line pattern), which the render error exposes, and those frames keep the teacher depth.
     \item \textbf{Self-trained renderer.} GAN-$\Kreal$ is retrained on the $\Kreal$ true plus the pseudo pairs (30k updates) and re-renders the simulated contacts.
-    \item \textbf{Self-trained model.} $f_1$ is trained on the $\Kreal$ labeled frames, the pseudo-labeled frames and the synthetic data. Pseudo depth and normals are supervised; the pose loss (and its uncertainty weight) is applied only to frames with a true pose, since a predicted pose is a poorer target than no target.
+    \item \textbf{Self-trained model.} $f_1$ is trained on the $\Kreal$ labeled frames, the pseudo-labeled frames and the synthetic data, with depth, normal and pose supervision on all of them.
 \end{enumerate}
-The loop can be iterated with $f_1$ as labeler. PPB adds no labeled data and no new architecture; it charges the budget one background frame per session and the unlabeled frames, and it is evaluated under the same leakage rule (validation and test frames are never pseudo-labeled). Its components are ablated in Sec.~\ref{sec:unlabeled}: renderer only, model only, both, pose masking, window stitching, and rounds.
+PPB adds no labeled data and no new architecture; it charges the budget one background frame per session, the unlabeled frames and the meshes that simulation already uses, and it is evaluated under the same leakage rule (validation and test frames are never pseudo-labeled). Where the frames are not registered to a mesh (sensor B in this study) step~2 is skipped: the teacher depth is used as is and the pose loss (and its uncertainty weight) is restricted to the $\Kreal$ labeled frames. The components are ablated in Sec.~\ref{sec:unlabeled}: renderer only, model only, both, verification, pose supervision, window stitching, and rounds.
 
 \subsection{Zero-Label Alternative: Contact-Preserving Unpaired Refiner}
 \label{sec:refiner}

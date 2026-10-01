@@ -127,13 +127,12 @@ for K in (0, 10, 25, 50, 100):
                               (f"+ Blender $\\oplus$ GAN-{K}", f"B_k{K}_mix", {}),
                               (f"+ refiner-{K} (0 labels)", f"B_k{K}_ref", {}),
                               ("+ refiner-U (0 labels, all unlabeled)", f"B_k{K}_refufull", {}),
-                              (f"+ self-trained GAN-{K}", f"B_k{K}_pseudo", {}),
-                              ("+ pseudo-labeled $U$ (self-trained model)", f"B_k{K}_semi", {}),
-                              ("\\quad pose loss on labeled frames only", f"B_k{K}_semipm", {}),
-                              ("\\quad\\quad center window only (no stitching)", f"B_k{K}_semipm_c1", {}),
-                              (f"+ pseudo-labeled $U$ + self-trained GAN-{K}", f"B_k{K}_semi_pseudo", {}),
-                              ("\\quad pose loss on labeled frames only", f"B_k{K}_semipm_pseudo", {}),
-                              ("\\quad\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
+                              (f"+ self-trained GAN-{K} (renderer only)", f"B_k{K}_pseudo", {}),
+                              ("+ PPB w/o verification, model only", f"B_k{K}_semipm", {}),
+                              ("\\quad center window only (no stitching)", f"B_k{K}_semipm_c1", {}),
+                              ("+ PPB w/o verification", f"B_k{K}_semipm_pseudo", {}),
+                              ("\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
+                              ("+ PPB", f"B_k{K}_rcp", {}),
                               ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
@@ -158,10 +157,36 @@ T["kshot"] = "\n\\midrule\n".join(table(b, cols5, bold_max=("iou",)) for b in bl
 # seeds (50 ep, 3 seeds) for K=25 and K=100
 sd = []
 for K in (25, 100):
-    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank")):
+    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ PPB w/o verification", f"B_k{K}_semipm_pseudo"), ("+ PPB", f"B_k{K}_rcp")):
         s = seeds(run)
         sd.append(f"{K} & {label} & " + " & ".join(f"{s[k][0]:.{nd}f} $\\pm$ {s[k][1]:.{nd}f}" if s.get(k) else "--" for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\")
 T["seeds"] = "\n".join(sd)
+# ---------------- verification ablation (K=25, 50 ep): label quality vs downstream ----------------
+def labq(root, parts):
+    """Quality of a label set against the withheld labels (pseudo_label_rc.py --eval-gt): mean over the given parts."""
+    p = f"/media/hdd2/ihsuan/gs_blender/{root}/pseudo_manifest.json"
+    if not osp.exists(p):
+        return None
+    q = json.load(open(p))["stats"]
+    v = [q["q_" + k] for k in parts if "q_" + k in q]
+    return [sum(x[i] for x in v) / len(v) for i in range(3)] if v else None
+def abl(label, run, dep, pose, n=1):
+    s = seeds(run) if n > 1 else None
+    r = row(run, prefix="pilot_")
+    if r is None:
+        return None
+    g = lambda k, nd: (f"{s[k][0]:.{nd}f}" if s and s.get(k) else f(r.get(k), nd))
+    return (f"{label} & {f(dep[0], 2) if dep else '--'} & {f(dep[1], 2) if dep else '--'} & {f(pose, 1) if pose is not None else '--'} & "
+            f"{g('depth_mse', 4)} & {g('c_mae', 3)} & {g('iou', 3)} & {g('rot', 1)}" + r" \\")
+_t = labq("real_pseudo_k25_rc100", ["teacher (all)"]); _m = labq("real_pseudo_k25_rc100", ["mesh (kept)"])
+_h = labq("real_pseudo_k25_rc", ["mesh (kept)", "teacher (rejected)"]); _hk = labq("real_pseudo_k25_rc", ["mesh (kept)"])
+T["rcabl"] = "\n".join(x for x in (
+    abl("teacher & --", "B_k25_semipm_pseudo", _t, None, 3),
+    abl("teacher & teacher", "B_k25_tp", _t, _t[2] if _t else None),
+    abl("mesh$^{1/2}$ & fit$^{1/2}$", "B_k25_rc50", _h, _hk[2] if _hk else None),
+    abl("mesh & fit", "B_k25_rc100", _m, _m[2] if _m else None),
+    abl("mesh$^{1/2}$ & fit$^{\\dagger}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
+) if x)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
     r = (CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854")
@@ -184,13 +209,15 @@ cross = [
     ("$\\Kreal=25$ + GAN-25", cs("B_k25_gank"), {}),
     ("$\\Kreal=25$ + refiner-25 (0 labels)", cs("B_k25_ref"), {}),
     ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
-    ("$\\Kreal=25$ + pseudo-labeled $U$ (+ GAN-25)", cs("B_k25_semipm_pseudo") or cs("B_k25_semi_pseudo"), {}),
+    ("$\\Kreal=25$ + PPB w/o verification", cs("B_k25_semipm_pseudo"), {}),
+    ("$\\Kreal=25$ + PPB", cs("B_k25_rcp"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
     ("$\\Kreal=100$ + refiner-100 (0 labels)", cs("B_k100_ref"), {}),
     ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
-    ("$\\Kreal=100$ + pseudo-labeled $U$ (+ GAN-100)", cs("B_k100_semipm_pseudo") or cs("B_k100_semi_pseudo"), {}),
+    ("$\\Kreal=100$ + PPB w/o verification", cs("B_k100_semipm_pseudo"), {}),
+    ("$\\Kreal=100$ + PPB", cs("B_k100_rcp"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
@@ -206,7 +233,7 @@ sbrows = [("0 & Sensor-A model, real only", xs("A_realonly", "pilot150_"), {"ref
 for K in (10, 25, 50, 100):
     first = True
     for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), ("+ Blender (domain rand.)", f"S_k{K}_dr"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40"),
-                       ("+ PPB, model only", f"S_k{K}_semipm"), (f"+ PPB, model + GAN-{K}", f"S_k{K}_semipm_pseudo")):
+                       ("+ PPB w/o verif., model only", f"S_k{K}_semipm"), ("+ PPB w/o verification", f"S_k{K}_semipm_pseudo")):
         r = sb(run)
         if r is None:
             continue

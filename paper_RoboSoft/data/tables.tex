@@ -28,18 +28,17 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
    & \textit{+ GAN-full (leaky)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\ % pilot_B_k10_ganfull (50 ep)
 \midrule
 25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\ % pilot150_B_k25_realonly (150 ep)
-  & + Blender & 0.0549 & 0.329 & 0.656 & 27.5 & \textbf{4.7} \\ % pilot150_B_k25_blender (150 ep)
+  & + Blender & 0.0549 & 0.329 & 0.656 & 27.5 & 4.7 \\ % pilot150_B_k25_blender (150 ep)
   & + GAN-25 & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 \\ % pilot150_B_k25_gank (150 ep)
   & + Blender $\oplus$ GAN-25 & 0.0554 & 0.324 & 0.667 & 27.4 & 4.8 \\ % pilot150_B_k25_mix (150 ep)
-  & + refiner-25 (0 labels) & 0.0551 & \textbf{0.297} & \textbf{0.672} & 27.1 & 5.5 \\ % pilot150_B_k25_ref (150 ep)
+  & + refiner-25 (0 labels) & 0.0551 & 0.297 & \textbf{0.672} & 27.1 & 5.5 \\ % pilot150_B_k25_ref (150 ep)
   & + refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.6 \\ % pilot150_B_k25_refufull (150 ep)
-  & + self-trained GAN-25 & 0.0538 & 0.326 & 0.641 & 28.0 & 4.8 \\ % pilot150_B_k25_pseudo (150 ep)
-  & + pseudo-labeled $U$ (self-trained model) & 0.0519 & 0.316 & 0.631 & 26.6 & 12.8 \\ % pilot150_B_k25_semi (150 ep)
-  & \quad pose loss on labeled frames only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.2 \\ % pilot150_B_k25_semipm (150 ep)
-  & \quad\quad center window only (no stitching) & 0.0518 & 0.328 & 0.643 & 26.7 & 8.4 \\ % pilot150_B_k25_semipm_c1 (150 ep)
-  & + pseudo-labeled $U$ + self-trained GAN-25 & 0.0507 & 0.299 & 0.621 & 26.2 & 10.6 \\ % pilot150_B_k25_semi_pseudo (150 ep)
-  & \quad pose loss on labeled frames only & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
-  & \quad\quad round 2 & \textbf{0.0500} & 0.310 & 0.642 & \textbf{26.0} & 6.2 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
+  & + self-trained GAN-25 (renderer only) & 0.0538 & 0.326 & 0.641 & 28.0 & 4.8 \\ % pilot150_B_k25_pseudo (150 ep)
+  & + PPB w/o verification, model only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.2 \\ % pilot150_B_k25_semipm (150 ep)
+  & \quad center window only (no stitching) & 0.0518 & 0.328 & 0.643 & 26.7 & 8.4 \\ % pilot150_B_k25_semipm_c1 (150 ep)
+  & + PPB w/o verification & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
+  & \quad round 2 & 0.0500 & 0.310 & 0.642 & 26.0 & 6.2 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
+  & + PPB & \textbf{0.0482} & \textbf{0.291} & 0.655 & \textbf{25.5} & \textbf{4.5} \\ % pilot150_B_k25_rcp (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\ % pilot150_B_k25_ganfull (150 ep)
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & \textbf{4.3} \\ % pilot150_B_k50_realonly (150 ep)
@@ -52,12 +51,11 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
   & + Blender $\oplus$ GAN-100 & 0.0329 & 0.213 & 0.760 & 20.5 & 4.2 \\ % pilot150_B_k100_mix (150 ep)
   & + refiner-100 (0 labels) & 0.0340 & 0.224 & 0.761 & 21.1 & 4.9 \\ % pilot150_B_k100_ref (150 ep)
   & + refiner-U (0 labels, all unlabeled) & 0.0329 & 0.228 & 0.747 & 21.1 & 4.9 \\ % pilot150_B_k100_refufull (150 ep)
-  & + self-trained GAN-100 & 0.0308 & \textbf{0.207} & \textbf{0.774} & 20.6 & 4.4 \\ % pilot150_B_k100_pseudo (150 ep)
-  & + pseudo-labeled $U$ (self-trained model) & 0.0293 & 0.213 & 0.734 & 19.8 & 5.2 \\ % pilot150_B_k100_semi (150 ep)
-  & \quad pose loss on labeled frames only & 0.0290 & 0.221 & 0.744 & 19.8 & 4.5 \\ % pilot150_B_k100_semipm (150 ep)
-  & + pseudo-labeled $U$ + self-trained GAN-100 & \textbf{0.0284} & 0.216 & 0.751 & \textbf{19.6} & 5.3 \\ % pilot150_B_k100_semi_pseudo (150 ep)
-  & \quad pose loss on labeled frames only & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\ % pilot150_B_k100_semipm_pseudo (150 ep)
-  & \quad\quad round 2 & 0.0295 & 0.217 & 0.736 & 20.2 & 4.9 \\ % pilot150_B_k100_semipm_pseudo_r2 (150 ep)
+  & + self-trained GAN-100 (renderer only) & 0.0308 & 0.207 & \textbf{0.774} & 20.6 & 4.4 \\ % pilot150_B_k100_pseudo (150 ep)
+  & + PPB w/o verification, model only & 0.0290 & 0.221 & 0.744 & 19.8 & 4.5 \\ % pilot150_B_k100_semipm (150 ep)
+  & + PPB w/o verification & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\ % pilot150_B_k100_semipm_pseudo (150 ep)
+  & \quad round 2 & 0.0295 & 0.217 & 0.736 & 20.2 & 4.9 \\ % pilot150_B_k100_semipm_pseudo_r2 (150 ep)
+  & + PPB & \textbf{0.0276} & \textbf{0.203} & 0.771 & \textbf{19.4} & 4.1 \\ % pilot150_B_k100_rcp (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
@@ -65,8 +63,21 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 \newcommand{\tabseeds}{%
 25 & Real only & 0.0551 $\pm$ 0.0010 & 0.314 $\pm$ 0.010 & 0.665 $\pm$ 0.004 & 5.5 $\pm$ 0.0 \\
 25 & + GAN-25 & 0.0536 $\pm$ 0.0013 & 0.314 $\pm$ 0.008 & 0.655 $\pm$ 0.032 & 6.0 $\pm$ 0.1 \\
+25 & + PPB w/o verification & 0.0507 $\pm$ 0.0001 & 0.310 $\pm$ 0.004 & 0.624 $\pm$ 0.002 & 7.2 $\pm$ 0.1 \\
+25 & + PPB & 0.0482 $\pm$ 0.0004 & 0.289 $\pm$ 0.004 & 0.648 $\pm$ 0.010 & 5.5 $\pm$ 0.1 \\
 100 & Real only & 0.0366 $\pm$ 0.0008 & 0.234 $\pm$ 0.006 & 0.750 $\pm$ 0.004 & 3.9 $\pm$ 0.0 \\
 100 & + GAN-100 & 0.0299 $\pm$ 0.0004 & 0.201 $\pm$ 0.002 & 0.779 $\pm$ 0.001 & 5.5 $\pm$ 0.0 \\
+100 & + PPB w/o verification & 0.0280 $\pm$ 0.0001 & 0.209 $\pm$ 0.002 & 0.743 $\pm$ 0.007 & 6.1 $\pm$ 0.0 \\
+100 & + PPB & 0.0275 $\pm$ 0.0002 & 0.201 $\pm$ 0.003 & 0.767 $\pm$ 0.005 & 5.0 $\pm$ 0.1 \\
+}
+
+% ---- rcabl ----
+\newcommand{\tabrcabl}{%
+teacher & -- & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.2 \\
+teacher & teacher & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 5.9 \\
+mesh$^{1/2}$ & fit$^{1/2}$ & 0.63 & 0.30 & 1.4 & 0.0485 & 0.286 & 0.639 & 6.3 \\
+mesh & fit & 0.64 & 0.30 & 2.5 & 0.0489 & 0.292 & 0.657 & 5.4 \\
+mesh$^{1/2}$ & fit$^{\dagger}$ & 0.63 & 0.30 & 2.5 & 0.0482 & 0.289 & 0.648 & 5.5 \\
 }
 
 % ---- cross ----
@@ -87,13 +98,15 @@ $\Kreal=25$ + Blender & 0.443 & 0.578 & 29.3 & 23.0 & 5.4 \\
 $\Kreal=25$ + GAN-25 & 0.393 & 0.603 & 27.5 & 25.7 & 5.3 \\
 $\Kreal=25$ + refiner-25 (0 labels) & 0.408 & 0.589 & 29.9 & 15.5 & 5.6 \\
 $\Kreal=25$ + self-trained GAN-25 & 0.429 & 0.585 & 28.7 & 20.4 & 5.5 \\
-$\Kreal=25$ + pseudo-labeled $U$ (+ GAN-25) & 0.389 & 0.607 & 27.6 & 13.1 & 5.5 \\
+$\Kreal=25$ + PPB w/o verification & 0.389 & 0.607 & 27.6 & 13.1 & 5.5 \\
+$\Kreal=25$ + PPB & 0.378 & 0.626 & 27.1 & 17.2 & 5.1 \\
 $\Kreal=100$ real only & 0.418 & 0.597 & 28.2 & 17.5 & 5.5 \\
 $\Kreal=100$ + Blender & \textbf{0.370} & 0.641 & \textbf{26.4} & 16.4 & 5.1 \\
 $\Kreal=100$ + GAN-100 & 0.381 & 0.632 & 28.5 & 13.7 & 5.4 \\
 $\Kreal=100$ + refiner-100 (0 labels) & 0.405 & 0.622 & 27.7 & 16.9 & 6.1 \\
 $\Kreal=100$ + self-trained GAN-100 & 0.393 & 0.623 & 29.1 & 12.1 & 4.9 \\
-$\Kreal=100$ + pseudo-labeled $U$ (+ GAN-100) & 0.381 & \textbf{0.661} & 27.3 & 11.0 & 4.9 \\
+$\Kreal=100$ + PPB w/o verification & 0.381 & \textbf{0.661} & 27.3 & 11.0 & 4.9 \\
+$\Kreal=100$ + PPB & 0.379 & 0.658 & 27.2 & 12.5 & 5.0 \\
 }
 
 % ---- sensorb ----
@@ -109,8 +122,8 @@ $\Kreal=100$ + pseudo-labeled $U$ (+ GAN-100) & 0.381 & \textbf{0.661} & 27.3 & 
   & + Blender (sensor-A calib.) & 0.0147 & 0.125 & 0.846 & 16.5 & 11.2 \\
   & + Blender (domain rand.) & 0.0146 & 0.126 & 0.830 & 16.3 & 10.9 \\
   & + GAN-25 (sensor B) & 0.0107 & 0.100 & 0.846 & 14.6 & 10.4 \\
-  & + PPB, model only & 0.0098 & 0.100 & 0.841 & 14.8 & 11.6 \\
-  & + PPB, model + GAN-25 & 0.0102 & 0.098 & 0.840 & 14.6 & 11.8 \\
+  & + PPB w/o verif., model only & 0.0098 & 0.100 & 0.841 & 14.8 & 11.6 \\
+  & + PPB w/o verification & 0.0102 & 0.098 & 0.840 & 14.6 & 11.8 \\
 \midrule
 50 & Real only & 0.0063 & 0.081 & 0.860 & 13.2 & 9.9 \\
   & + Blender (sensor-A calib.) & 0.0058 & 0.077 & 0.858 & 12.8 & 9.7 \\
