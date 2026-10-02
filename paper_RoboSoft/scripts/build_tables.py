@@ -195,8 +195,8 @@ T["rcabl"] = "\n".join(x for x in (
 ) if x)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
-    r = (CROSS.get(f"{pre}{run}/cross_session_curated854") or CROSS.get(f"pilot_{run}/cross_session_curated854")
-         or CROSS.get(f"{pre}{run}/cross_session_curated") or CROSS.get(f"pilot_{run}/cross_session_curated"))  # newer evals: default tag, 854 frames
+    # corrected session-2 labels only (scripts/fix_session2_view.py; tag cross_session_fv)
+    r = CROSS.get(f"{pre}{run}/cross_session_fv") or CROSS.get(f"pilot_{run}/cross_session_fv")
     return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib")) if r else None
 cross = [
     ("Real only (all objects, session 1)", cs("A_realonly"), {}),
@@ -228,6 +228,18 @@ cross = [
     ("$\\Kreal=100$ + MAPL", cs("B_k100_al2"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
+# ---------------- test-time pose refinement with the aligner ----------------
+_pr = f"{P}/pose_refine_results.json"
+PR = json.load(open(_pr)) if osp.exists(_pr) else {}
+pr = []
+for K in (10, 25, 50, 100):
+    cells = []
+    for split in ("val", "session2"):
+        for run in (f"B_k{K}_realonly", f"B_k{K}_al2"):
+            e = PR.get(f"pilot150_{run}/{split}")
+            cells += [f(e["rot"], 1), f(e["rot_al"], 1)] if e else ["--", "--"]
+    pr.append(f"{K} & " + " & ".join(cells) + r" \\")
+T["poseref"] = "\n".join(pr)
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
 def sb(run):
     r = SB.get(f"pilot_{run}/sensorB_test")
