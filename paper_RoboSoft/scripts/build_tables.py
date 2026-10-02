@@ -128,11 +128,12 @@ for K in (0, 10, 25, 50, 100):
                               (f"+ refiner-{K} (0 labels)", f"B_k{K}_ref", {}),
                               ("+ refiner-U (0 labels, all unlabeled)", f"B_k{K}_refufull", {}),
                               (f"+ self-trained GAN-{K} (renderer only)", f"B_k{K}_pseudo", {}),
-                              ("+ PPB w/o verification, model only", f"B_k{K}_semipm", {}),
+                              ("+ PPB w/o alignment, model only", f"B_k{K}_semipm", {}),
                               ("\\quad center window only (no stitching)", f"B_k{K}_semipm_c1", {}),
-                              ("+ PPB w/o verification", f"B_k{K}_semipm_pseudo", {}),
+                              ("+ PPB w/o alignment", f"B_k{K}_semipm_pseudo", {}),
                               ("\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
-                              ("+ PPB", f"B_k{K}_rcp", {}),
+                              ("+ PPB, L1 render-and-compare", f"B_k{K}_rcp", {}),
+                              ("+ PPB", f"B_k{K}_al2", {}),
                               ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
@@ -157,7 +158,7 @@ T["kshot"] = "\n\\midrule\n".join(table(b, cols5, bold_max=("iou",)) for b in bl
 # seeds (50 ep, 3 seeds) for K=25 and K=100
 sd = []
 for K in (25, 100):
-    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ PPB w/o verification", f"B_k{K}_semipm_pseudo"), ("+ PPB", f"B_k{K}_rcp")):
+    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ PPB w/o alignment", f"B_k{K}_semipm_pseudo"), ("+ PPB, L1 render-and-compare", f"B_k{K}_rcp"), ("+ PPB", f"B_k{K}_al2")):
         s = seeds(run)
         sd.append(f"{K} & {label} & " + " & ".join(f"{s[k][0]:.{nd}f} $\\pm$ {s[k][1]:.{nd}f}" if s.get(k) else "--" for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\")
 T["seeds"] = "\n".join(sd)
@@ -180,12 +181,17 @@ def abl(label, run, dep, pose, n=1):
             f"{g('depth_mse', 4)} & {g('c_mae', 3)} & {g('iou', 3)} & {g('rot', 1)}" + r" \\")
 _t = labq("real_pseudo_k25_rc100", ["teacher (all)"]); _m = labq("real_pseudo_k25_rc100", ["mesh (kept)"])
 _h = labq("real_pseudo_k25_rc", ["mesh (kept)", "teacher (rejected)"]); _hk = labq("real_pseudo_k25_rc", ["mesh (kept)"])
+_a = labq("real_pseudo_k25_al", ["mesh (kept)"])
 T["rcabl"] = "\n".join(x for x in (
     abl("teacher & --", "B_k25_semipm_pseudo", _t, None, 3),
     abl("teacher & teacher", "B_k25_tp", _t, _t[2] if _t else None),
-    abl("mesh$^{1/2}$ & fit$^{1/2}$", "B_k25_rc50", _h, _hk[2] if _hk else None),
-    abl("mesh & fit", "B_k25_rc100", _m, _m[2] if _m else None),
-    abl("mesh$^{1/2}$ & fit$^{\\dagger}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
+    r"\midrule",
+    abl("mesh$^{1/2}$ & L1$^{1/2}$", "B_k25_rc50", _h, _hk[2] if _hk else None),
+    abl("mesh & L1", "B_k25_rc100", _m, _m[2] if _m else None),
+    abl("mesh$^{1/2}$ & L1", "B_k25_rcp", _h, _m[2] if _m else None, 3),
+    r"\midrule",
+    abl("mesh & aligner$^{\\ddagger}$", "B_k25_al", _a, _a[2] if _a else None),
+    abl("mesh & aligner$^{\\dagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
 ) if x)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
@@ -209,15 +215,17 @@ cross = [
     ("$\\Kreal=25$ + GAN-25", cs("B_k25_gank"), {}),
     ("$\\Kreal=25$ + refiner-25 (0 labels)", cs("B_k25_ref"), {}),
     ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
-    ("$\\Kreal=25$ + PPB w/o verification", cs("B_k25_semipm_pseudo"), {}),
-    ("$\\Kreal=25$ + PPB", cs("B_k25_rcp"), {}),
+    ("$\\Kreal=25$ + PPB w/o alignment", cs("B_k25_semipm_pseudo"), {}),
+    ("$\\Kreal=25$ + PPB, L1 render-and-compare", cs("B_k25_rcp"), {}),
+    ("$\\Kreal=25$ + PPB", cs("B_k25_al2"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
     ("$\\Kreal=100$ + refiner-100 (0 labels)", cs("B_k100_ref"), {}),
     ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
-    ("$\\Kreal=100$ + PPB w/o verification", cs("B_k100_semipm_pseudo"), {}),
-    ("$\\Kreal=100$ + PPB", cs("B_k100_rcp"), {}),
+    ("$\\Kreal=100$ + PPB w/o alignment", cs("B_k100_semipm_pseudo"), {}),
+    ("$\\Kreal=100$ + PPB, L1 render-and-compare", cs("B_k100_rcp"), {}),
+    ("$\\Kreal=100$ + PPB", cs("B_k100_al2"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
@@ -233,7 +241,7 @@ sbrows = [("0 & Sensor-A model, real only", xs("A_realonly", "pilot150_"), {"ref
 for K in (10, 25, 50, 100):
     first = True
     for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), ("+ Blender (domain rand.)", f"S_k{K}_dr"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40"),
-                       ("+ PPB w/o verif., model only", f"S_k{K}_semipm"), ("+ PPB w/o verification", f"S_k{K}_semipm_pseudo")):
+                       ("+ PPB w/o align., model only", f"S_k{K}_semipm"), ("+ PPB w/o alignment", f"S_k{K}_semipm_pseudo")):
         r = sb(run)
         if r is None:
             continue

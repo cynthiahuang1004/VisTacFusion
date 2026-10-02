@@ -165,6 +165,9 @@ def main():
     ap.add_argument("--pose-all", action="store_true",
                     help="frames that keep the teacher depth still get the fitted pose as a regular label (the fit is "
                          "more accurate than the teacher pose on every frame; only its dense label is gated)")
+    ap.add_argument("--aligner", default=None, help="aligner.pt of train_aligner.py: fit the pose with the learned residual aligner "
+                                                    "instead of the coarse + render-and-compare search")
+    ap.add_argument("--aligner-iters", type=int, default=6)
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--workers", type=int, default=24)
     ap.add_argument("--limit", type=int, default=0)
@@ -187,6 +190,23 @@ def main():
             it["pose"], it["p"], it["err"] = tuple(cache[it["tac"]]["pose"]), cache[it["tac"]]["p"], cache[it["tac"]]["err"]
         for o in sorted({it["obj"] for it in items}):
             B.get_zmap(o)
+    elif args.aligner:
+        # learned residual aligner (train_aligner.py): iterate the predicted pose correction from the teacher pose
+        from train_aligner import Aligner, refine
+        for o in sorted({it["obj"] for it in items}):
+            B.get_zmap(o)
+        A = Aligner().to(dev).eval(); A.load_state_dict(torch.load(args.aligner, map_location=dev))
+        G = UNetG(in_ch=3).to(dev).eval(); G.load_state_dict(torch.load(osp.join(args.gan, "G_final.pt"), map_location=dev))
+        print(f"{len(items)} pseudo frames, teacher={args.prefix}{args.run}, aligner={args.aligner}", flush=True)
+        for i0 in range(0, len(items), 64):
+            its = items[i0:i0 + 64]
+            img = torch.from_numpy(np.stack([np.array(Image.open(it["tac"]).convert("RGB"), np.float32).transpose(2, 0, 1) / 127.5 - 1 for it in its])).to(dev)
+            p0 = [float(np.clip(np.load(osp.join(it["src_unit"], "raw_data", it["idx"] + "_gt.npy")).max() * 1000, 0.3, 1.6)) for it in its]
+            pz = torch.tensor([[*tp[it["tac"]], q] for it, q in zip(its, p0)], dtype=torch.float32, device=dev)
+            pz = refine(A, [it["obj"] for it in its], img, pz, dev, iters=args.aligner_iters)
+            for j, it in enumerate(its):
+                it["pose"] = tuple(pz[j, :3].tolist()); it["p"] = float(pz[j, 3])
+                it["err"] = float(render_error(G, it["obj"], pz[j:j + 1, :3], it["p"], img[j], None, dev)[0])   # only used by the gate
     else:
         for o in sorted({it["obj"] for it in items}):
             B.get_zmap(o)                                         # build z-maps before forking
