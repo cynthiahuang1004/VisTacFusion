@@ -3,28 +3,6 @@
 
 \begin{figure}[t]
     \centering
-    \begin{tikzpicture}[font=\scriptsize, node distance=2.5mm and 3mm,
-        box/.style={draw, rounded corners=1pt, align=center, inner sep=2pt, minimum height=5mm, fill=white},
-        data/.style={box, fill=black!5}, model/.style={box, fill=blue!8}, rend/.style={box, fill=orange!12},
-        arr/.style={-{Latex[length=1.5mm]}, thick}]
-        \node[data, text width=31mm] (lab) {$\Kreal$ labeled frames per object (depth, pose)};
-        \node[data, text width=26mm, right=of lab] (mesh) {object meshes};
-        \node[model, text width=31mm, below=of lab] (f0) {teacher $f_0$ ($\Kreal$-shot model)};
-        \node[rend, text width=26mm, below=of mesh] (al) {aligner $A$: (frame, mesh depth at pose) $\to$ pose correction};
-        \node[data, text width=31mm, below=4.5mm of f0] (unl) {unlabeled frames $U$};
-        \node[box, text width=26mm, right=of unl] (rc) {\textbf{align}: iterate $A$ from the teacher pose};
-        \node[model, text width=31mm, below=of unl] (f1) {student $f_1$: $\Kreal$ labeled + aligned $U$};
-        \node[box, text width=26mm, below=of rc] (lbl) {\textbf{label}: mesh depth, normals and pose at the aligned pose};
-        \draw[arr] (lab) -- (f0); \draw[arr] (lab) -- (al); \draw[arr] (mesh) -- (al);
-        \draw[arr] (f0) -- node[left, xshift=-1pt] {pose} (unl); \draw[arr] (unl) -- (rc); \draw[arr] (al) -- (rc);
-        \draw[arr] (rc) -- (lbl); \draw[arr] (lbl) -- (f1);
-    \end{tikzpicture}
-    \caption{\textbf{Mesh-aligned pseudo-labeling.} The $\Kreal$-shot teacher proposes a pose for every unlabeled frame. An aligner trained on the same $\Kreal$ labeled frames iteratively corrects that pose until the object mesh matches the frame; the mesh at the aligned pose, not the teacher's prediction, labels the frame for the student.}
-    \label{fig:mapl}
-\end{figure}
-
-\begin{figure}[t]
-    \centering
     \includegraphics[width=\columnwidth]{figures/fig_align.pdf}
     \caption{\textbf{Labels of unlabeled frames} ($\Kreal=25$; each object's median-quality frame). The teacher's depth is blurred and its pose is off by several degrees; after alignment the mesh label is close to the withheld reference.}
     \label{fig:align}

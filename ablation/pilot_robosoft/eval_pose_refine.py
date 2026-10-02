@@ -30,6 +30,7 @@ from vistacfusion.models.model import build_model  # noqa: E402
 from vistacfusion.utils.config import merge_configs  # noqa: E402
 
 OUT = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2"
+SIDE = int(math.floor(224 * 0.816)); OFF = (224 - SIDE) // 2
 NEW = "/media/hdd2/ihsuan/gs_blender/real_filtered_new_curated_pred_r2_fv"
 REAL = "/media/hdd2/ihsuan/gs_blender/real_filtered"
 
@@ -51,7 +52,8 @@ def run_split(model_p, model_d, A, ds, dev, iters):
         n = len(b["tactile"]); units = [ds.samples[i0 + j] for j in range(n)]; i0 += n
         x = b["tactile"].to(dev); oid = b["object"].to(dev)
         se2 = model_p(x, x, config="tactile", object_ids=oid)["se2"].float().cpu()
-        dep = model_d(x, x, config="tactile", object_ids=oid)["depth"][:, 0].float().clamp(min=0).amax((1, 2)).cpu()
+        dmap = model_d(x, x, config="tactile", object_ids=oid)["depth"][:, 0].float().clamp(min=0).cpu().numpy()
+        dep = torch.from_numpy(dmap).amax((1, 2))
         objs = [u.split("/")[-3] for u, _ in units]
         half = [ds.unit_meta[u]["half"] * 1e3 for u, _ in units]
         img = torch.from_numpy(np.stack([np.array(Image.open(osp.join(u, "samples", f"{s:04d}.png")).convert("RGB"), np.float32).transpose(2, 0, 1) / 127.5 - 1
@@ -64,7 +66,15 @@ def run_split(model_p, model_d, A, ds, dev, iters):
             g = (P["rotation_euler"][2], P["sample_x"] * 1e3, P["sample_y"] * 1e3)
             def e(p):
                 return ((math.degrees(float(p[0]) - g[0]) + 180) % 360 - 180, (abs(float(p[1]) - g[1]) + abs(float(p[2]) - g[2])) / 2 / half[j])
-            rows.append((objs[j],) + e(p0[j]) + e(p1[j]))
+            # dense: the model's depth vs the mesh depth at the aligned pose, both inside the model's 0.816 view
+            gt = np.load(osp.join(u, "raw_data", f"{s:04d}_gt.npy")) * 1000
+            cr = lambda d: d[OFF:OFF + SIDE, OFF:OFF + SIDE]
+            gm = cr(gt) > 0
+            def dq(d):
+                pm = d > 0.05
+                return (float((pm & gm).sum() / max(1, (pm | gm).sum())), float(np.abs(d - cr(gt))[gm].mean()) if gm.any() else float("nan"))
+            import cv2
+            rows.append((objs[j],) + e(p0[j]) + e(p1[j]) + dq(cv2.resize(dmap[j], (SIDE, SIDE))) + dq(cr(B.gt_depth_mm(objs[j], *p1[j].tolist()))))
     return rows
 
 
@@ -96,9 +106,10 @@ def main():
             objs = [r[0] for r in rows]; v = np.array([r[1:] for r in rows], float)
             r = dict(rot=float(np.abs(v[:, 0]).mean()), rot_al=float(np.abs(v[:, 2]).mean()), rot_med=float(np.median(np.abs(v[:, 0]))), rot_med_al=float(np.median(np.abs(v[:, 2]))),
                      rotc=float(circ_offset_removed(v[:, 0], objs).mean()), rotc_al=float(circ_offset_removed(v[:, 2], objs).mean()),
-                     trans=float(v[:, 1].mean()), trans_al=float(v[:, 3].mean()), n=len(rows))
+                     trans=float(v[:, 1].mean()), trans_al=float(v[:, 3].mean()), n=len(rows),
+                     iou=float(np.nanmean(v[:, 4])), c_mae=float(np.nanmean(v[:, 5])), iou_mesh=float(np.nanmean(v[:, 6])), c_mae_mesh=float(np.nanmean(v[:, 7])))
             res[f"{prefix}{run}/{name}"] = r
-            print(f"{run:24s} {name:10s} {r['rot']:6.2f} -> {r['rot_al']:6.2f} {r['rot_med']:5.2f} {r['rot_med_al']:6.2f} {r['rotc']:5.2f} {r['rotc_al']:6.2f} {r['trans']:6.4f} {r['trans_al']:6.4f} {r['n']:4d}", flush=True)
+            print(f"{run:24s} {name:10s} {r['rot']:6.2f} -> {r['rot_al']:6.2f} {r['rot_med']:5.2f} {r['rot_med_al']:6.2f} {r['rotc']:5.2f} {r['rotc_al']:6.2f} {r['trans']:6.4f} {r['trans_al']:6.4f} {r['n']:4d} | depth IoU {r['iou']:.3f} cMAE {r['c_mae']:.3f} -> mesh@aligned {r['iou_mesh']:.3f} {r['c_mae_mesh']:.3f}", flush=True)
         json.dump(res, open(args.json, "w"), indent=1)
 
 
