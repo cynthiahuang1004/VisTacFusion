@@ -88,7 +88,9 @@ def fig_kshot(out):
                 else:
                     y = best(r)
                 xs.append(K); ys.append(y)
-            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.6, ms=7 if m == "*" else 4.5, mec="white", mew=0.6, label=name)
+            lab_name = {"+ Blender (physical)": "+ physical renderer", "+ GAN-K (learned, strict)": "+ learned renderer",
+                        "+ GAN-full (leaky)": "+ leaky renderer", "+ MAPL (ours, strict)": "+ MAPL (ours)"}.get(name, name)
+            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.6, ms=7 if m == "*" else 4.5, mec="white", mew=0.6, label=lab_name)
         ax.set_xscale("symlog", linthresh=10)
         ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks])
         ax.set_xlabel("Real samples per object, $K$"); ax.set_title(lab, loc="left")
@@ -242,10 +244,46 @@ def fig_cross(out):
     fig.savefig(osp.join(out, "fig_cross.pdf")); plt.close(fig)
 
 
+def fig_align(out, K=25):
+    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (MAPL label) | reference."""
+    sys.path.insert(0, "scripts")
+    import build_real_filtered_new as B
+    B.VIEW = 0.017502
+    G = "/media/hdd2/ihsuan/gs_blender"
+    fits = json.load(open(f"{G}/real_pseudo_k{K}_al/rc_fits.json"))
+    objs = ["pattern_01_2_lines_angle_1_2", "pattern_06_5_lines_angle_1", "pattern_32", "pattern_36"]
+    rows = []
+    for o in objs:
+        cand = sorted(t for t in fits if f"/{o}/" in t)
+        def iou_of(t):
+            f = fits[t]; gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
+            m = B.gt_depth_mm(o, *f["pose"], f["p"]); a, b = m > 0.05, gt > 0
+            return (a & b).sum() / max(1, (a | b).sum())
+        sc = sorted((iou_of(t), t) for t in cand[::7])
+        rows.append(sc[len(sc) // 2][1])                       # the object's median-quality frame
+    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.2))
+    titles = ["unlabeled frame", "teacher depth", "mesh, teacher pose", "mesh, aligned", "reference"]
+    for r, t in enumerate(rows):
+        f = fits[t]; o = t.split("/")[-5]
+        gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
+        td = np.load(t.replace(REAL, f"{G}/real_pseudo_k{K}_ng").replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
+        tp = f["tp"]; m0 = B.gt_depth_mm(o, tp[0], tp[1], tp[2], f["p"]); m1 = B.gt_depth_mm(o, *f["pose"], f["p"])
+        for c, im in enumerate([np.array(Image.open(t).convert("RGB")), td, m0, m1, gt]):
+            ax = axes[r, c]
+            ax.imshow(im) if c == 0 else ax.imshow(im, cmap="viridis", vmin=0, vmax=1.2)
+            ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
+            for sp in ax.spines.values():
+                sp.set_visible(False)
+            if r == 0:
+                ax.set_title(titles[c], fontsize=5.5, pad=2)
+    fig.subplots_adjust(left=0.005, right=0.995, top=0.94, bottom=0.005, wspace=0.03, hspace=0.03)
+    fig.savefig(osp.join(out, "fig_align.pdf"), dpi=300); plt.close(fig)
+
+
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out)
+    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out)
     try:
         fig_fidelity(out)
     except Exception as e:  # noqa: BLE001

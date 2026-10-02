@@ -88,6 +88,9 @@ def main():
     ap.add_argument("--bs-real", type=int, default=24)
     ap.add_argument("--bs-sim", type=int, default=40)
     ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--exclude-objects", nargs="*", default=[], help="leave-object-out: objects whose labeled frames the aligner never sees")
+    ap.add_argument("--real-root", default=REAL, help="labeled real root (default: sensor A real_filtered)")
+    ap.add_argument("--view", type=float, default=0.017502, help="gel view (m) covered by a stored frame (sensor B: 0.012)")
     ap.add_argument("--range-scale", type=float, default=1.0, help="sensitivity: multiply the perturbation ranges (SCALE)")
     ap.add_argument("--no-pretrain", action="store_true", help="sensitivity: ResNet-18 from scratch")
     ap.add_argument("--extra-root", default=None,
@@ -104,7 +107,8 @@ def main():
     dev = args.device
     torch.manual_seed(0); np.random.seed(0)
     # ---- K labeled real frames ----
-    rp = RealPairs(root=REAL, split="train", per_object=args.k)
+    B.VIEW = args.view
+    rp = RealPairs(root=args.real_root, split="train", per_object=args.k if args.k > 0 else None, exclude_objects=tuple(args.exclude_objects))
     r_img, r_pose, r_obj = [], [], []
     for dep, tac in rp.items:
         P = json.load(open(dep.replace("_gt.npy", "_pose.json")))
