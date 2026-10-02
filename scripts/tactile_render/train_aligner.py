@@ -91,6 +91,8 @@ def main():
     ap.add_argument("--exclude-objects", nargs="*", default=[], help="leave-object-out: objects whose labeled frames the aligner never sees")
     ap.add_argument("--real-root", default=REAL, help="labeled real root (default: sensor A real_filtered)")
     ap.add_argument("--view", type=float, default=0.017502, help="gel view (m) covered by a stored frame (sensor B: 0.012)")
+    ap.add_argument("--pose-json", default=None, help="json {tactile path: [theta, x_mm, y_mm, p_mm]} overriding the frames' _pose.json "
+                                                      "(sensor B: mesh poses fitted to the labeled depth, scripts/tactile_render/fit_mesh_pose.py)")
     ap.add_argument("--range-scale", type=float, default=1.0, help="sensitivity: multiply the perturbation ranges (SCALE)")
     ap.add_argument("--no-pretrain", action="store_true", help="sensitivity: ResNet-18 from scratch")
     ap.add_argument("--extra-root", default=None,
@@ -110,10 +112,13 @@ def main():
     B.VIEW = args.view
     rp = RealPairs(root=args.real_root, split="train", per_object=args.k if args.k > 0 else None, exclude_objects=tuple(args.exclude_objects))
     r_img, r_pose, r_obj = [], [], []
+    PJ = json.load(open(args.pose_json)) if args.pose_json else None
     for dep, tac in rp.items:
+        if PJ is not None and tac not in PJ:
+            continue
         P = json.load(open(dep.replace("_gt.npy", "_pose.json")))
         r_img.append(np.array(Image.open(tac).convert("RGB"), np.float32).transpose(2, 0, 1) / 127.5 - 1)
-        r_pose.append([P["rotation_euler"][2], P["sample_x"] * 1e3, P["sample_y"] * 1e3, P["sample_z"] * 1e3])
+        r_pose.append(PJ[tac][:4] if PJ is not None else [P["rotation_euler"][2], P["sample_x"] * 1e3, P["sample_y"] * 1e3, P["sample_z"] * 1e3])
         r_obj.append(tac.split("/")[-5])
     n_true = len(r_obj)
     if args.extra_root:
