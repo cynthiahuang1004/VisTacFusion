@@ -30,7 +30,7 @@ STY = {
     "+ Blender (physical)": ("#2a78d6", "s", "-"),
     "+ GAN-K (learned, strict)": ("#eb6834", "^", "-"),
     "+ GAN-full (leaky)": ("#1baf7a", "D", "--"),
-    "+ PPB (ours, strict)": ("#8a4fd3", "*", "-"),
+    "+ MAPL (ours, strict)": ("#8a4fd3", "*", "-"),
 }
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
                      "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7,
@@ -69,7 +69,7 @@ def fig_kshot(out):
         "+ Blender (physical)": ["B_k0_blender", "B_k10_blender", "B_k25_blender", "B_k50_blender", "B_k100_blender"],
         "+ GAN-K (learned, strict)": [None, "B_k10_gank", "B_k25_gank", "B_k50_gank", "B_k100_gank"],
         "+ GAN-full (leaky)": ["B_k0_ganfull", "B_k10_ganfull", "B_k25_ganfull", None, "B_k100_ganfull"],
-        "+ PPB (ours, strict)": [None, "B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
+        "+ MAPL (ours, strict)": [None, "B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
     }
     fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.0))
     panels = [("depth_mse", "val", "Depth MSE [mm$^2$]"), ("c_mae", "masked", "Contact MAE [mm]"),
@@ -80,7 +80,7 @@ def fig_kshot(out):
             xs, ys = [], []
             for K, r in zip(Ks, runs):
                 if r is None or prefix_of(r) != "pilot150_" and "_al2" in r or f"{prefix_of(r)}{r}/val" not in MASKED:
-                    continue                      # PPB points only from finished 150-epoch runs
+                    continue                      # MAPL points only from finished 150-epoch runs
                 if src == "masked":
                     y = masked(r)
                 elif src == "rot":

@@ -128,12 +128,12 @@ for K in (0, 10, 25, 50, 100):
                               (f"+ refiner-{K} (0 labels)", f"B_k{K}_ref", {}),
                               ("+ refiner-U (0 labels, all unlabeled)", f"B_k{K}_refufull", {}),
                               (f"+ self-trained GAN-{K} (renderer only)", f"B_k{K}_pseudo", {}),
-                              ("+ PPB w/o alignment, model only", f"B_k{K}_semipm", {}),
+                              ("+ teacher-label self-training, model only", f"B_k{K}_semipm", {}),
                               ("\\quad center window only (no stitching)", f"B_k{K}_semipm_c1", {}),
-                              ("+ PPB w/o alignment", f"B_k{K}_semipm_pseudo", {}),
+                              ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo", {}),
                               ("\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
-                              ("+ PPB, L1 render-and-compare", f"B_k{K}_rcp", {}),
-                              ("+ PPB", f"B_k{K}_al2", {}),
+                              ("+ MAPL, L1 search", f"B_k{K}_rcp", {}),
+                              ("+ MAPL", f"B_k{K}_al2", {}),
                               ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
@@ -158,7 +158,7 @@ T["kshot"] = "\n\\midrule\n".join(table(b, cols5, bold_max=("iou",)) for b in bl
 # seeds (50 ep, 3 seeds) for K=25 and K=100
 sd = []
 for K in (25, 100):
-    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ PPB w/o alignment", f"B_k{K}_semipm_pseudo"), ("+ PPB, L1 render-and-compare", f"B_k{K}_rcp"), ("+ PPB", f"B_k{K}_al2")):
+    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ MAPL, L1 search", f"B_k{K}_rcp"), ("+ MAPL", f"B_k{K}_al2")):
         s = seeds(run)
         sd.append(f"{K} & {label} & " + " & ".join(f"{s[k][0]:.{nd}f} $\\pm$ {s[k][1]:.{nd}f}" if s.get(k) else "--" for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\")
 T["seeds"] = "\n".join(sd)
@@ -215,17 +215,17 @@ cross = [
     ("$\\Kreal=25$ + GAN-25", cs("B_k25_gank"), {}),
     ("$\\Kreal=25$ + refiner-25 (0 labels)", cs("B_k25_ref"), {}),
     ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
-    ("$\\Kreal=25$ + PPB w/o alignment", cs("B_k25_semipm_pseudo"), {}),
-    ("$\\Kreal=25$ + PPB, L1 render-and-compare", cs("B_k25_rcp"), {}),
-    ("$\\Kreal=25$ + PPB", cs("B_k25_al2"), {}),
+    ("$\\Kreal=25$ + teacher-label self-training", cs("B_k25_semipm_pseudo"), {}),
+    ("$\\Kreal=25$ + MAPL, L1 search", cs("B_k25_rcp"), {}),
+    ("$\\Kreal=25$ + MAPL", cs("B_k25_al2"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
     ("$\\Kreal=100$ + refiner-100 (0 labels)", cs("B_k100_ref"), {}),
     ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
-    ("$\\Kreal=100$ + PPB w/o alignment", cs("B_k100_semipm_pseudo"), {}),
-    ("$\\Kreal=100$ + PPB, L1 render-and-compare", cs("B_k100_rcp"), {}),
-    ("$\\Kreal=100$ + PPB", cs("B_k100_al2"), {}),
+    ("$\\Kreal=100$ + teacher-label self-training", cs("B_k100_semipm_pseudo"), {}),
+    ("$\\Kreal=100$ + MAPL, L1 search", cs("B_k100_rcp"), {}),
+    ("$\\Kreal=100$ + MAPL", cs("B_k100_al2"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
@@ -241,7 +241,7 @@ sbrows = [("0 & Sensor-A model, real only", xs("A_realonly", "pilot150_"), {"ref
 for K in (10, 25, 50, 100):
     first = True
     for label, run in (("Real only", f"S_k{K}_realonly"), ("+ Blender (sensor-A calib.)", f"S_k{K}_blender"), ("+ Blender (domain rand.)", f"S_k{K}_dr"), (f"+ GAN-{K} (sensor B)", f"S_k{K}_gan40"),
-                       ("+ PPB w/o align., model only", f"S_k{K}_semipm"), ("+ PPB w/o alignment", f"S_k{K}_semipm_pseudo")):
+                       ("+ teacher-label self-training, model only", f"S_k{K}_semipm"), ("+ teacher-label self-training", f"S_k{K}_semipm_pseudo")):
         r = sb(run)
         if r is None:
             continue
