@@ -89,7 +89,7 @@ def main():
     res = json.load(open(args.json)) if osp.exists(args.json) else {}
     print(f"{'run':24s} {'split':10s} {'rot':>6s} {'->':>2s} {'rot+A':>6s} {'med':>5s} {'med+A':>6s} {'rotC':>5s} {'rotC+A':>6s} {'trans':>6s} {'tr+A':>6s} {'n':>4s}")
     for spec in args.runs:
-        run, prefix, K = spec.split(":")
+        parts = spec.split(":"); run, prefix, K = parts[:3]; atag = parts[3] if len(parts) > 3 else ""
         cfg = merge_configs("ablation/encoder/tac_sitr_single.yaml", "ablation/pilot_robosoft/train_pilot_e50.yaml", f"ablation/pilot_robosoft/data_{run}.yaml")
         with contextlib.redirect_stdout(io.StringIO()):
             c1 = copy.deepcopy(cfg); c1["real"]["root"] = REAL
@@ -98,7 +98,7 @@ def main():
             new = SimVisuoTactileDataset(c2, cfg.image_size, augment=False, split="all", data_section="real", shared_obj_map=val._obj_to_id)
             mp = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, prefix + run, "best_pose.pt"), mp, device=dev)
             md = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, prefix + run, "best_depth.pt"), md, device=dev)
-        A = Aligner().to(dev).eval(); A.load_state_dict(torch.load(f"outputs/aligner_k{K}/aligner.pt", map_location=dev))
+        A = Aligner().to(dev).eval(); A.load_state_dict(torch.load(f"outputs/aligner_k{K}{atag}/aligner.pt", map_location=dev))
         for o in sorted({u.split("/")[-3] for u, _ in val.samples}):
             B.get_zmap(o)
         for name, ds in (("val", val), ("session2", new)):
@@ -108,7 +108,7 @@ def main():
                      rotc=float(circ_offset_removed(v[:, 0], objs).mean()), rotc_al=float(circ_offset_removed(v[:, 2], objs).mean()),
                      trans=float(v[:, 1].mean()), trans_al=float(v[:, 3].mean()), n=len(rows),
                      iou=float(np.nanmean(v[:, 4])), c_mae=float(np.nanmean(v[:, 5])), iou_mesh=float(np.nanmean(v[:, 6])), c_mae_mesh=float(np.nanmean(v[:, 7])))
-            res[f"{prefix}{run}/{name}"] = r
+            res[f"{prefix}{run}{atag}/{name}"] = r
             print(f"{run:24s} {name:10s} {r['rot']:6.2f} -> {r['rot_al']:6.2f} {r['rot_med']:5.2f} {r['rot_med_al']:6.2f} {r['rotc']:5.2f} {r['rotc_al']:6.2f} {r['trans']:6.4f} {r['trans_al']:6.4f} {r['n']:4d} | depth IoU {r['iou']:.3f} cMAE {r['c_mae']:.3f} -> mesh@aligned {r['iou_mesh']:.3f} {r['c_mae_mesh']:.3f}", flush=True)
         json.dump(res, open(args.json, "w"), indent=1)
 

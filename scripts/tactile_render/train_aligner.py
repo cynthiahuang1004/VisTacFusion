@@ -34,13 +34,13 @@ SCALE = torch.tensor([math.radians(8.0), 1.5, 1.5, 0.15])     # perturbation hal
 
 
 class Aligner(nn.Module):
-    def __init__(self, pretrained=True):
+    def __init__(self, pretrained=True, arch="resnet18"):
         super().__init__()
-        m = torchvision.models.resnet18(weights="IMAGENET1K_V1" if pretrained else None)
+        m = getattr(torchvision.models, arch)(weights="IMAGENET1K_V1" if pretrained else None)
         w = m.conv1.weight.data
         m.conv1 = nn.Conv2d(4, 64, 7, 2, 3, bias=False)
         m.conv1.weight.data = torch.cat([w, w.mean(1, keepdim=True)], 1)
-        m.fc = nn.Linear(512, 4)
+        m.fc = nn.Linear(m.fc.in_features, 4)
         self.net = m
 
     def forward(self, img, cand_mm):
@@ -94,6 +94,7 @@ def main():
     ap.add_argument("--pose-json", default=None, help="json {tactile path: [theta, x_mm, y_mm, p_mm]} overriding the frames' _pose.json "
                                                       "(sensor B: mesh poses fitted to the labeled depth, scripts/tactile_render/fit_mesh_pose.py)")
     ap.add_argument("--range-scale", type=float, default=1.0, help="sensitivity: multiply the perturbation ranges (SCALE)")
+    ap.add_argument("--arch", default="resnet18", help="sensitivity: torchvision backbone (resnet18 / resnet34 / resnet50)")
     ap.add_argument("--no-pretrain", action="store_true", help="sensitivity: ResNet-18 from scratch")
     ap.add_argument("--extra-root", default=None,
                     help="self-training round: a root labeled by a previous aligner (pseudo_label_rc.py --aligner); its mesh-labeled "
@@ -142,7 +143,7 @@ def main():
         rng[o] = (lo - m, hi + m)
     print(f"{n_true} labeled real frames, {len(objs)} objects", flush=True)
     G = UNetG(in_ch=3).to(dev).eval(); G.load_state_dict(torch.load(osp.join(args.gan, "G_final.pt"), map_location=dev))
-    A = Aligner(pretrained=not args.no_pretrain).to(dev)
+    A = Aligner(pretrained=not args.no_pretrain, arch=args.arch).to(dev)
     ck = osp.join(args.out, "aligner.pt")
     if args.eval_only:
         A.load_state_dict(torch.load(ck, map_location=dev))

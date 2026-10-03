@@ -133,7 +133,9 @@ for K in (0, 10, 25, 50, 100):
                               ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo", {}),
                               ("\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
                               ("+ MAPL, L1 search", f"B_k{K}_rcp", {}),
-                              ("+ MAPL", f"B_k{K}_al2", {}),
+                              ("+ MAPL (with renderer)", f"B_k{K}_al2", {}),
+                              ("\\quad no synthetic frames", f"B_k{K}_al0", {}),
+                              ("+ MAPL (no renderer)", f"B_k{K}_rf", {}),
                               ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
@@ -158,7 +160,7 @@ T["kshot"] = "\n\\midrule\n".join(table(b, cols5, bold_max=("iou",)) for b in bl
 # seeds (50 ep, 3 seeds) for K=25 and K=100
 sd = []
 for K in (25, 100):
-    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ MAPL, L1 search", f"B_k{K}_rcp"), ("+ MAPL", f"B_k{K}_al2")):
+    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ MAPL, L1 search", f"B_k{K}_rcp"), ("+ MAPL (with renderer)", f"B_k{K}_al2"), ("+ MAPL", f"B_k{K}_rf")):
         s = seeds(run)
         sd.append(f"{K} & {label} & " + " & ".join(f"{s[k][0]:.{nd}f} $\\pm$ {s[k][1]:.{nd}f}" if s.get(k) else "--" for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\")
 T["seeds"] = "\n".join(sd)
@@ -233,7 +235,7 @@ km = []
 for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ physical renderer", f"B_k{K}_blender", {}), (f"+ learned renderer", f"B_k{K}_gank", {}),
-                              ("+ self-training", f"B_k{K}_semipm_pseudo", {}), ("+ MAPL (ours)", f"B_k{K}_al2", {}),
+                              ("+ self-training", f"B_k{K}_semipm_pseudo", {}), ("+ MAPL (ours)", f"B_k{K}_al2", {}), ("\\quad no renderer", f"B_k{K}_rf", {}),
                               ("+ leaky renderer", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is None:
@@ -245,20 +247,22 @@ T["crossmain"] = table([
     ("all & Real only", cs("A_realonly"), {}), ("  & + physical renderer", cs("A_blender"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}),
     ("  & + leaky renderer", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + learned renderer", cs("B_k25_gank"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}),
-    ("  & + MAPL (ours)", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("  & + MAPL (ours)", cs("B_k25_al2"), {}), ("  & \\quad no renderer", cs("B_k25_rf"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + learned renderer", cs("B_k100_gank"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}),
-    ("  & + MAPL (ours)", cs("B_k100_al2"), {}),
+    ("  & + MAPL (ours)", cs("B_k100_al2"), {}), ("  & \\quad no renderer", cs("B_k100_rf"), {}),
 ], [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",))
 T["loomain"] = table([
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}), ("+ physical renderer", row("A_blender", "TEST"), {}),
     ("+ learned renderer", row("A_ganloo", "TEST"), {}), ("\\quad w/o held-out meshes", row("A_ganloo_9obj", "TEST"), {}),
     ("\\quad background-conditioned", row("A_bgcondloo", "TEST"), {}), ("+ leaky renderer", row("A_ganfull", "TEST"), {"leaky": True}),
 ], [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
+_r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"]); _rt = labq("real_pseudo_k25_ro_al", ["teacher (all)"])
 T["rcablmain"] = "\n".join(x for x in (
     abl("teacher & --", "B_k25_semipm_pseudo", _t, None, 3),
     abl("teacher & teacher", "B_k25_tp", _t, _t[2] if _t else None),
     abl("mesh$^{1/2}$ & L1 search", "B_k25_rcp", _h, _m[2] if _m else None, 3),
     abl("mesh & aligner", "B_k25_al2", _a, _a[2] if _a else None, 3),
+    abl("mesh & aligner$^{\\ddagger}$", "B_k25_rf", _r, _r[2] if _r else None, 3),
 ) if x)
 # ---------------- test-time pose refinement with the aligner ----------------
 _pr = f"{P}/pose_refine_results.json"

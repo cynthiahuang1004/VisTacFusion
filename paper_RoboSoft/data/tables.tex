@@ -25,8 +25,11 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.6 \\ % pilot150_B_k10_realonly (150 ep)
   & + Blender & 0.0636 & 0.367 & 0.602 & 30.8 & 5.2 \\ % pilot150_B_k10_blender (150 ep)
   & + GAN-10 & 0.0624 & 0.354 & 0.597 & 30.6 & 5.9 \\ % pilot150_B_k10_gank (150 ep)
-  & + MAPL, L1 search & \textbf{0.0545} & 0.320 & 0.639 & 27.3 & 4.6 \\ % pilot150_B_k10_rcp (150 ep)
-  & + MAPL & 0.0559 & \textbf{0.288} & \textbf{0.682} & \textbf{27.2} & \textbf{4.0} \\ % pilot150_B_k10_al2 (150 ep)
+  & + teacher-label self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.5 \\ % pilot150_B_k10_semipm_pseudo (150 ep)
+  & + MAPL, L1 search & 0.0545 & 0.320 & 0.639 & 27.3 & 4.6 \\ % pilot150_B_k10_rcp (150 ep)
+  & + MAPL (with renderer) & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & 4.0 \\ % pilot150_B_k10_al2 (150 ep)
+  & \quad no synthetic frames & 0.0571 & 0.293 & 0.678 & 27.3 & \textbf{3.2} \\ % pilot150_B_k10_al0 (150 ep)
+  & + MAPL (no renderer) & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\ % pilot150_B_k10_rf (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\ % pilot_B_k10_ganfull (50 ep)
 \midrule
 25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\ % pilot150_B_k25_realonly (150 ep)
@@ -41,16 +44,21 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
   & + teacher-label self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
   & \quad round 2 & 0.0500 & 0.310 & 0.642 & 26.0 & 6.2 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
   & + MAPL, L1 search & 0.0482 & 0.291 & 0.655 & 25.5 & 4.5 \\ % pilot150_B_k25_rcp (150 ep)
-  & + MAPL & \textbf{0.0450} & \textbf{0.249} & \textbf{0.727} & \textbf{24.0} & \textbf{3.7} \\ % pilot150_B_k25_al2 (150 ep)
+  & + MAPL (with renderer) & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\ % pilot150_B_k25_al2 (150 ep)
+  & \quad no synthetic frames & 0.0456 & 0.259 & 0.715 & 24.7 & \textbf{2.7} \\ % pilot150_B_k25_al0 (150 ep)
+  & + MAPL (no renderer) & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & 2.8 \\ % pilot150_B_k25_rf (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\ % pilot150_B_k25_ganfull (150 ep)
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & 4.3 \\ % pilot150_B_k50_realonly (150 ep)
   & + Blender & 0.0478 & 0.270 & 0.701 & 25.2 & 4.5 \\ % pilot150_B_k50_blender (150 ep)
   & + GAN-50 & 0.0434 & 0.260 & 0.716 & 24.3 & 4.7 \\ % pilot150_B_k50_gank (150 ep)
+  & + teacher-label self-training & 0.0381 & 0.255 & 0.706 & 22.7 & 5.5 \\ % pilot150_B_k50_semipm_pseudo (150 ep)
   & + MAPL, L1 search & 0.0384 & 0.247 & 0.714 & 22.7 & 4.1 \\ % pilot150_B_k50_rcp (150 ep)
-  & + MAPL & \textbf{0.0307} & \textbf{0.206} & \textbf{0.769} & \textbf{20.4} & \textbf{3.7} \\ % pilot150_B_k50_al2 (150 ep)
+  & + MAPL (with renderer) & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\ % pilot150_B_k50_al2 (150 ep)
+  & \quad no synthetic frames & 0.0332 & 0.215 & 0.764 & 21.1 & 3.0 \\ % pilot150_B_k50_al0 (150 ep)
+  & + MAPL (no renderer) & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\ % pilot150_B_k50_rf (150 ep)
 \midrule
-100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & \textbf{3.2} \\ % pilot150_B_k100_realonly (150 ep)
+100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & 3.2 \\ % pilot150_B_k100_realonly (150 ep)
   & + Blender & 0.0350 & 0.232 & 0.727 & 22.0 & 4.0 \\ % pilot150_B_k100_blender (150 ep)
   & + GAN-100 & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 \\ % pilot150_B_k100_gank (150 ep)
   & + Blender $\oplus$ GAN-100 & 0.0329 & 0.213 & 0.760 & 20.5 & 4.2 \\ % pilot150_B_k100_mix (150 ep)
@@ -61,7 +69,9 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
   & + teacher-label self-training & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\ % pilot150_B_k100_semipm_pseudo (150 ep)
   & \quad round 2 & 0.0295 & 0.217 & 0.736 & 20.2 & 4.9 \\ % pilot150_B_k100_semipm_pseudo_r2 (150 ep)
   & + MAPL, L1 search & 0.0276 & 0.203 & 0.771 & 19.4 & 4.1 \\ % pilot150_B_k100_rcp (150 ep)
-  & + MAPL & \textbf{0.0232} & \textbf{0.168} & \textbf{0.803} & \textbf{17.1} & 3.7 \\ % pilot150_B_k100_al2 (150 ep)
+  & + MAPL (with renderer) & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\ % pilot150_B_k100_al2 (150 ep)
+  & \quad no synthetic frames & 0.0237 & 0.168 & 0.809 & 17.1 & 2.7 \\ % pilot150_B_k100_al0 (150 ep)
+  & + MAPL (no renderer) & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\ % pilot150_B_k100_rf (150 ep)
    & \textit{+ GAN-full (leaky)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
@@ -71,12 +81,14 @@ Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
 25 & + GAN-25 & 0.0536 $\pm$ 0.0013 & 0.314 $\pm$ 0.008 & 0.655 $\pm$ 0.032 & 6.0 $\pm$ 0.1 \\
 25 & + teacher-label self-training & 0.0507 $\pm$ 0.0001 & 0.310 $\pm$ 0.004 & 0.624 $\pm$ 0.002 & 7.2 $\pm$ 0.1 \\
 25 & + MAPL, L1 search & 0.0482 $\pm$ 0.0004 & 0.289 $\pm$ 0.004 & 0.648 $\pm$ 0.010 & 5.5 $\pm$ 0.1 \\
-25 & + MAPL & 0.0447 $\pm$ 0.0009 & 0.246 $\pm$ 0.002 & 0.729 $\pm$ 0.002 & 4.9 $\pm$ 0.1 \\
+25 & + MAPL (with renderer) & 0.0447 $\pm$ 0.0009 & 0.246 $\pm$ 0.002 & 0.729 $\pm$ 0.002 & 4.9 $\pm$ 0.1 \\
+25 & + MAPL & -- & -- & -- & -- \\
 100 & Real only & 0.0366 $\pm$ 0.0008 & 0.234 $\pm$ 0.006 & 0.750 $\pm$ 0.004 & 3.9 $\pm$ 0.0 \\
 100 & + GAN-100 & 0.0299 $\pm$ 0.0004 & 0.201 $\pm$ 0.002 & 0.779 $\pm$ 0.001 & 5.5 $\pm$ 0.0 \\
 100 & + teacher-label self-training & 0.0280 $\pm$ 0.0001 & 0.209 $\pm$ 0.002 & 0.743 $\pm$ 0.007 & 6.1 $\pm$ 0.0 \\
 100 & + MAPL, L1 search & 0.0275 $\pm$ 0.0002 & 0.201 $\pm$ 0.003 & 0.767 $\pm$ 0.005 & 5.0 $\pm$ 0.1 \\
-100 & + MAPL & 0.0229 $\pm$ 0.0003 & 0.164 $\pm$ 0.000 & 0.818 $\pm$ 0.000 & 4.8 $\pm$ 0.0 \\
+100 & + MAPL (with renderer) & 0.0229 $\pm$ 0.0003 & 0.164 $\pm$ 0.000 & 0.818 $\pm$ 0.000 & 4.8 $\pm$ 0.0 \\
+100 & + MAPL & -- & -- & -- & -- \\
 }
 
 % ---- rcabl ----
@@ -128,26 +140,32 @@ $\Kreal=100$ + MAPL & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 14.4 & 5
 10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.6 \\
   & + physical renderer & 0.0636 & 0.367 & 0.602 & 30.8 & 5.2 \\
   & + learned renderer & 0.0624 & 0.354 & 0.597 & 30.6 & 5.9 \\
-  & + MAPL (ours) & \textbf{0.0559} & \textbf{0.288} & \textbf{0.682} & \textbf{27.2} & \textbf{4.0} \\
+  & + self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.5 \\
+  & + MAPL (ours) & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & \textbf{4.0} \\
+  & \quad no renderer & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\
    & \textit{+ leaky renderer} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\
 \midrule
 25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\
   & + physical renderer & 0.0549 & 0.329 & 0.656 & 27.5 & 4.7 \\
   & + learned renderer & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 \\
   & + self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\
-  & + MAPL (ours) & \textbf{0.0450} & \textbf{0.249} & \textbf{0.727} & \textbf{24.0} & \textbf{3.7} \\
+  & + MAPL (ours) & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\
+  & \quad no renderer & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & \textbf{2.8} \\
    & \textit{+ leaky renderer} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & 4.3 \\
   & + physical renderer & 0.0478 & 0.270 & 0.701 & 25.2 & 4.5 \\
   & + learned renderer & 0.0434 & 0.260 & 0.716 & 24.3 & 4.7 \\
-  & + MAPL (ours) & \textbf{0.0307} & \textbf{0.206} & \textbf{0.769} & \textbf{20.4} & \textbf{3.7} \\
+  & + self-training & 0.0381 & 0.255 & 0.706 & 22.7 & 5.5 \\
+  & + MAPL (ours) & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\
+  & \quad no renderer & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\
 \midrule
-100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & \textbf{3.2} \\
+100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & 3.2 \\
   & + physical renderer & 0.0350 & 0.232 & 0.727 & 22.0 & 4.0 \\
   & + learned renderer & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 \\
   & + self-training & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\
-  & + MAPL (ours) & \textbf{0.0232} & \textbf{0.168} & \textbf{0.803} & \textbf{17.1} & 3.7 \\
+  & + MAPL (ours) & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\
+  & \quad no renderer & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\
    & \textit{+ leaky renderer} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\
 }
 
@@ -162,11 +180,13 @@ all & Real only & 0.315 & 0.675 & 25.4 & 16.4 \\
   & + learned renderer & 0.342 & 0.589 & 28.7 & 25.7 \\
   & + self-training & 0.335 & 0.598 & 27.5 & 13.1 \\
   & + MAPL (ours) & 0.310 & 0.660 & 27.2 & 13.8 \\
+  & \quad no renderer & 0.306 & 0.654 & 27.3 & 17.3 \\
 \midrule
 100 & Real only & 0.351 & 0.657 & 27.5 & 17.5 \\
   & + learned renderer & 0.295 & 0.713 & 25.6 & 13.7 \\
   & + self-training & 0.300 & 0.707 & 24.2 & 11.0 \\
   & + MAPL (ours) & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 14.4 \\
+  & \quad no renderer & 0.288 & 0.707 & 24.6 & 15.1 \\
 }
 
 % ---- loomain ----
