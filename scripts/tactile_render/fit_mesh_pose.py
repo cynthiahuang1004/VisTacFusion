@@ -79,7 +79,9 @@ def load_depth_mm(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--frames", choices=["labeled", "pseudo"], required=True)
+    ap.add_argument("--frames", choices=["labeled", "pseudo", "all"], required=True)
+    ap.add_argument("--root", default=REAL_B, help="root whose frames are fitted (--frames all: every frame with a _gt.npy)")
+    ap.add_argument("--objects", nargs="*", default=None, help="--frames all: restrict to these objects")
     ap.add_argument("--k", type=int, default=25)
     ap.add_argument("--src-root", default=None, help="pseudo root with the teacher depth (for --frames pseudo)")
     ap.add_argument("--out", required=True)
@@ -91,6 +93,12 @@ def main():
     from train_tactile_gan import RealPairs
     if args.frames == "labeled":
         items = [(tac, dep) for dep, tac in RealPairs(root=REAL_B, split="train", per_object=args.k).items]
+    elif args.frames == "all":
+        items = []
+        for dep in sorted(glob.glob(osp.join(args.root, "*", "session_*", "sensor_0000", "raw_data", "*_gt.npy"))):
+            if args.objects and dep.split("/")[-5] not in args.objects:
+                continue
+            items.append((osp.join(osp.dirname(osp.dirname(dep)), "samples", osp.basename(dep)[:4] + ".png"), dep))
     else:
         man = json.load(open(osp.join(args.src_root, "pseudo_manifest.json")))["manifest"]
         fr = [t for t, k, _ in man if k == "pseudo"]

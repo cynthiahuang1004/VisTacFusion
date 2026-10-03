@@ -168,6 +168,14 @@ def main():
     ap.add_argument("--aligner", default=None, help="aligner.pt of train_aligner.py: fit the pose with the learned residual aligner "
                                                     "instead of the coarse + render-and-compare search")
     ap.add_argument("--aligner-iters", type=int, default=6)
+    ap.add_argument("--init", default="teacher", choices=["teacher", "global"],
+                    help="aligner start: the teacher's pose, or a global mesh fit to the teacher depth (fit_mesh_pose.fit; "
+                         "for sensors whose pose head is unreliable)")
+    ap.add_argument("--canon", default=None, help="symmetry json of canonicalize_gs40_poses.py: snap the aligned rotation to the "
+                                                 "branch nearest the dataset rotation of --orig-root + per-object offset")
+    ap.add_argument("--orig-root", default=None)
+    ap.add_argument("--real-root", default=None, help="labeled real root the pseudo root was built from (default: sensor-A real_filtered)")
+    ap.add_argument("--view", type=float, default=None, help="gel view (m) of a stored frame (sensor B: 0.012)")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--workers", type=int, default=24)
     ap.add_argument("--limit", type=int, default=0)
@@ -175,6 +183,11 @@ def main():
     args = ap.parse_args()
     os.chdir(ROOT)
     dev = args.device
+    global REAL
+    if args.real_root:
+        REAL = args.real_root
+    if args.view:
+        B.VIEW = args.view
     man = json.load(open(osp.join(args.src_root, "pseudo_manifest.json")))["manifest"]
     frames = [t for t, k, _ in man if k == "pseudo"]
     if args.limit:
@@ -202,7 +215,12 @@ def main():
             its = items[i0:i0 + 64]
             img = torch.from_numpy(np.stack([np.array(Image.open(it["tac"]).convert("RGB"), np.float32).transpose(2, 0, 1) / 127.5 - 1 for it in its])).to(dev)
             p0 = [float(np.clip(np.load(osp.join(it["src_unit"], "raw_data", it["idx"] + "_gt.npy")).max() * 1000, 0.3, 1.6)) for it in its]
-            pz = torch.tensor([[*tp[it["tac"]], q] for it, q in zip(its, p0)], dtype=torch.float32, device=dev)
+            if args.init == "global":
+                from fit_mesh_pose import fit as global_fit, load_depth_mm
+                starts = [global_fit(it["obj"], load_depth_mm(osp.join(it["src_unit"], "raw_data", it["idx"] + "_gt.npy")), dev)[0] for it in its]
+                pz = torch.tensor(starts, dtype=torch.float32, device=dev)
+            else:
+                pz = torch.tensor([[*tp[it["tac"]], q] for it, q in zip(its, p0)], dtype=torch.float32, device=dev)
             pz = refine(A, [it["obj"] for it in its], img, pz, dev, iters=args.aligner_iters)
             for j, it in enumerate(its):
                 it["pose"] = tuple(pz[j, :3].tolist()); it["p"] = float(pz[j, 3])
@@ -235,6 +253,13 @@ def main():
                 it["pose"] = tuple(cands[e.argmin()].tolist()); it["err"] = float(e.min())
             if n % 200 == 0:
                 print(f"  {n}/{len(items)}", flush=True)
+    if args.canon:
+        sym = json.load(open(args.canon))
+        for it in items:
+            per, off = sym[it["obj"]]["period_deg"], sym[it["obj"]]["offset_deg"]
+            P = json.load(open(osp.join(osp.dirname(osp.dirname(it["tac"])).replace(REAL, args.orig_root), "raw_data", it["idx"] + "_pose.json")))
+            thf = math.degrees(it["pose"][0]); thd = math.degrees(P["rotation_euler"][2])
+            it["pose"] = (math.radians(thf - round((thf - thd - off) / per) * per),) + tuple(it["pose"][1:])
     os.makedirs(args.out_root, exist_ok=True)
     json.dump({it["tac"]: dict(pose=it["pose"], p=it["p"], err=it["err"], tp=tp[it["tac"]]) for it in items}, open(osp.join(args.out_root, "rc_fits.json"), "w"))
     # per-object gate on the render error
