@@ -4,11 +4,11 @@
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_align.pdf}
-    \caption{\textbf{Labels of unlabeled frames} ($\Kreal=25$; each object's median-quality frame). The teacher's depth is blurred and its pose is off by several degrees; after alignment the mesh label is close to the withheld ground truth (GT).}
+    \caption{\textbf{Labels of unlabeled frames} ($\Kreal=25$; each object's median-quality frame). The teacher's depth is blurred and its pose is off by several degrees; after alignment the mesh label is close to the withheld GT.}
     \label{fig:align}
 \end{figure}
 
-\noindent\textbf{Idea.} Let $d(M,q)$ be the depth map of mesh $M$ at contact state $q=(\theta,x,y,z)$ (planar pose and indentation). The reference label of a real frame $I$ of object $M$ is $d(M,q^\ast)$ for the pose $q^\ast$ at which it was captured, so labeling an unlabeled frame is a pose-estimation problem with only four unknowns, and its solution yields depth, normals and pose at once. A $\Kreal$-shot model estimates $q$ only to a few degrees and its dense output is blurred (Fig.~\ref{fig:align}); MAPL closes this gap with a learned refinement.
+\noindent\textbf{Idea.} Let $d(M,q)$ be the depth map of mesh $M$ at contact state $q=(\theta,x,y,z)$ (planar pose and indentation). The GT label of a real frame $I$ of object $M$ is $d(M,q^\ast)$ for the pose $q^\ast$ at which it was captured, so labeling an unlabeled frame is a pose-estimation problem with only four unknowns, and its solution yields depth, normals and pose at once. A $\Kreal$-shot model estimates $q$ only to a few degrees and its dense output is blurred (Fig.~\ref{fig:align}); MAPL closes this gap with a learned refinement.
 
 \noindent\textbf{Residual aligner.} The aligner $A$ is a ResNet-18 (ImageNet-initialized) that takes the real frame and, as a fourth channel, the mesh depth at a candidate pose, and regresses the correction that brings the candidate onto the frame:
 \begin{equation}
