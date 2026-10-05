@@ -71,9 +71,9 @@ def fig_kshot(out):
         "+ GAN-full (leaky)": ["B_k0_ganfull", "B_k10_ganfull", "B_k25_ganfull", None, "B_k100_ganfull"],
         "+ MAPL (ours, strict)": [None, "B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
     }
-    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.0))
-    panels = [("depth_mse", "val", "Depth MSE [mm$^2$]"), ("c_mae", "masked", "Contact MAE [mm]"),
-              ("pose_rot_deg", "rot", "Rotation error [deg]")]
+    fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.95))
+    panels = [("depth_mse", "val", "(a) Depth MSE [mm$^2$]"), ("c_mae", "masked", "(b) Contact MAE [mm]"),
+              ("pose_rot_deg", "rot", "(c) Rotation error [deg]")]
     for ax, (key, src, lab) in zip(axes, panels):
         for name, runs in series.items():
             c, m, ls = STY[name]
@@ -93,10 +93,20 @@ def fig_kshot(out):
             ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.6, ms=7 if m == "*" else 4.5, mec="white", mew=0.6, label=lab_name)
         ax.set_xscale("symlog", linthresh=10)
         ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks])
-        ax.set_xlabel("Real samples per object, $K$"); ax.set_title(lab, loc="left")
+        ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
+        ax.text(0.97, 0.95, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
+    ax = axes[3]                                              # second sensor (mesh-registered labels, renderer-free MAPL)
+    KB = [10, 25, 50, 100]
+    for name, suf in (("Real only", "realonly_m"), ("+ MAPL (ours, strict)", "maplnr_m")):
+        c, m, ls = STY[name]
+        ax.plot(KB, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in KB], color=c, marker=m, ls=ls, lw=1.6,
+                ms=7 if m == "*" else 4.5, mec="white", mew=0.6)
+    ax.set_xscale("symlog", linthresh=10); ax.set_xticks(KB); ax.set_xticklabels([str(k) for k in KB]); ax.set_xlim(8, 115)
+    ax.set_xlabel("Labels per object, $K$"); ax.set_title("(d) Contact MAE [mm]", loc="left")
+    ax.text(0.97, 0.95, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, frameon=False, ncol=5, loc="lower center", bbox_to_anchor=(0.5, -0.02), columnspacing=1.0, handletextpad=0.4)
-    fig.tight_layout(w_pad=1.2, rect=(0, 0.08, 1, 1))
+    fig.tight_layout(w_pad=0.8, rect=(0, 0.08, 1, 1))
     fig.savefig(osp.join(out, "fig_kshot.pdf")); plt.close(fig)
 
 
@@ -280,10 +290,73 @@ def fig_align(out, K=25):
     fig.savefig(osp.join(out, "fig_align.pdf"), dpi=300); plt.close(fig)
 
 
+def _label_quality():
+    """(teacher IoU, aligned IoU, teacher pose err, aligned pose err) per budget, from the labeling logs (--eval-gt)."""
+    import re
+    def read(path):
+        t = open(path).read()
+        g = lambda k: [float(v) for v in re.search(rf"{re.escape(k)}\s+\d+\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", t).groups()]
+        te, me = g("teacher (all)"), g("mesh (kept)")
+        return te[0], me[0], te[2], me[2]
+    L = "outputs/pilot_logs"
+    A = {K: read(f"{L}/pseudo_k{K}_al.log") for K in (10, 50, 100)}
+    A[25] = (0.553, 0.712, 5.30, 1.10)                         # log of the K=25 run was overwritten; values of the alignment ablation table
+    Bq = {K: read(f"{L}/pseudo_S_k{K}_m_al.log") for K in (10, 25, 50, 100)}
+    return A, Bq
+
+
+def fig_labels(out):
+    """Label quality on the unlabeled frames: the K-shot teacher's own prediction vs the mesh at the aligned pose, both sensors."""
+    A, Bq = _label_quality(); Ks = [10, 25, 50, 100]
+    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.75))
+    for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (2, "Pose error [deg] $\\downarrow$")]):
+        for D, ls, sn in ((A, "-", "A"), (Bq, "--", "B")):
+            ax.plot(Ks, [D[k][i] for k in Ks], color="#52514e", marker="o", ls=ls, lw=1.4, ms=4, mec="white", mew=0.6, label=f"teacher, sensor {sn}")
+            ax.plot(Ks, [D[k][i + 1] for k in Ks], color="#8a4fd3", marker="*", ls=ls, lw=1.4, ms=6.5, mec="white", mew=0.6, label=f"aligned mesh, sensor {sn}")
+        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
+        ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
+    axes[1].set_ylim(0, None)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, -0.03), columnspacing=1.0, handletextpad=0.4, fontsize=6.5)
+    fig.tight_layout(w_pad=1.0, rect=(0, 0.17, 1, 1))
+    fig.savefig(osp.join(out, "fig_labels.pdf")); plt.close(fig)
+
+
+def fig_qual(out):
+    """Held-out frames of both sensors at K=25: frame | real only | MAPL | reference.  Per object, the frame whose gain in
+    contact MAE is the object's median gain (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
+    sets = [("A", "B_k25_realonly", "B_k25_al2", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A (GelSlim 5.0)"),
+            ("B", "S_k25_realonly_m", "S_k25_mapl_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_37"], "Sensor B (GelSlim 4.0)")]
+    fig = plt.figure(figsize=(7.1, 2.75))
+    outer = fig.add_gridspec(1, 2, left=0.004, right=0.996, top=0.865, bottom=0.004, wspace=0.035)
+    for g, (name, r0, r1, objs, title) in zip(outer, sets):
+        d = np.load(f"outputs/robosoft_qual/qual_{name}.npz")
+        inner = g.subgridspec(3, 4, wspace=0.025, hspace=0.035)
+        gain = d[f"cmae_{r0}"] - d[f"cmae_{r1}"]
+        for r, o in enumerate(objs):
+            ids = [i for i, k in enumerate(d["keys"]) if f"/{o}/" in str(k)]
+            i = sorted(ids, key=lambda j: gain[j])[len(ids) // 2]
+            vmax = max(1.0, float(d["gt"][i].max()))
+            for c, im in enumerate([d["img"][i], d[f"pred_{r0}"][i].astype(np.float32), d[f"pred_{r1}"][i].astype(np.float32), d["gt"][i].astype(np.float32)]):
+                ax = fig.add_subplot(inner[r, c])
+                ax.imshow(im) if c == 0 else ax.imshow(im, cmap="viridis", vmin=0, vmax=vmax)
+                ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
+                for sp in ax.spines.values():
+                    sp.set_visible(False)
+                if r == 0:
+                    ax.set_title(["frame", "real only", "MAPL (ours)", "reference"][c], fontsize=7, pad=2)
+                if c in (1, 2):
+                    e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
+                    ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white")
+        bb = g.get_position(fig)
+        fig.text((bb.x0 + bb.x1) / 2, 0.985, title, ha="center", va="top", fontsize=8, fontweight="bold")
+    fig.savefig(osp.join(out, "fig_qual.pdf"), dpi=300); plt.close(fig)
+
+
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out)
+    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out)
     try:
         fig_fidelity(out)
     except Exception as e:  # noqa: BLE001

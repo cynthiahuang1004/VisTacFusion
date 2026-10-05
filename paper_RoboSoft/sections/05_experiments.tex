@@ -3,38 +3,38 @@
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency} (real validation error vs.\ labeled frames per object). The leakage-free learned renderer separates from real-only training only at $\Kreal=50$ and the physical renderer never improves dense error, while the leaky renderer (dashed) appears to help everywhere. MAPL improves dense error at every budget and passes the leaky renderer at $\Kreal=100$.}
+    \includegraphics[width=0.98\textwidth]{figures/fig_kshot.pdf}
+    \caption{\textbf{Label efficiency} (error on held-out real frames vs.\ labeled frames per object). (a)--(c) Sensor A: the leakage-free learned renderer separates from real-only training only at $\Kreal=50$ and the physical renderer never improves dense error, while the leaky renderer (dashed) appears to help everywhere; MAPL improves dense error at every budget and passes the leaky renderer at $\Kreal=100$. (d) Sensor B: MAPL with $\Kreal$ labels matches real-only training with $2\Kreal$.}
     \label{fig:kshot}
 \end{figure*}
 
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{$\Kreal$-shot results} on the real validation split ($472$ frames). All methods share the same $\Kreal$ labeled frames per object; self-training and MAPL additionally use the unlabeled training frames; ``no renderer'' trains teacher and student without any synthetic frame. Leaky rows (italic) use a renderer trained on all real pairs and are never bold.}
+\caption{\textbf{Sensor A}, real validation split ($472$ frames). All methods share the same $\Kreal$ labeled frames per object; self-training and MAPL also use the unlabeled training frames. The leaky renderer (italic) is trained on all real pairs.}
 \label{tab:kshot}
-\setlength{\tabcolsep}{2.4pt}
-\begin{tabularx}{\columnwidth}{@{}rXrrrrr@{}}
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabularx}{\columnwidth}{@{}rXrrrr@{}}
 \toprule
-$\Kreal$ & Training data & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
+$\Kreal$ & Training data & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Rot.}{(deg)} \\
 \midrule
-\tabkshotmain
+\tabkshotshort
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-Table~\ref{tab:kshot} and Fig.~\ref{fig:kshot} compare, at equal label budget, real-only training, co-training with either renderer, self-training on the teacher's own predictions (Sec.~\ref{sec:ablation}) and MAPL. Each MAPL run uses the $2{,}997$--$4{,}077$ training frames outside the $\Kreal$ budget without their labels.
+Table~\ref{tab:kshot} and Fig.~\ref{fig:kshot} compare, at equal label budget, real-only training, co-training with a renderer, self-training on the teacher's own predictions and MAPL.
 
-\noindent\textbf{Simulation alone.} Neither leakage-free renderer improves dense error for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), the physical renderer by at most $5\%$. Both lower rotation error at $\Kreal=10$ ($9.6^\circ\!\to\!5$--$6^\circ$) and raise it at $\Kreal=100$.
+\noindent\textbf{Simulation alone.} Neither leakage-free renderer improves dense error for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), the physical one by at most $5\%$.
 
-\noindent\textbf{MAPL} improves on real-only training at every budget: depth MSE by $13\%$, $19\%$, $36\%$ and $37\%$ and contact MAE by $13\%$, $20\%$, $27\%$ and $28\%$ at $\Kreal=10$, $25$, $50$ and $100$, with IoU $+0.06$ to $+0.08$ and normal error $-2.6^\circ$ to $-5.1^\circ$. Over three seeds (50 epochs) the depth MSE is $0.0558\pm0.0003$, $0.0447\pm0.0009$, $0.0313\pm0.0007$ and $0.0229\pm0.0003$ against $0.0635\pm0.0007$, $0.0551\pm0.0010$, $0.0480\pm0.0006$ and $0.0366\pm0.0008$ for real-only training. Three comparisons put the gain in perspective. MAPL with $50$ labels per object ($0.0307$) is ahead of real-only training with $100$ ($0.0369$) and on par with the learned renderer at $100$ ($0.0311$). At $\Kreal=100$ it is \emph{better} than the leaky renderer (depth MSE $0.0232$ vs.\ $0.0274$, contact MAE $0.168$ vs.\ $0.205$), and at $\Kreal=25$ it matches the leaky contact MAE and IoU at $8\%$ higher depth MSE. Its rotation error is the lowest leakage-free value for $\Kreal\le50$ ($4.0^\circ$, $3.7^\circ$, $3.7^\circ$); at $\Kreal=100$ real-only training is ahead ($3.2^\circ$ vs.\ $3.7^\circ$) until the aligner is also used at test time (Sec.~\ref{sec:tta}). MAPL does not need the renderer for these numbers: with a real-only teacher, an aligner trained on the $\Kreal$ frames alone and no synthetic frame at all (``no renderer''), depth MSE is $0.0521$, $0.0433$, $0.0291$ and $0.0227$ and rotation error $2.5$--$4.7^\circ$, equal to or better than with the renderer; the renderer earns its place across sessions (Sec.~\ref{sec:cross}).
+\noindent\textbf{MAPL} improves on real-only training at every budget: depth MSE by $13$--$37\%$ and contact MAE by $13$--$28\%$, with IoU $+0.06$ to $+0.08$. Over three seeds the depth MSE at $\Kreal=25$ is $0.0447\pm0.0009$ against $0.0551\pm0.0010$, and at $\Kreal=100$ $0.0229\pm0.0003$ against $0.0366\pm0.0008$. MAPL with $50$ labels per object ($0.0307$) is ahead of real-only training with $100$ ($0.0369$), and at $\Kreal=100$ it is \emph{better} than the leaky renderer in every dense metric. Its rotation error is the lowest for $\Kreal\le50$; at $\Kreal=100$ real-only training is ahead until the aligner is also used at test time (Sec.~\ref{sec:tta}). MAPL does not need the renderer for these numbers: with a real-only teacher and no synthetic frame at all, depth MSE is $0.0521$, $0.0433$, $0.0291$ and $0.0227$ at the four budgets, equal to or better than with it; the renderer earns its place across sessions (Sec.~\ref{sec:general}).
 
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{What labels the unlabeled frames} ($\Kreal=25$, 50 epochs; three-seed means except row 2). Left: quality of the pseudo labels against the withheld reference labels (evaluation only). Right: validation error of the student. $^{1/2}$: mesh label on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: real-only teacher, aligner trained on the $\Kreal$ frames only, student without synthetic frames.}
+\caption{\textbf{What labels the unlabeled frames} ($\Kreal=25$, sensor A). Left: quality of the pseudo labels against the withheld references. Right: validation error of the student. $^{1/2}$: mesh label on the half of the frames with the lowest render error. $\ddagger$: no renderer anywhere in the pipeline.}
 \label{tab:abl}
 \setlength{\tabcolsep}{2.6pt}
 \resizebox{\columnwidth}{!}{%
@@ -49,38 +49,60 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 \end{tabular}}
 \end{table}
 
-\subsection{Why Alignment: Ablation}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_labels.pdf}
+    \caption{\textbf{Label quality on the unlabeled frames}: the $\Kreal$-shot teacher's own prediction vs.\ the mesh at the aligned pose. The aligner improves on the teacher at every budget on both sensors.}
+    \label{fig:labels}
+\end{figure}
+
+\subsection{Why Alignment}
 \label{sec:ablation}
-Table~\ref{tab:abl} varies only how the unlabeled frames are labeled.
+Table~\ref{tab:abl} varies only how the unlabeled frames are labeled. \emph{Self-training} on the teacher's own depth lowers depth MSE by $8\%$ but not contact MAE or IoU: the pseudo labels inherit the teacher's localization error (label IoU $0.56$), and adding the teacher's pose as a label changes nothing. An \emph{L1 render-and-compare search} with the few-shot renderer helps less than the aligner (label IoU $0.63$) and needs gating, because the few-shot renderer is a poor comparator: its render at the true pose is farther from the frame than its render at the selected pose on $93\%$ of the frames. The \emph{learned aligner} lowers the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ and yields labels with IoU $0.71$; its student is the first to lower contact error ($0.310\!\to\!0.246\,$mm) and raise IoU ($0.624\!\to\!0.729$). Label quality grows with the budget and exceeds the teacher's everywhere (Fig.~\ref{fig:labels}). The aligner is learned from the $\Kreal$ real frames: it does not need the renderer (last row), needs no confidence gate, and is insensitive to its perturbation range, training length and backbone (label IoU $0.71$--$0.73$). A quarter of the unlabeled frames already gives most of the gain (depth MSE $0.0453$, $0.0452$, $0.0447$ with $25\%$, $50\%$, $100\%$ of them), and a second round with the student as teacher brings no further gain.
 
-\noindent\textbf{Self-training.} With the teacher's own depth as label (stitched from five windows to cover the full frame, pose loss on the labeled frames only), depth MSE improves by $8\%$ but contact MAE and IoU do not: the pseudo labels inherit the teacher's localization error (label IoU $0.56$), so the student learns sharper depth values, not where the contact is. Adding the teacher's pose as a label restores rotation accuracy and nothing else, and a second round of self-training changes depth MSE by at most $4\%$ in either direction.
-
-\noindent\textbf{L1 render-and-compare.} Replacing the aligner by a search---fit the mesh to the teacher depth on a pose grid, then pick, among $567$ neighbouring poses, the one whose GAN-$\Kreal$ render is closest to the frame in image L1---helps less (label IoU $0.64$, pose error $2.5^\circ$) and requires gating: on the half of the frames with the larger render error the mesh label is no better than the teacher's. The few-shot renderer is a poor comparator; at $\Kreal=25$ its render at the true pose is farther from the frame than its render at the selected pose on $93\%$ of the frames.
-
-\noindent\textbf{Learned aligner.} The aligner lowers the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ on the $3{,}897$ unlabeled frames and yields labels with IoU $0.71$ and contact MAE $0.24\,$mm (teacher: $0.55$, $0.32$). Label quality grows with the budget (IoU $0.65$, $0.71$, $0.76$, $0.81$ and pose error $1.6^\circ$, $1.1^\circ$, $1.1^\circ$, $0.7^\circ$ for $\Kreal=10$--$100$). The student trained on these labels is the first to lower contact error ($0.310\!\to\!0.246$) and to raise IoU ($0.624\!\to\!0.729$). Further findings: (i) the aligner is learned from the $\Kreal$ real frames---adding frames rendered by GAN-$\Kreal$ at random poses does not change label quality (IoU $0.72$), and training on such renders alone fails ($0.56$); (ii) no gate is needed, since on the frames a render-error gate would reject its labels still beat the teacher's (IoU $0.66$ vs.\ $0.55$); (iii) it is insensitive to its settings (half or double the perturbation range: $0.72$, $0.73$; 2k or 20k steps: $0.73$, $0.72$; ResNet-34 or -50 backbone: $0.73$, $0.71$), while dropping the ImageNet initialization costs accuracy ($0.67$); (iv) the student is unchanged whether its synthetic frames come from the renderer retrained on aligned pairs or on teacher-labeled pairs (depth MSE $0.0447$ in both cases), and within the session it does not need them at all (last row: $0.0433\pm0.0004$ over three seeds with a real-only teacher and no synthetic frame, against $0.0447\pm0.0009$ with the renderer); (v) a quarter of the unlabeled frames already gives most of the gain (depth MSE $0.0453$, $0.0452$ and $0.0447$ with $25\%$, $50\%$ and $100\%$ of $U$), while IoU keeps growing with their number ($0.710$, $0.725$, $0.729$); (vi) a second round, with the student as the new teacher, does not improve further: although the student proposes poses $1.5^\circ$ closer than the original teacher, the aligned labels (IoU $0.65$, $0.71$ at $\Kreal=10$, $25$) and the retrained student (depth MSE $0.0570$, $0.0445$; IoU $0.674$, $0.717$) are within seed variation of the first round. An unpaired sim-to-real refiner of the physical render, which uses the unlabeled frames without any pose, does not improve on its input (contact MAE $0.349$ vs.\ $0.346$ on unseen objects).
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{figures/fig_qual.pdf}
+    \caption{\textbf{Predictions on held-out frames} ($\Kreal=25$) with per-frame contact MAE. For each object the frame shown is the one whose improvement is the object's median improvement.}
+    \label{fig:qual}
+\end{figure*}
 
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Second session} ($854$ frames, objects re-placed; nothing from this session is used for training). ``all'': models trained on every session-1 label.}
-\label{tab:cross}
-\begin{tabularx}{\columnwidth}{lXrrrr}
+\caption{\textbf{Generalization.} Left: second session of sensor A ($854$ frames, objects re-placed; ``all'': every session-1 label). Right: sensor B ($1{,}620$ test frames; MAPL without synthetic frames).}
+\label{tab:general}
+\setlength{\tabcolsep}{2.2pt}
+\begin{minipage}[t]{0.5\columnwidth}\centering
+\begin{tabular}[t]{@{}rlrr@{}}
 \toprule
-$\Kreal$ & Training data & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
+$\Kreal$ & \multicolumn{1}{c}{Session 2} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
 \midrule
-\tabcrossmain
+\tabcrossshortb
 \bottomrule
-\end{tabularx}
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\columnwidth}\centering
+\begin{tabular}[t]{@{}rlrr@{}}
+\toprule
+$\Kreal$ & \multicolumn{1}{c}{Sensor B} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+\midrule
+\tabsbshortb
+\bottomrule
+\end{tabular}
+\end{minipage}
 \end{table}
 
-\subsection{A Second Session}
-\label{sec:cross}
-On the second session (Table~\ref{tab:cross}) dense error is $1.5$--$3\times$ the same-session value, partly because the reference poses are re-estimated. The ordering of the methods is preserved. MAPL has the lowest contact MAE and the highest IoU of its budget ($0.310$, $0.660$ at $\Kreal=25$; $0.252$, $0.743$ at $\Kreal=100$), i.e.\ $16\%$ and $28\%$ less contact error than real-only training, as within the session; at $\Kreal=100$ it is ahead of the model trained on \emph{all} session-1 labels ($0.315$, $0.675$) and level with that model's leaky variant. Simulation also helps across sessions (contact MAE $0.315\!\to\!0.27$--$0.29$ and rotation $16.4^\circ\!\to\!10.5$--$11.5^\circ$ for the full-data model). Here the synthetic frames matter: without the renderer MAPL loses its advantage over self-training at $\Kreal=100$ (contact MAE $0.288$, IoU $0.707$), although it is as accurate within the session---the renderer's contribution is robustness to the appearance of a new session, consistent with Sec.~\ref{sec:study}. Raw rotation error remains above $10^\circ$ for every method because the objects were re-placed; two thirds of it is a per-object constant.
+\subsection{A Second Session and a Second Sensor}
+\label{sec:general}
+\noindent\textbf{Second session.} On frames captured on another day (Table~\ref{tab:general}, left) MAPL has the lowest contact MAE and the highest IoU of its budget, $16\%$ and $28\%$ less contact error than real-only training at $\Kreal=25$ and $100$; at $\Kreal=100$ it is ahead of the model trained on \emph{all} session-1 labels. Here the synthetic frames matter: without the renderer MAPL loses its advantage over self-training at $\Kreal=100$ (contact MAE $0.288$), although it is as accurate within the session.
+
+\noindent\textbf{Second sensor.} On \sensorB{} MAPL transfers without any change of settings (Table~\ref{tab:general}, right; Fig.~\ref{fig:kshot}d). The few-shot teacher is already accurate on this sensor, yet the aligner improves on it at every budget (Fig.~\ref{fig:labels}). MAPL lowers contact MAE by $15$--$36\%$ and depth MSE by $33$--$58\%$; over three seeds at $\Kreal=25$ contact MAE is $0.078\pm0.0003$ against $0.127\pm0.001\,$mm. The learned renderer ($0.111$) and self-training ($0.135$) gain far less. Fig.~\ref{fig:qual} shows representative predictions on both sensors.
 
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Test-time alignment.} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
+\caption{\textbf{Test-time alignment} (sensor A). Rotation error (deg) of the predicted pose and after six aligner iterations. No retraining.}
 \label{tab:poseref}
 \setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{@{}rrrrrrrrr@{}}
@@ -97,12 +119,12 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 
 \subsection{Test-Time Alignment}
 \label{sec:tta}
-Since pose is defined with respect to a known object, the $\Kreal$-shot aligner can refine the pose predicted on a test frame (Table~\ref{tab:poseref}). On the validation split rotation error falls from $3.2$--$9.6^\circ$ to $0.4$--$2.8^\circ$ for real-only models and from $3.7$--$4.0^\circ$ to $0.8$--$1.5^\circ$ for MAPL models; from $\Kreal=25$ on the refined error is about $1^\circ$ whichever model proposes the pose, and translation error falls by $25$--$50\%$. On the second session rotation error falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $9$--$11^\circ$ to about $5^\circ$ (MAPL) with a median of $1.5$--$2.2^\circ$: the mean is dominated by a minority of frames on which the alignment fails. The mesh at the aligned pose is also a depth estimate: on the validation split it is as accurate as the MAPL student's output (IoU $0.81$ vs.\ $0.79$, contact MAE $0.158$ vs.\ $0.168\,$mm at $\Kreal=100$) and lifts a real-only model to the MAPL level (IoU $0.656\!\to\!0.710$ at $\Kreal=25$), so the student distills into a mesh-free network what alignment achieves with the mesh. The aligner also generalizes across objects: trained on the nine seen objects of the leave-object-out protocol and applied to the three held-out ones, whose only available data is their mesh, it lowers the rotation error of the simulation-trained models of Table~\ref{tab:loo} from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
+The $\Kreal$-shot aligner can refine the pose predicted on a test frame (Table~\ref{tab:poseref}). Within the session rotation error falls to about $1^\circ$ from $\Kreal=25$ on, whichever model proposes the pose. On the second session it falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $9$--$11^\circ$ to about $5^\circ$ (MAPL), with a median of $1.5$--$2.2^\circ$: the mean is dominated by a minority of failed alignments. The mesh at the aligned pose is also a depth estimate, as accurate as the MAPL student's output (IoU $0.81$ vs.\ $0.79$ at $\Kreal=100$): the student distills into a mesh-free network what alignment achieves with the mesh. The aligner also generalizes across objects: trained on nine objects and applied to three held-out ones, known only by their mesh, it lowers rotation error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
 
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Unseen objects} (three held-out objects, $1{,}244$ frames, no real data; their meshes are available to simulation).}
+\caption{\textbf{Unseen objects} (sensor A; three held-out objects, $1{,}244$ frames, no real data; their meshes are available to simulation).}
 \label{tab:loo}
 \begin{tabularx}{\columnwidth}{Xrrrr}
 \toprule
@@ -115,12 +137,10 @@ Training data & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstac
 
 \subsection{What Simulation Contributes Under Leakage Control}
 \label{sec:study}
-The baselines above come from a controlled study whose main findings motivate MAPL.
+The baselines come from a controlled study whose findings motivate MAPL.
 
-\noindent\textbf{Geometry transfers, contact appearance does not.} On objects without any real data (Table~\ref{tab:loo}) pose error falls from $65^\circ$ to $5$--$7^\circ$ with either renderer, including the physical one calibrated from a single no-contact frame; removing the held-out meshes from simulation returns it to $51^\circ$, so the gain is mesh coverage. Dense error improves by at most $13\%$ in depth MSE (learned renderer conditioned on the session background) against $30\%$ for the leaky renderer.
+\noindent\textbf{Geometry transfers, contact appearance does not.} On objects without any real data (Table~\ref{tab:loo}) pose error falls from $65^\circ$ to $5$--$7^\circ$ with either renderer, including the physical one calibrated from a single no-contact frame; removing the held-out meshes from simulation returns it to $51^\circ$, so the gain is mesh coverage. Dense error improves by at most $13\%$ in depth MSE, against $30\%$ for the leaky renderer.
 
-\noindent\textbf{Cost of leakage.} The leaky renderer reports depth MSE reductions of $24$--$31\%$ at every budget; the leakage-free numbers are $0$--$3\%$ for $\Kreal\le25$ and $10$--$16\%$ for $\Kreal\ge50$. The bias is largest where the pipeline is most attractive---few or no labeled contacts---because the leaky renderer has memorized the appearance of the test contacts.
+\noindent\textbf{Cost of leakage.} The leaky renderer reports depth MSE reductions of $24$--$31\%$ at every budget; the leakage-free numbers are $0$--$3\%$ for $\Kreal\le25$ and $10$--$16\%$ for $\Kreal\ge50$. The bias is largest where the pipeline is most attractive---few labeled contacts---because the leaky renderer has memorized the appearance of the test contacts.
 
-\noindent\textbf{Fidelity predicts utility.} Rendering the depth maps of held-out real pairs and comparing with the real images gives a contact-region image error that ranks $14$ leakage-free renderer variants in the order of their downstream depth error (Spearman $\rho=0.95$). By this proxy and downstream, conditioning the learned renderer on the physical render, pretraining it on physical renders, predicting difference images, and domain-randomizing the physical renderer instead of calibrating it do not help dense prediction.
-
-\noindent\textbf{A second sensor.} On \sensorB{} ($1{,}620$ test frames) MAPL transfers without any change of settings. The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels. The few-shot teacher is already accurate on this sensor (label IoU $0.78$, $0.85$, $0.90$, $0.93$ on the unlabeled frames at $\Kreal=10$, $25$, $50$, $100$; $0.55$ at $\Kreal=25$ on sensor A), yet the aligner improves on it at every budget (IoU $0.85$, $0.91$, $0.94$, $0.95$; pose error $2.3^\circ$, $1.4^\circ$, $0.9^\circ$, $0.8^\circ$ against $6.6$--$11.4^\circ$). At $\Kreal=25$ the student lowers depth MSE from $0.0179\pm0.0004$ to $0.0075\pm0.0001$ and contact MAE from $0.127\pm0.001$ to $0.078\pm0.0003\,$mm over real-only training (three seeds) and raises IoU from $0.849$ to $0.903$. The baselines gain far less: the learned renderer trained on the $25$ pairs reaches $0.111\,$mm (IoU $0.877$) and self-training on the teacher's depth does not improve on real data ($0.135\,$mm, $0.846$). Without any synthetic frame, MAPL lowers contact MAE from $0.180$, $0.127$, $0.083$, $0.066$ to $0.121$, $0.081$, $0.061$, $0.056\,$mm at $\Kreal=10$--$100$ ($-15$ to $-36\%$) and depth MSE by $33$--$58\%$, so that, as on sensor A, it needs about half the labels of real-only training for a given contact error. Rotation error improves at $10$ and $25$ labels ($14.0^\circ\!\to\!9.5^\circ$, $13.4^\circ\!\to\!9.2^\circ$) but not beyond ($9^\circ$ either way). Scored against the original public labels, MAPL keeps its advantage (contact MAE $0.137\!\to\!0.098\,$mm at $\Kreal=25$).
+\noindent\textbf{Fidelity predicts utility.} A contact-region image error on held-out real pairs ranks $14$ leakage-free renderer variants in the order of their downstream depth error (Spearman $\rho=0.95$). By this proxy and downstream, conditioning the learned renderer on the physical render, pretraining it on physical renders, and domain-randomizing the physical renderer do not help dense prediction.

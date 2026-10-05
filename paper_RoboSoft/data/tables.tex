@@ -265,3 +265,101 @@ Blender pretrain $\to$ real fine-tune & -- & \textbf{0.294} & -- & -- & -- \\
 \quad + L2-SP & -- & 0.307 & -- & -- & -- \\
 }
 
+% ---- sbmapl ----
+\newcommand{\tabsbmapl}{%
+10 & Real only & 0.0314 & 0.180 & 0.780 & 22.5 & 14.0 \\
+  & + MAPL (ours), no renderer & \textbf{0.0170} & \textbf{0.121} & \textbf{0.856} & \textbf{19.7} & \textbf{9.5} \\
+\midrule
+25 & Real only & 0.0182 & 0.127 & 0.847 & 19.6 & 13.4 \\
+  & + learned renderer & 0.0148 & 0.111 & 0.877 & 18.3 & 11.4 \\
+  & + self-training & 0.0175 & 0.135 & 0.846 & 19.7 & 13.1 \\
+  & + MAPL (ours) & \textbf{0.0075} & \textbf{0.078} & 0.904 & \textbf{16.2} & 9.9 \\
+  & \quad no renderer & 0.0076 & 0.081 & \textbf{0.911} & 16.3 & \textbf{9.2} \\
+\midrule
+50 & Real only & 0.0088 & 0.083 & 0.899 & 16.9 & \textbf{9.0} \\
+  & + MAPL (ours), no renderer & \textbf{0.0041} & \textbf{0.061} & \textbf{0.933} & \textbf{14.8} & 9.7 \\
+\midrule
+100 & Real only & 0.0051 & 0.066 & 0.932 & 15.1 & \textbf{8.4} \\
+  & + MAPL (ours), no renderer & \textbf{0.0034} & \textbf{0.056} & \textbf{0.944} & \textbf{14.4} & 9.1 \\
+}
+
+% ---- kshotshort ----
+\newcommand{\tabkshotshort}{%
+10 & Real only & 0.0642 & 0.330 & 0.625 & 9.6 \\
+  & + learned renderer & 0.0624 & 0.354 & 0.597 & 5.9 \\
+  & + self-training & 0.0574 & 0.341 & 0.592 & 6.5 \\
+  & + MAPL (ours) & \textbf{0.0559} & \textbf{0.288} & \textbf{0.682} & \textbf{4.0} \\
+   & \textit{+ leaky renderer} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{6.1} \\
+\midrule
+25 & Real only & 0.0558 & 0.312 & 0.664 & 5.6 \\
+  & + learned renderer & 0.0544 & 0.321 & 0.626 & 5.1 \\
+  & + self-training & 0.0508 & 0.307 & 0.628 & 6.1 \\
+  & + MAPL (ours) & \textbf{0.0450} & \textbf{0.249} & \textbf{0.727} & \textbf{3.7} \\
+   & \textit{+ leaky renderer} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{4.9} \\
+\midrule
+50 & Real only & 0.0482 & 0.283 & 0.690 & 4.3 \\
+  & + learned renderer & 0.0434 & 0.260 & 0.716 & 4.7 \\
+  & + self-training & 0.0381 & 0.255 & 0.706 & 5.5 \\
+  & + MAPL (ours) & \textbf{0.0307} & \textbf{0.206} & \textbf{0.769} & \textbf{3.7} \\
+\midrule
+100 & Real only & 0.0369 & 0.235 & 0.744 & \textbf{3.2} \\
+  & + learned renderer & 0.0311 & 0.210 & 0.773 & 4.5 \\
+  & + self-training & 0.0285 & 0.211 & 0.750 & 4.9 \\
+  & + MAPL (ours) & \textbf{0.0232} & \textbf{0.168} & \textbf{0.803} & 3.7 \\
+   & \textit{+ leaky renderer} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{4.4} \\
+}
+
+% ---- sbshort ----
+\newcommand{\tabsbshort}{%
+10 & Real only & 0.0314 & 0.180 & 0.780 & 14.0 \\
+  & + MAPL (ours) & \textbf{0.0170} & \textbf{0.121} & \textbf{0.856} & \textbf{9.5} \\
+\midrule
+25 & Real only & 0.0182 & 0.127 & 0.847 & 13.4 \\
+  & + MAPL (ours) & \textbf{0.0076} & \textbf{0.081} & \textbf{0.911} & \textbf{9.2} \\
+\midrule
+50 & Real only & 0.0088 & 0.083 & 0.899 & \textbf{9.0} \\
+  & + MAPL (ours) & \textbf{0.0041} & \textbf{0.061} & \textbf{0.933} & 9.7 \\
+\midrule
+100 & Real only & 0.0051 & 0.066 & 0.932 & \textbf{8.4} \\
+  & + MAPL (ours) & \textbf{0.0034} & \textbf{0.056} & \textbf{0.944} & 9.1 \\
+}
+
+% ---- crossshort ----
+\newcommand{\tabcrossshort}{%
+all & Real only & 0.315 & 0.675 & 16.4 \\
+  & + learned renderer & 0.270 & 0.727 & \textbf{10.5} \\
+\midrule
+25 & Real only & 0.368 & 0.598 & 20.8 \\
+  & + self-training & 0.335 & 0.598 & 13.1 \\
+  & + MAPL (ours) & 0.310 & 0.660 & 13.8 \\
+\midrule
+100 & Real only & 0.351 & 0.657 & 17.5 \\
+  & + self-training & 0.300 & 0.707 & 11.0 \\
+  & + MAPL (ours) & \textbf{0.252} & \textbf{0.743} & 14.4 \\
+}
+
+% ---- crossshortb ----
+\newcommand{\tabcrossshortb}{%
+all & Real only & 0.315 & 0.675 \\
+\midrule
+25 & Real only & 0.368 & 0.598 \\
+  & Self-train. & 0.335 & 0.598 \\
+  & MAPL & 0.310 & 0.660 \\
+\midrule
+100 & Real only & 0.351 & 0.657 \\
+  & Self-train. & 0.300 & 0.707 \\
+  & MAPL & \textbf{0.252} & \textbf{0.743} \\
+}
+
+% ---- sbshortb ----
+\newcommand{\tabsbshortb}{%
+10 & Real only & 0.180 & 0.780 \\
+  & MAPL & \textbf{0.121} & \textbf{0.856} \\
+25 & Real only & 0.127 & 0.847 \\
+  & MAPL & \textbf{0.081} & \textbf{0.911} \\
+50 & Real only & 0.083 & 0.899 \\
+  & MAPL & \textbf{0.061} & \textbf{0.933} \\
+100 & Real only & 0.066 & 0.932 \\
+  & MAPL & \textbf{0.056} & \textbf{0.944} \\
+}
+

@@ -329,6 +329,45 @@ variants = [
     var("\\quad + L2-SP", "B_k25_ft_l2sp", None, None, None),
 ]
 T["variants"] = table(variants, [("fk", 3), ("c_mae", 3), ("fl", 3), ("c_mae_loo", 3), ("rot_loo", 1)])
+# ---------------- sensor B with mesh-registered labels: MAPL ----------------
+def sbm(run):
+    r = SB.get(f"pilot_{run}/sensorB_mesh")
+    return dict(depth_mse=r["full_mse"], c_mae=r["c_mae"], iou=r["iou"], nrm=r["normal_deg"], rot=r["rot_deg"]) if r else None
+sbl = []
+for K in (10, 25, 50, 100):
+    blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {})]
+    if K == 25:
+        blk += [("  & + learned renderer", sbm("S_k25_gan40m"), {}), ("  & + self-training", sbm("S_k25_semipm_m"), {}), ("  & + MAPL (ours)", sbm("S_k25_mapl_m"), {})]
+    blk.append(("  & " + ("\\quad no renderer" if K == 25 else "+ MAPL (ours), no renderer"), sbm(f"S_k{K}_maplnr_m"), {}))
+    sbl.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",)))
+T["sbmapl"] = "\n\\midrule\n".join(sbl)
+# ---------------- 6-page paper: both sensors in one table, short cross-session table ----------------
+ks = []
+for K in (10, 25, 50, 100):
+    blk = []
+    for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ learned renderer", f"B_k{K}_gank", {}), ("+ self-training", f"B_k{K}_semipm_pseudo", {}),
+                              ("+ MAPL (ours)", f"B_k{K}_al2", {}), ("+ leaky renderer", f"B_k{K}_ganfull", {"leaky": True})):
+        r = row(run)
+        if r is not None:
+            blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
+    ks.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",)))
+T["kshotshort"] = "\n\\midrule\n".join(ks)
+sbs = []
+for K in (10, 25, 50, 100):
+    blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & + MAPL (ours)", sbm(f"S_k{K}_maplnr_m"), {})]
+    sbs.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",)))
+T["sbshort"] = "\n\\midrule\n".join(sbs)
+T["crossshort"] = table([
+    ("all & Real only", cs("A_realonly"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}), ("", None, {"sep": r"\midrule"}),
+    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}), ("  & + MAPL (ours)", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}), ("  & + MAPL (ours)", cs("B_k100_al2"), {}),
+], [("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
+T["crossshortb"] = table([
+    ("all & Real only", cs("A_realonly"), {}), ("", None, {"sep": r"\midrule"}),
+    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-train.", cs("B_k25_semipm_pseudo"), {}), ("  & MAPL", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-train.", cs("B_k100_semipm_pseudo"), {}), ("  & MAPL", cs("B_k100_al2"), {}),
+], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
+T["sbshortb"] = "\n".join(table([(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & MAPL", sbm(f"S_k{K}_maplnr_m"), {})], [("c_mae", 3), ("iou", 3)], bold_max=("iou",)) for K in (10, 25, 50, 100))
 # ---------------- write ----------------
 with open("paper_RoboSoft/data/tables.tex", "w") as fh:
     for k, v in T.items():
