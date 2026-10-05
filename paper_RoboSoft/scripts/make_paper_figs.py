@@ -272,7 +272,7 @@ def fig_align(out, K=25):
         sc = sorted((iou_of(t), t) for t in cand[::7])
         rows.append(sc[len(sc) // 2][1])                       # the object's median-quality frame
     fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.2))
-    titles = ["unlabeled frame", "teacher depth", "mesh, teacher pose", "mesh, aligned", "reference"]
+    titles = ["unlabeled frame", "teacher depth", "mesh, teacher pose", "mesh, aligned", "GT"]
     for r, t in enumerate(rows):
         f = fits[t]; o = t.split("/")[-5]
         gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
@@ -326,7 +326,7 @@ def fig_qual(out):
     """Held-out frames of both sensors at K=25: frame | real only | MAPL | reference.  Per object, the frame whose gain in
     contact MAE is the object's median gain (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "B_k25_realonly", "B_k25_al2", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A (GelSlim 5.0)"),
-            ("B", "S_k25_realonly_m", "S_k25_mapl_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_37"], "Sensor B (GelSlim 4.0)")]
+            ("B", "S_k25_realonly_m", "S_k25_mapl_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
     fig = plt.figure(figsize=(7.1, 2.75))
     outer = fig.add_gridspec(1, 2, left=0.004, right=0.996, top=0.865, bottom=0.004, wspace=0.035)
     for g, (name, r0, r1, objs, title) in zip(outer, sets):
@@ -344,7 +344,7 @@ def fig_qual(out):
                 for sp in ax.spines.values():
                     sp.set_visible(False)
                 if r == 0:
-                    ax.set_title(["frame", "real only", "MAPL (ours)", "reference"][c], fontsize=7, pad=2)
+                    ax.set_title(["frame", "real only", "MAPL (ours)", "GT"][c], fontsize=7, pad=2)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
                     ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white")
