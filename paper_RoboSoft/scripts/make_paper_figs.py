@@ -308,22 +308,18 @@ def _label_quality():
 def fig_labels(out):
     """Label quality on the unlabeled frames: the K-shot teacher's own prediction vs the mesh at the aligned pose, both sensors."""
     A, Bq = _label_quality(); Ks = [10, 25, 50, 100]
-    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.75))
+    series = [("Teacher, sensor A", A, 0, "#52514e", "o", 4.2), ("Aligned mesh, sensor A", A, 1, "#8a4fd3", "*", 6.8),
+              ("Teacher, sensor B", Bq, 0, "#eb6834", "s", 4.0), ("Aligned mesh, sensor B", Bq, 1, "#1baf7a", "D", 3.8)]
+    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.8))
     for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (2, "Pose error [deg] $\\downarrow$")]):
-        for D, ls, sn in ((A, "-", "A"), (Bq, "--", "B")):
-            ax.plot(Ks, [D[k][i] for k in Ks], color="#52514e", marker="o", ls=ls, lw=1.4, ms=4, mec="white", mew=0.6, label=f"teacher, sensor {sn}")
-            ax.plot(Ks, [D[k][i + 1] for k in Ks], color="#8a4fd3", marker="*", ls=ls, lw=1.4, ms=6.5, mec="white", mew=0.6, label=f"aligned mesh, sensor {sn}")
+        for name, D, off, c, m, ms in series:
+            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=1.5, ms=ms, mec="white", mew=0.6, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
     axes[1].set_ylim(0, None)
-    from matplotlib.lines import Line2D
-    # two independent keys: colour/marker = whose label, line style = which sensor
-    h = [Line2D([], [], color="#52514e", marker="o", ls="none", ms=4, mec="white", mew=0.6, label="teacher prediction"),
-         Line2D([], [], color="#26251f", ls="-", lw=1.4, label="sensor A (solid)"),
-         Line2D([], [], color="#8a4fd3", marker="*", ls="none", ms=6.5, mec="white", mew=0.6, label="aligned mesh (ours)"),
-         Line2D([], [], color="#26251f", ls="--", lw=1.4, label="sensor B (dashed)")]
-    fig.legend(handles=h, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, -0.03), columnspacing=0.9, handletextpad=0.35,
-               handlelength=2.8, fontsize=6.5)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, -0.03), columnspacing=1.2, handletextpad=0.4,
+               handlelength=2.0, fontsize=6.5)
     fig.tight_layout(w_pad=1.0, rect=(0, 0.17, 1, 1))
     fig.savefig(osp.join(out, "fig_labels.pdf")); plt.close(fig)
 
