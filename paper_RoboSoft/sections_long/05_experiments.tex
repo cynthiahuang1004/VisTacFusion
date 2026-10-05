@@ -57,6 +57,7 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \caption{\textbf{Alignment ablation} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld true labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: MAPL (renderer retrained on the aligned pairs).}
 \label{tab:rcabl}
 \setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llrrrrrrr@{}}
 \toprule
 \multicolumn{2}{c}{Labels of $U$} & \multicolumn{3}{c}{Pseudo-label quality} & \multicolumn{4}{c}{Downstream} \\
@@ -65,7 +66,7 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 \midrule
 \tabrcabl
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{figure}[!tbp]
