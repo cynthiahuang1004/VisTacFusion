@@ -206,6 +206,8 @@ def main():
     elif args.aligner:
         # learned residual aligner (train_aligner.py): iterate the predicted pose correction from the teacher pose
         from train_aligner import Aligner, refine
+        if args.view:
+            B.VIEW = args.view          # importing train_aligner re-imports this file as a module, which resets B.VIEW
         for o in sorted({it["obj"] for it in items}):
             B.get_zmap(o)
         A = Aligner().to(dev).eval(); A.load_state_dict(torch.load(args.aligner, map_location=dev))
