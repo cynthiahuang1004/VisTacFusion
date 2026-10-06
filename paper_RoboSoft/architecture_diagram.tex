@@ -52,14 +52,15 @@
 \node[capt, below=1pt of mesh] {Object mesh $M$};
 
 % teacher
-\node[blk, fill=cVis, draw=cVisB, minimum width=1.75cm, minimum height=0.95cm] (teacher) at (2.35, 3.55)
-  {\textbf{Teacher $f_0$}\\[0.5pt]{\scriptsize $K$-shot model}};
+\node[blk, fill=cVis, draw=cVisB, minimum width=2.3cm, minimum height=0.95cm] (teacher) at (2.35, 3.55)
+  {\textbf{Teacher $f_0$}\\[0.5pt]{\scriptsize trained on $K$ labeled frames}};
 \draw[arr] (frame) -- (teacher);
 
 % ---- mesh alignment lane ----
 \node[blk, fill=cOut, draw=cOutB, minimum width=1.55cm] (render) at (5.15, 1.75)
   {\textbf{Mesh depth}\\[0.5pt]{\scriptsize $d(M,q)$}};
 \node[thumb] (dq0) at (6.95, 1.75) {\img[0.85cm]{mesh_q0.png}};
+\node[capt, below=1pt of dq0] {$d(M,q)$};
 \node[draw=black!60, circle, inner sep=0.6pt, font=\scriptsize, fill=white] (cat) at (8.4, 2.65) {$\oplus$};
 \node[blk, fill=cTac, draw=cTacB, minimum width=1.65cm, minimum height=0.95cm] (al) at (10.0, 2.65)
   {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize ResNet-18, 4-ch.\ input}};
@@ -67,7 +68,7 @@
   {\textbf{$\boldsymbol{\Delta q}$}\\[0.5pt]{\scriptsize $(\Delta\theta,\Delta x,\Delta y,\Delta z)$}};
 
 \draw[arr] (mesh) -- (render);
-\draw[arr] (teacher.east) -| node[lbl, pos=0.22, above] {pose $q_0$} (render.north);
+\draw[arr] (teacher.east) -| node[lbl, pos=0.35, above] {pose $q_0$} (render.north);
 \draw[arr] (render) -- (dq0);
 \draw[arr] (dq0.east) -| (cat.south);
 \draw[arr] (frame.north) -- ++(0,0.42) -| node[lbl, pos=0.25, above] {frame} (cat.north);
@@ -75,7 +76,7 @@
 \draw[arr] (al) -- (dq);
 % iteration (feedback)
 \draw[garr] (dq.south) -- ++(0,-1.42) -| node[lbl, pos=0.25, above, text=cGate!85!black, font=\scriptsize] {iterate\quad$q \leftarrow q + \Delta q$\quad($\times 6$)} (render.south);
-\node[lbl, align=center, text=black!60] (note) at (10.55, 1.72) {trained on the $K$ labeled frames:\\[-1pt]true pose $+$ random offset $\delta\ \to\ -\delta$};
+
 
 \begin{scope}[on background layer]
   \node[lane=cTrunkB, fill=cTrunk!25, fit=(render)(dq0)(cat)(al)(dq), inner xsep=7pt, inner ysep=15pt, yshift=-3pt] (lane_al) {};
@@ -86,10 +87,11 @@
 \node[thumb] (ld) at (15.35, 3.3) {\img[0.85cm]{label_depth.png}};
 \node[thumb] (ln) at (16.35, 3.3) {\img[0.85cm]{label_normal.png}};
 \node[smallblk, fill=cOut, draw=cOutB, minimum width=1.85cm] (lq) at (15.85, 2.2) {\textbf{Pose $\boldsymbol{q}$}\\[0.5pt]{\scriptsize $(\theta, x, y, z)$}};
+\node[capt, below=1pt of lq, font=\tiny] {$z$: indentation, depth label only};
 \node[capt, above=1pt of ld] {Depth};
 \node[capt, above=1pt of ln] {Normal};
 \begin{scope}[on background layer]
-  \node[lane=cHeadB, fill=cHead!45, fit=(ld)(ln)(lq), inner xsep=6pt, inner ysep=13pt, yshift=2pt] (lane_lab) {};
+  \node[lane=cHeadB, fill=cHead!45, fit=(ld)(ln)(lq), inner xsep=6pt, inner ysep=17pt, yshift=-2pt] (lane_lab) {};
 \end{scope}
 \node[font=\footnotesize\bfseries, text=cHeadB!60!black, anchor=south] at ($(lane_lab.north)+(0,-1pt)$) {Mesh-aligned label};
 \draw[arr] (dq.east) -- (dq.east -| lane_lab.west);
@@ -105,7 +107,7 @@
   {\textbf{Tactile Enc.}\\[0.5pt]{\scriptsize SITR-B/18}};
 \node[lbl, above=0pt of enc, text=cVisB!80!black, font=\scriptsize\itshape] {frozen};
 \node[blk, fill=cVis, draw=cVisB, minimum width=1.9cm] (dpt) at (5.6, -0.95)
-  {\textbf{DPT Decoder}\\[0.5pt]{\scriptsize reassemble $\to$ fuse}};
+  {\textbf{DPT Decoder}\\[0.5pt]{\scriptsize depth \& normal head}};
 \node[blk, fill=cVis, draw=cVisB, minimum width=1.9cm, minimum height=0.85cm] (pose) at (5.6, -2.0) {\textbf{Pose MLP}\\[0.5pt]{\scriptsize $(\cos\theta,\sin\theta,t_x,t_y)$}};
 \node[thumb] (od) at (7.85, -0.95) {\img[0.75cm]{out_depth.png}};
 \node[thumb] (on) at (8.75, -0.95) {\img[0.75cm]{out_normal.png}};
@@ -136,5 +138,27 @@
 \draw[garr] (lane_lab.south) |- node[lbl, pos=0.75, above, text=cGate!85!black] {supervision} (loss.east);
 
 
+
+% ---- reading order ----
+\tikzset{stepno/.style={circle, draw=black!70, fill=white, inner sep=0.5pt, minimum size=9pt, font=\scriptsize\bfseries, line width=0.5pt},
+         steptxt/.style={font=\scriptsize\bfseries, text=black!70, anchor=west}}
+\node[stepno] (n1) at ($(teacher.north west)+(-2pt,8pt)$) {1}; \node[steptxt] at (n1.east) {Propose pose};
+\node[stepno] (n2) at ($(lane_al.north west)+(4pt,-16pt)$) {2}; \node[steptxt] at (n2.east) {Align mesh ($\times 6$)};
+\node[stepno] (n3) at ($(lane_lab.north west)+(-4pt,2pt)$) {3}; \node[steptxt, anchor=east] at (n3.west) {Label};
+\node[stepno] (n4) at ($(lane_st.north west)+(-6pt,8pt)$) {4}; \node[steptxt, anchor=east] at (n4.west) {Train student};
+% ---- legend ----
+\begin{scope}[shift={(0,-3.4)}, font=\scriptsize]
+  \node[draw=cVisB, fill=cVis, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg1) at (0.2,0) {};
+  \node[anchor=west, text=black!70] at (lg1.east) {perception network ($f_0$, $f_1$)};
+  \node[draw=cTacB, fill=cTac, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg2) at (4.3,0) {};
+  \node[anchor=west, text=black!70] at (lg2.east) {aligner $A$};
+  \node[draw=cOutB, fill=cOut, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg3) at (6.3,0) {};
+  \node[anchor=west, text=black!70] at (lg3.east) {geometry and pose};
+  \node[draw=cHeadB, fill=cHead, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg4) at (9.3,0) {};
+  \node[anchor=west, text=black!70] at (lg4.east) {labels and loss};
+  \draw[garr] (12.0,0) -- (12.6,0); \node[anchor=west, text=black!70] at (12.6,0) {iteration / supervision};
+  \node[draw=black!60, dashed, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt, line width=0.5pt] (lg5) at (15.6,0) {};
+  \node[anchor=west, text=black!70] at (lg5.east) {frozen weights};
+\end{scope}
 \end{tikzpicture}
 \end{document}

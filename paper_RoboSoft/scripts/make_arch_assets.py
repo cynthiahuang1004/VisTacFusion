@@ -4,6 +4,7 @@ and the student's prediction on that frame.
 usage: python paper_RoboSoft/scripts/make_arch_assets.py
 """
 import json
+import os
 import os.path as osp
 import sys
 
@@ -57,3 +58,38 @@ gy, gx = np.gradient(h); shade = np.clip(0.75 + 0.5 * (gx - gy) / (np.abs(gx).ma
 img = (np.clip(0.35 + 0.6 * h / h.max(), 0, 1) * shade)
 Image.fromarray((np.stack([img * 0.92, img * 0.95, img], -1) * 255).astype(np.uint8)).resize((224, 224), Image.LANCZOS).save(osp.join(OUT, "mesh.png"))
 print("frame:", t, "| label IoU", round(iou_of(t), 3), "| assets ->", OUT)
+
+
+# ---- the student's actual prediction on this frame (pilot150_B_k25_al2, best_depth.pt) ----
+# The model sees the central 0.816 crop; its output is pasted back into the full-frame canvas so that the
+# thumbnail is aligned with the other ones (outside the crop the canvas stays empty).
+import contextlib, copy, io
+import torch
+from vistacfusion.data.dataset import SimVisuoTactileDataset
+from vistacfusion.engine.train import load_checkpoint
+from vistacfusion.models.model import build_model
+from vistacfusion.utils.config import merge_configs
+
+RUN = "pilot150_B_k25_al2"; OUTD = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2"
+cfg = merge_configs("ablation/encoder/tac_sitr_single.yaml", "ablation/pilot_robosoft/train_pilot_e50.yaml", "ablation/pilot_robosoft/data_B_k25_al2.yaml")
+with contextlib.redirect_stdout(io.StringIO()):
+    ref = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False, split="val", data_section="real")
+    c2 = copy.deepcopy(cfg); c2["real"]["root"] = "/media/hdd2/ihsuan/gs_blender/real_filtered"; c2["real"]["val_every"] = 1
+    ds = SimVisuoTactileDataset(c2, cfg.image_size, augment=False, split="all", data_section="real", shared_obj_map=ref._obj_to_id)
+    model = build_model(cfg).to("cuda:0").eval(); load_checkpoint(osp.join(OUTD, RUN, "best_depth.pt"), model, device="cuda:0")
+unit = osp.dirname(osp.dirname(os.path.realpath(t))); sidx = int(osp.basename(t)[:4])
+i = [k for k, (u, s) in enumerate(ds.samples) if os.path.realpath(u) == unit and s == sidx][0]
+b = ds[i]
+with torch.no_grad():
+    o = model(b["rgb"][None].cuda(), b["tactile"][None].cuda(), config="tactile", object_ids=torch.tensor([b["object"]]).cuda())
+pd = o["depth"][0, 0].float().cpu().numpy(); pn = o["normal"][0].float().cpu().numpy().transpose(1, 2, 0)
+pn = pn / np.clip(np.linalg.norm(pn, axis=-1, keepdims=True), 1e-6, None)
+crop = ds.fixed_crop; side = int(round(224 * crop)); o0 = (224 - side) // 2
+from PIL import Image as _I
+canvas_d = np.zeros((224, 224), np.float32); canvas_d[o0:o0 + side, o0:o0 + side] = np.array(_I.fromarray(pd).resize((side, side), _I.BILINEAR))
+canvas_n = np.zeros((224, 224, 3), np.float32); canvas_n[..., 2] = 1.0
+canvas_n[o0:o0 + side, o0:o0 + side] = np.stack([np.array(_I.fromarray(pn[..., c]).resize((side, side), _I.BILINEAR)) for c in range(3)], -1)
+depth_png(np.clip(canvas_d, 0, None), "out_depth.png")
+_I.fromarray(((canvas_n * 0.5 + 0.5) * 255).clip(0, 255).astype(np.uint8)).save(osp.join(OUT, "out_normal.png"))
+m = b["depth"][0].numpy() > 0
+print(f"student prediction written: contact MAE on this frame {np.abs(pd - b['depth'][0].numpy())[m].mean():.3f} mm (crop {crop})")

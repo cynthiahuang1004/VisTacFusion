@@ -4,12 +4,14 @@ Vision-based tactile sensors image a soft elastomer as it deforms against an obj
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.97\textwidth]{figures/fig_arch.pdf}
-    \caption{\textbf{Overview of MeshTac.} A teacher initializes the contact state of an unlabeled frame. The aligner compares the frame with mesh depth and updates the state six times; the aligned mesh supplies depth, normal and planar-pose labels. Aligner training uses the same $K$ real labels per object; synthetic augmentation is optional. The student learns from labeled and aligned real frames, optionally with synthetic images. Its forward pass requires no mesh; optional pose refinement uses the image and known mesh.}
+    \includegraphics[width=0.97\textwidth]{figures/fig_arch_v1.pdf}
+    \caption{\textbf{Overview of MeshTac.} \textcircled{\scriptsize 1} The teacher $f_0$, trained on the $\Kreal$ labeled frames, proposes a pose $q_0$ for an unlabeled frame. \textcircled{\scriptsize 2} The aligner $A$ takes the frame and the mesh depth at the current pose and predicts a correction $\Delta q$, applied six times; $A$ is trained on the same $\Kreal$ labeled frames by regressing random offsets of their true pose. \textcircled{\scriptsize 3} The mesh depth, normals and pose at the aligned pose become the frame's label. \textcircled{\scriptsize 4} The student $f_1$, the same network as $f_0$, is trained on the $\Kreal$ labeled and the mesh-aligned frames; at test time it needs no mesh, and the same aligner can optionally refine its predicted pose. Colours: blue, perception network; orange, aligner; grey, geometry and pose quantities; purple, labels and loss. Thumbnails are a real unlabeled frame ($\Kreal=25$), its mesh depth at the teacher pose, its mesh-aligned label and the student's actual prediction.}
     \label{fig:mapl}
 \end{figure*}
 
 Simulation offers one way to reduce this labeling effort. Tactile simulators generate images and geometric labels from known object meshes~\cite{wang2022tacto,si2022taxim,chen2023tacchi}. Their utility depends on how well the synthetic contact appearance matches the real sensor. A learned appearance model can narrow this gap, but fitting it also consumes labeled real contacts. Evaluating label efficiency therefore requires counting the labels used throughout the pipeline, including renderer training.
+
+We first measure this cost with a shared training-label budget: the learned renderer and downstream model receive the same $K$ real pairs per object. On sensor A, a renderer trained on all real training pairs gives $24$--$26\%$ lower depth MSE than $K$-shot real-only training. Restricting it to the same $K$ labels yields only about $3\%$ lower MSE at $K\le25$, with worse contact MAE and IoU. This distinction separates the benefit of synthetic images from the benefit of additional real supervision.
 
 We study a complementary use of the mesh: assigning geometric labels directly to unlabeled real images. These images already contain the sensor's contact appearance and require no pose registration during capture. Given the object identity and mesh, the missing quantity is the contact state: in-plane rotation, translation and indentation. A model trained on a small labeled set provides an initial estimate, but its pose and dense predictions are not accurate enough to serve as reliable supervision on their own.
 
@@ -17,6 +19,7 @@ MeshTac refines this estimate with a learned residual aligner (Fig.~\ref{fig:map
 
 We evaluate MeshTac against real-only training, synthetic-data augmentation and teacher-based self-training with the same labeled frames. With $10$--$25$ labels per object, it reduces contact MAE by $13$--$20\%$ on sensor A and $33$--$36\%$ on sensor B. The main contributions are:
 \begin{itemize}
+    \item A label-accounting study of tactile simulation that measures renderer and downstream supervision jointly, separating gains under matched training-label budgets from gains obtained with additional real pairs.
     \item A mesh-aligned pseudo-labeling procedure that learns pose refinement from the available labeled contacts and supplies depth, normal and pose supervision for unlabeled real frames.
     \item An evaluation on two sensors, trained separately, that measures label efficiency and separates the effects of alignment, synthetic data and additional real labels. A second capture session tests sensitivity to changes in appearance and object placement.
     \item A test-time use of the same aligner that reduces rotation error without retraining, including on held-out objects with known meshes.
