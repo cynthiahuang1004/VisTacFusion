@@ -7,7 +7,7 @@
 \usepackage{mathptmx}   % Times text + math
 \usepackage{tikz}
 \usepackage{graphicx}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,bm}
 
 \usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shapes.geometric}
 
@@ -29,7 +29,7 @@
 \tikzset{
   blk/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=3pt, line width=0.5pt, minimum height=0.85cm},
   frozen/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=3pt, line width=0.7pt, dashed},
-  smallblk/.style={draw, rounded corners=1.5pt, align=center, font=\scriptsize, inner sep=2pt, line width=0.4pt, minimum height=0.7cm},
+  smallblk/.style={draw, rounded corners=1.5pt, align=center, font=\footnotesize, inner sep=2pt, line width=0.4pt, minimum height=0.7cm},
   arr/.style={-{Stealth[length=3.5pt,width=2.5pt]}, line width=0.5pt, color=black!60},
   garr/.style={-{Stealth[length=3.5pt,width=2.5pt]}, line width=0.6pt, dashed, color=cGate},
   lbl/.style={font=\scriptsize, text=black!55},
@@ -63,8 +63,8 @@
 \node[draw=black!60, circle, inner sep=0.6pt, font=\scriptsize, fill=white] (cat) at (8.4, 2.65) {$\oplus$};
 \node[blk, fill=cTac, draw=cTacB, minimum width=1.65cm, minimum height=0.95cm] (al) at (10.0, 2.65)
   {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize ResNet-18, 4-ch.\ input}};
-\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.25cm, minimum height=0.75cm] (dq) at (12.75, 2.65)
-  {$\Delta q$\\[0.5pt]{\scriptsize $\Delta\theta,\Delta x,\Delta y,\Delta z$}};
+\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.6cm, minimum height=0.8cm] (dq) at (12.75, 2.65)
+  {\textbf{$\boldsymbol{\Delta q}$}\\[0.5pt]{\scriptsize $(\Delta\theta,\Delta x,\Delta y,\Delta z)$}};
 
 \draw[arr] (mesh) -- (render);
 \draw[arr] (teacher.east) -| node[lbl, pos=0.22, above] {pose $q_0$} (render.north);
@@ -85,7 +85,7 @@
 % ---- pseudo label ----
 \node[thumb] (ld) at (15.35, 3.3) {\img[0.85cm]{label_depth.png}};
 \node[thumb] (ln) at (16.35, 3.3) {\img[0.85cm]{label_normal.png}};
-\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.85cm] (lq) at (15.85, 2.2) {\textbf{Pose} $q$\\[0.5pt]{\scriptsize $\theta, x, y, z$}};
+\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.85cm] (lq) at (15.85, 2.2) {\textbf{Pose $\boldsymbol{q}$}\\[0.5pt]{\scriptsize $(\theta, x, y, z)$}};
 \node[capt, above=1pt of ld] {Depth};
 \node[capt, above=1pt of ln] {Normal};
 \begin{scope}[on background layer]
@@ -109,7 +109,7 @@
 \node[blk, fill=cVis, draw=cVisB, minimum width=1.9cm, minimum height=0.85cm] (pose) at (5.6, -2.0) {\textbf{Pose MLP}\\[0.5pt]{\scriptsize $(\cos\theta,\sin\theta,t_x,t_y)$}};
 \node[thumb] (od) at (7.85, -0.95) {\img[0.75cm]{out_depth.png}};
 \node[thumb] (on) at (8.75, -0.95) {\img[0.75cm]{out_normal.png}};
-\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.65cm] (se2) at (8.3, -2.0) {\textbf{SE(2)}\\[0.5pt]{\scriptsize $\theta, t_x, t_y$}};
+\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.65cm] (se2) at (8.3, -2.0) {\textbf{SE(2) pose}\\[0.5pt]{\scriptsize $(\theta, t_x, t_y)$}};
 \node[capt, above=0pt of od] {Depth};
 \node[capt, above=0pt of on] {Normal};
 
@@ -129,9 +129,9 @@
 \draw[arr] (lane_st.east |- loss) -- (loss.west);
 
 % test-time use of the aligner (optional)
-\node[smallblk, fill=cTac, draw=cTacB, minimum width=1.5cm] (al2) at (11.55, -2.0) {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize with mesh $M$}};
+\node[smallblk, fill=cTac, draw=cTacB, minimum width=1.5cm] (al2) at (11.55, -2.0) {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize same weights, $\times 6$}};
 \node[smallblk, fill=cOut, draw=cOutB, minimum width=1.3cm] (rp) at (13.55, -2.0) {\textbf{Refined pose}};
-\draw[arr] (se2.east) -- node[lbl, pos=0.3, above] {test time} (al2.west);
+\draw[arr] (se2.east) -- node[lbl, pos=0.62, above] {test time} (al2.west);
 \draw[arr] (al2) -- (rp);
 \draw[garr] (lane_lab.south) |- node[lbl, pos=0.75, above, text=cGate!85!black] {supervision} (loss.east);
 
