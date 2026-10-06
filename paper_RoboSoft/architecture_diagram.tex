@@ -68,7 +68,7 @@
   {\textbf{$\boldsymbol{\Delta q}$}\\[0.5pt]{\scriptsize $(\Delta\theta,\Delta x,\Delta y,\Delta z)$}};
 
 \draw[arr] (mesh) -- (render);
-\draw[arr] (teacher.east) -| node[lbl, pos=0.35, above] {pose $q_0$} (render.north);
+\draw[arr] (teacher.east) -| node[lbl, pos=0.78, right] {pose $q_0$} (render.north);
 \draw[arr] (render) -- (dq0);
 \draw[arr] (dq0.east) -| (cat.south);
 \draw[arr] (frame.north) -- ++(0,0.42) -| node[lbl, pos=0.25, above] {frame $I$} (cat.north);
@@ -79,9 +79,9 @@
 
 
 \begin{scope}[on background layer]
-  \node[lane=cTrunkB, fill=cTrunk!25, fit=(render)(dq0)(cat)(al)(dq), inner xsep=7pt, inner ysep=15pt, yshift=-3pt] (lane_al) {};
+  \node[lane=cTrunkB, fill=cTrunk!25, fit=(render)(dq0)(cat)(al)(dq), inner xsep=7pt, inner ysep=19pt, yshift=2pt] (lane_al) {};
 \end{scope}
-\node[font=\footnotesize\bfseries, text=cTrunkB!70!black, anchor=north east] at ($(lane_al.north east)+(-3pt,-2pt)$) {Mesh alignment};
+\node[font=\footnotesize\bfseries, text=cTrunkB!70!black, anchor=north east] at ($(lane_al.north east)+(-3pt,-1pt)$) {Mesh alignment};
 
 % ---- pseudo label ----
 \node[thumb] (ld) at (15.35, 3.3) {\img[0.85cm]{label_depth.png}};
