@@ -1,6 +1,8 @@
 # RoboSoft 2027 paper — data provenance
 
-**2026-10-06 作者回饋修訂**：Fig. 1 恢復 `fig_arch_v1.pdf`；Fig. 4 全實線。恢復摘要重點、label-accounting 獨立貢獻、有限定語氣的 pose 論點，以及長版 practical recipe/reporting；保留事實修正。短版 6 頁、長版 15 頁。
+**最新文句修訂（2026-10-06）**：參考 TACTO、Taxim、DeepIM、Sparsh 的段落組織，兩版摘要改為無數字的定性敘述，全文改善動機、段落銜接與結論。數值比較保留在實驗；圖表不變，短版 6 頁、長版 15 頁。詳見 `EDITORIAL_REVIEW.md` 最上方紀錄。
+
+**2026-10-06 作者回饋修訂**：Fig. 1 使用作者最新指定的 `fig_arch.pdf`；Fig. 4 全實線。恢復摘要重點、label-accounting 獨立貢獻、有限定語氣的 pose 論點，以及長版 practical recipe/reporting；保留事實修正。短版 6 頁、長版 15 頁。
 
 **全文修訂紀錄：[`EDITORIAL_REVIEW.md`](EDITORIAL_REVIEW.md)**。`main.pdf` 為六頁匿名稿；`main_long.pdf` 為 extended version。原始結果未改，修訂包含論述、資料來源校正、圖表與排版。
 

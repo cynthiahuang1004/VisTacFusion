@@ -1,8 +1,40 @@
 # MeshTac 全文修訂紀錄
 
-## 2026-10-06 作者回饋後的修訂（目前版本）
+## 2026-10-06 文獻寫法參考與全文修飾（最新）
 
-- 兩版 Fig. 1 均直接引用作者指定的 `figures/fig_arch_v1.pdf`，PDF 本身未修改。Caption 補充圖中省略的 synthetic training 分支與 schematic output thumbnails。
+依作者最新要求，兩版摘要改為約 198 字的定性敘述，不列改善百分比、K 值、誤差或測試角度。原先數字仍在實驗正文與表格；「一半標註」的具體比較保留於 label-efficiency 段落。這項選擇取代前一輪「在摘要恢復數字」的編輯方向。
+
+### 本輪參考的原始論文與採用方式
+
+這些是與研究主題直接相關的代表性論文，未按引用次數排名；參考的是論述組織，沒有移植原文句子。
+
+| 原始論文 | 閱讀重點 | 本稿採用方式 |
+|---|---|---|
+| [TACTO](https://arxiv.org/html/2012.08456v2) | 摘要從模擬需求、缺口帶到系統能力；實驗分清設定與結果；結論回到已驗證能力 | 每個實驗先交代比較目的，再給結果和解釋；結論不再重複一串指標 |
+| [Taxim](https://arxiv.org/html/2109.04027v2) | 方法先交代整體流程，再分解光學與 marker 模型；結論銜接能力及延伸方向 | 方法先建立 contact state 與 mesh labels 的關係，再說 aligner 訓練、標籤生成與 student |
+| [DeepIM](https://arxiv.org/html/1804.00175v4) | 摘要以問題、迭代修正機制與驗證範圍為主，不列性能百分比；引言解釋初始估計為何需要 refinement | 摘要提早介紹 MeshTac，保留 pose bottleneck 論點；引言建立 pose error → dense-label error 的因果鏈 |
+| [Sparsh](https://arxiv.org/html/2410.24090v1) | 從觸覺資料與標註限制建立動機；Discussion 分開主要結果、解釋與限制 | 區分實驗觀察與可能原因，保留 GT 定義、validation 成本、失敗及幾何範圍限制 |
+
+這些論文對摘要是否列數字的選擇不同；本稿採定性摘要是配合作者偏好與論述主線，不是宣稱頂會論文一律不放數字。
+
+### 修改內容
+
+- **摘要**：mesh supervision 的問題 → teacher / residual aligner / student → qualitative evidence → renderer label accounting 與適用情境。保留 label-accounting 研究發現，縮減支線細節。
+- **引言**：從 tactile geometry 的需求收斂至註冊成本，再說明 renderer budget 的問題與 alignment 動機。四項貢獻均保留，方法放第一項；短版精簡重複背景，長版保留較完整銜接。
+- **Related work**：由逐項列舉改成依問題組織，明確交代 simulation、representation、pseudo-labeling 與 pose refinement 和本稿的關係。
+- **方法／設定**：新增簡短流程導讀，改善長句及不完整句子；主 aligner 的 real/synthetic 資料、訓練預算與 checkpoint 規則均保留。
+- **實驗**：各節先說比較目的；詳細版將原本一段內的六項 ablation 拆成 aligner training、synthetic student data、unlabeled data/filtering、repeated alignment 等段落。合併重複跨 session 敘述，保留實驗數值及比較。
+- **結論**：以方法貢獻和實驗支持的理解收束，不再重述摘要數字；保留 mesh-pose bottleneck、synthetic data 跨 session 的作用、限制與後續方向。長版 practical recipe/reporting 未刪除。
+- **順手修正的內容範圍**：長版 cross-session 表 caption 原仍寫「full session-1 real set」，補正為九物體並註明 depth checkpoint；few-shot renderer 的「不改善 dense error」改成「不同時改善 contact MAE 和 IoU」，避免與 MSE 小幅下降矛盾。若干未經單獨控制實驗驗證的機制解釋改為明示推測。
+- **圖表**：所有圖檔、`data/tables.tex` 和 bibliography 均逐檔 hash 確認未變；Fig. 1 持續使用作者指定的 `fig_arch.pdf`，Fig. 4 保留全實線。
+- **驗證**：短版 6 頁、長版 15 頁；兩版 LaTeX 編譯成功，無 undefined references、overfull boxes、oversized floats；文字框均在頁面內，並檢視短版首頁、Fig. 1 頁及結論頁。
+- **Overleaf**：已同步本輪修訂 `279b89f` 與最後校對 `445059e`。
+- **修訂前備份**：`overleaf_backups/meshtac-before-prose-2026-10-06.zip`（含本輪修改前的 TeX 與說明文件）。
+
+
+## 2026-10-06 作者回饋後的修訂（前一輪；摘要由上方更新）
+
+- 依作者最後指定，兩版 Fig. 1 均直接引用最新的 `figures/fig_arch.pdf`（取代本輪稍早的 v1 選擇），PDF 本身未修改。Caption 補充圖中省略的 synthetic training 分支；新版 student-output thumbnails 是 `make_arch_assets.py` 產生的實際預測，保留這項說明。
 - 保留 Claude 已恢復的 Fig. 4 四條實線，未改動該圖或生成 script。
 - 摘要恢復 renderer label cost 的切入點與 24–26% depth-MSE 結果，明確指出 all-pairs renderer 超出 K 的訓練標籤預算，因此不能當成只用 K labels 的 simulation gain。
 - 摘要恢復「一半訓練標註」的具體證據：sensor A 50 vs. 100（depth MSE），sensor B 25 vs. 50（contact MAE），不擴張為所有 budgets 和 metrics。
@@ -10,7 +42,9 @@
 - 結論恢復「the results indicate that mesh-pose accuracy is a key bottleneck」的詮釋，限定為利用未標註 real contacts 產生監督的問題。
 - Extended version 恢復 practical recipe 和 reporting，納入 renderer-free 起點、跨 session synthetic augmentation、known-mesh pose coverage，以及各元件的資料與 checkpoint accounting。
 - 五項已查證錯誤的修正、50/150 epochs 區別、validation-label 成本和 physical tuning 的待確認來源均保留。
+- Introduction 進一步把方法動機接回實驗發現：pose 誤差會使 mesh contact 錯位並污染 dense labels，因此 alignment 是利用額外真實影像的關鍵。
 - 編譯結果：短版 6 頁、長版 15 頁；無 undefined references、overfull boxes 或 oversized floats。
+- 已同步至 Overleaf：`ee664fe`（引言與所選 Fig. 1 的圖說）；指定的 Fig. 1 PDF 與 Fig. 4 均未改動。
 
 ## 2026-10-05 首輪修訂（歷史紀錄；部分編輯取捨已由上方更新）
 

@@ -1,6 +1,8 @@
 \section{Experiments}
 \label{sec:exp}
 
+We examine label efficiency, the contribution of alignment, and performance across sessions and sensors, followed by the renderer label-accounting study.
+
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.98\textwidth]{figures/fig_kshot.pdf}
@@ -25,11 +27,11 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-Table~\ref{tab:kshot} and Fig.~\ref{fig:kshot} compare methods under the same training-label budget. Real-only training uses the $K$ labeled frames. Renderer baselines add synthetic images; self-training adds unlabeled real frames with teacher depth targets and applies real-frame pose supervision only to the labeled subset. MeshTac uses the same unlabeled pool with mesh-aligned targets.
+We first compare the supervision strategies under the same training-label budget (Table~\ref{tab:kshot}, Fig.~\ref{fig:kshot}). Real-only training uses the $K$ labeled frames. Renderer baselines add synthetic images; self-training adds unlabeled real frames with teacher depth targets and applies real-frame pose supervision only to the labeled subset. MeshTac uses the same unlabeled pool with mesh-aligned targets.
 
 The learned renderer reduces all-pixel MSE by about $3\%$ at $K=10$ and $25$, but increases contact MAE and lowers IoU. At $K=50$ and $100$, both depth and contact metrics improve. Thus, a small change in all-pixel error alone does not establish better contact reconstruction.
 
-MeshTac improves all three dense metrics at every budget. At $K=10$ and $25$, depth MSE falls by $13\%$ and $19\%$, and contact MAE by $13\%$ and $20\%$. At $K=50$ and $100$, the reductions reach $36$--$37\%$ and $27$--$28\%$, respectively. With 50 labels, its depth MSE ($0.0307$) is lower than real-only training with 100 ($0.0369$). Three-seed checks at 50 epochs give $0.0447\pm0.0009$ versus $0.0551\pm0.0010$ at $K=25$, and $0.0229\pm0.0003$ versus $0.0366\pm0.0008$ at $K=100$ (mean $\pm$ sample standard deviation).
+MeshTac improves depth MSE, contact MAE and IoU at every evaluated budget. At $K=10$ and $25$, depth MSE falls by $13\%$ and $19\%$, and contact MAE by $13\%$ and $20\%$. At $K=50$ and $100$, the reductions reach $36$--$37\%$ and $27$--$28\%$, respectively. With 50 labels, its depth MSE ($0.0307$) is lower than real-only training with 100 ($0.0369$). Three-seed checks at 50 epochs give $0.0447\pm0.0009$ versus $0.0551\pm0.0010$ at $K=25$, and $0.0229\pm0.0003$ versus $0.0366\pm0.0008$ at $K=100$ (mean $\pm$ sample standard deviation).
 
 Pose gains are less uniform: MeshTac has the lowest rotation error among the budget-matched methods in Table~\ref{tab:kshot} for $K\le50$, but real-only training is better at $K=100$. Removing the renderer entirely preserves the depth gains (MSE $0.0521$, $0.0433$, $0.0291$, $0.0227$ across budgets). Section~\ref{sec:general} examines where synthetic data still helps.
 
@@ -60,9 +62,9 @@ Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 
 \subsection{Why Alignment}
 \label{sec:ablation}
-Table~\ref{tab:abl} compares labeling choices. Teacher-depth self-training reduces all-pixel MSE, but its contact localization remains limited (label IoU $0.56$). Adding teacher pose targets mainly improves student rotation. An L1 render-and-compare search improves contact MAE and IoU, but less than the learned aligner. Its image score is unreliable: at $K=25$, the selected pose has lower rendering error than the true pose on $93\%$ of frames. This measures disagreement between image error and pose accuracy, not a $93\%$ pose-failure rate.
+To determine whether the gains come from better geometric labels, Table~\ref{tab:abl} compares alternative ways of supervising the same unlabeled images. Teacher-depth self-training reduces all-pixel MSE, but its contact localization remains limited (label IoU $0.56$). Adding teacher pose targets mainly improves student rotation. An L1 render-and-compare search improves contact MAE and IoU, but less than the learned aligner. Its image score is unreliable: at $K=25$, the selected pose has lower rendering error than the true pose on $93\%$ of frames. Thus, the rendering score can favor an inaccurate contact state; this percentage describes score ordering rather than the rate of pose-estimation failures.
 
-Alignment reduces the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ and raises label IoU from $0.55$ to $0.71$. Relative to teacher-depth self-training, student contact MAE decreases from $0.310$ to $0.246\,$mm and IoU increases from $0.624$ to $0.729$. Improvements in label quality occur on both sensors (Fig.~\ref{fig:labels}). The tested perturbation ranges, training lengths and ResNet backbones yield label IoU of $0.71$--$0.73$. A second labeling round gives little change. These results support one alignment round without confidence filtering for this dataset.
+Alignment reduces the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ and raises label IoU from $0.55$ to $0.71$. Relative to teacher-depth self-training, student contact MAE decreases from $0.310$ to $0.246\,$mm and IoU increases from $0.624$ to $0.729$. Improvements in label quality occur on both sensors (Fig.~\ref{fig:labels}). The tested perturbation ranges, training lengths and ResNet backbones yield label IoU of $0.71$--$0.73$. A second labeling round gives little change. We therefore use one alignment round and retain all pseudo-labeled frames in the evaluated pipeline.
 
 \begin{figure*}[t]
     \centering
@@ -123,7 +125,7 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 
 \subsection{Test-Time Alignment}
 \label{sec:tta}
-Table~\ref{tab:poseref} applies the fixed aligner to predicted test-time poses. Within session 1, mean rotation error is $0.4$--$1.2^\circ$ at $K\ge25$. On session 2, MeshTac predictions improve from $8.8$--$10.6^\circ$ to $4.8$--$5.2^\circ$. Medians of $1.5$--$2.2^\circ$ indicate a skewed error distribution with some large residuals. An aligner trained on nine objects also reduces error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$ on three held-out objects whose meshes remain available.
+We next test whether the aligner learned for pseudo-labeling also improves poses at inference, with its weights fixed (Table~\ref{tab:poseref}). Within session 1, mean rotation error is $0.4$--$1.2^\circ$ at $K\ge25$. On session 2, MeshTac predictions improve from $8.8$--$10.6^\circ$ to $4.8$--$5.2^\circ$. Medians of $1.5$--$2.2^\circ$ indicate a skewed error distribution with some large residuals. An aligner trained on nine objects also reduces error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$ on three held-out objects whose meshes remain available.
 
 \begin{table}[t]
 \centering
@@ -141,6 +143,6 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 
 \subsection{Renderer Baselines and Label Accounting}
 \label{sec:study}
-Table~\ref{tab:loo} evaluates three objects excluded from real training. Providing their meshes through simulation lowers rotation error from $64.7^\circ$ to $5$--$7^\circ$; excluding these meshes leaves $50.6^\circ$. This supports the importance of geometric coverage for pose. Dense gains are smaller: depth MSE decreases by up to $13\%$ among the matched baselines, compared with $30\%$ when the renderer receives real pairs from the held-out objects.
+Table~\ref{tab:loo} evaluates three objects excluded from real training. Providing their meshes through simulation lowers rotation error from $64.7^\circ$ to $5$--$7^\circ$; excluding these meshes leaves $50.6^\circ$. The comparison identifies mesh coverage as an important source of the pose gain. Dense gains are smaller: depth MSE decreases by up to $13\%$ among the matched baselines, compared with $30\%$ when the renderer receives real pairs from the held-out objects.
 
-In the $K$-shot study, the leaky reference instead violates the label budget: its renderer uses all training pairs, including labels withheld from the $K$-shot methods. Its $24$--$26\%$ depth-MSE reductions at the reported budgets should therefore not be attributed to simulation at a cost of only $K$ labels. Across 14 budget-matched paired-renderer settings, contact-region image L1 and downstream depth MSE are correlated (Spearman $\rho=0.95$). This is a pooled association across budgets and variants, not evidence that image fidelity alone determines downstream accuracy.
+In the $K$-shot study, the leaky reference instead violates the label budget: its renderer uses all training pairs, including labels withheld from the $K$-shot methods. Its $24$--$26\%$ depth-MSE reductions at the reported budgets should therefore not be attributed to simulation at a cost of only $K$ labels. Across 14 budget-matched paired-renderer settings, contact-region image L1 and downstream depth MSE are correlated (Spearman $\rho=0.95$). Because the comparison pools budgets and renderer variants, it supports fidelity as a screening measure without isolating its effect on downstream accuracy.
