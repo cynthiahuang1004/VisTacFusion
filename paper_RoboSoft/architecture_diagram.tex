@@ -127,7 +127,7 @@
 \node[font=\footnotesize\bfseries, text=cVisB!65!black, anchor=south west] at ($(lane_st.north west)+(2pt,0pt)$) {Student $f_1$ (deployed model; same network as $f_0$)};
 
 % supervision
-\node[smallblk, fill=cHead, draw=cHeadB] (loss) at (12.95, -1.05) {\textbf{Loss}\\[0.5pt]{\scriptsize depth, normal, pose}};
+\node[smallblk, fill=cHead, draw=cHeadB] (loss) at (12.95, -0.85) {\textbf{Loss}\\[0.5pt]{\scriptsize depth, normal, pose}};
 \draw[arr] (lane_st.east |- loss) -- (loss.west);
 
 % test-time use of the aligner (optional)
