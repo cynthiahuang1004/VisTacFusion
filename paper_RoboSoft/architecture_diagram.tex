@@ -60,7 +60,7 @@
 \node[blk, fill=cOut, draw=cOutB] (render) at (5.15, 1.75)
   {\textbf{Mesh depth}\\[0.5pt]{\scriptsize $d(M,q)$}};
 \node[thumb] (dq0) at (6.95, 1.75) {\img[0.85cm]{mesh_q0.png}};
-\node[capt, below=1pt of dq0] {$d(M,q)$};
+\node[capt, above=1pt of dq0] {$d(M,q)$};
 \node[draw=black!60, circle, inner sep=0.6pt, font=\scriptsize, fill=white] (cat) at (8.4, 2.65) {$\oplus$};
 \node[blk, fill=cTac, draw=cTacB] (al) at (10.0, 2.65)
   {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize ResNet-18, 4-ch.\ input}};
@@ -75,7 +75,7 @@
 \draw[arr] (cat) -- (al);
 \draw[arr] (al) -- (dq);
 % iteration (feedback)
-\draw[garr] (dq.south) -- ++(0,-1.42) -| node[lbl, pos=0.25, above, text=cGate!85!black, font=\scriptsize] {iterate\quad$q \leftarrow q + \Delta q$\quad($\times 6$)} (render.south);
+\draw[garr] (dq.south) -- (dq.south |- 0,0.84) -| node[lbl, pos=0.25, above, text=cGate!85!black, font=\scriptsize] {iterate\quad$q \leftarrow q + \Delta q$\quad($\times 6$)} (render.south);
 
 
 \begin{scope}[on background layer]
