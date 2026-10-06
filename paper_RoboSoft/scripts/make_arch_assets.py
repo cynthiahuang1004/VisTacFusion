@@ -1,8 +1,9 @@
 """Thumbnails of the MeshTac overview figure (paper_RoboSoft/architecture_diagram.tex), all from one real unlabeled
 frame of the K=25 run: the frame, the object height map, the mesh depth at the teacher pose and at the aligned pose,
 its normals, and the student's ACTUAL prediction on that frame (pilot150_B_k25_al2, best_depth.pt).
-Frame choice: among every 7th unlabeled frame of OBJ, the one with the lowest student contact MAE whose aligned
-label has IoU >= 0.75 against the withheld GT (a clear illustration; not a typical-case figure).
+Frame choice: among every 7th unlabeled frame of OBJ, the one with the lowest student contact MAE whose teacher-pose mesh
+has IoU <= 0.6 and whose aligned label has IoU >= 0.8 against the withheld GT (a clear illustration, not a typical case).
+All thumbnails show the central 0.816 crop of the gel view, i.e. exactly what the networks see.
 usage: python paper_RoboSoft/scripts/make_arch_assets.py
 """
 import contextlib, copy, io, json, os, os.path as osp, sys
@@ -25,9 +26,10 @@ RUN = "pilot150_B_k25_al2"; OUTD = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2
 fits = json.load(open(f"{G}/real_pseudo_k{K}_al/rc_fits.json"))
 
 
-def iou_of(t):
+def iou_of(t, pose="pose"):
+    """IoU of the mesh at the aligned pose ("pose") or at the teacher pose ("tp") against the withheld GT."""
     f = fits[t]; gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
-    m = B.gt_depth_mm(OBJ, *f["pose"], f["p"]); a, b = m > 0.05, gt > 0
+    m = B.gt_depth_mm(OBJ, *f[pose], f["p"]); a, b = m > 0.05, gt > 0
     return (a & b).sum() / max(1, (a | b).sum())
 
 
@@ -52,33 +54,42 @@ def predict(t):
 
 # ---- frame choice ----
 cand = sorted(t for t in fits if f"/{OBJ}/" in t)[::7]
-scored = sorted((predict(t)[2], t) for t in cand if iou_of(t) >= 0.75)
+# a clear illustration: the teacher pose must be visibly off (mesh IoU <= 0.6), the aligned label good (>= 0.8), student accurate
+scored = sorted((predict(t)[2], t) for t in cand if iou_of(t) >= 0.8 and iou_of(t, "tp") <= 0.6)
 err, t = scored[0]
 f = fits[t]
-print(f"frame: {t} | label IoU {iou_of(t):.3f} | student contact MAE {err:.3f} mm")
+print(f"frame: {t} | mesh IoU at teacher pose {iou_of(t, 'tp'):.3f} -> aligned {iou_of(t):.3f} | student contact MAE {err:.3f} mm")
+
+
+CROP = 0.816
+def crop(a):
+    """central CROP of a 224x224 array, resized back to 224 (what the model sees)."""
+    side = int(round(224 * CROP)); o0 = (224 - side) // 2
+    im = Image.fromarray(a[o0:o0 + side, o0:o0 + side]); return np.array(im.resize((224, 224), Image.BILINEAR))
 
 
 def depth_png(d, name):
-    Image.fromarray((cm.viridis(np.clip(d / 1.2, 0, 1))[..., :3] * 255).astype(np.uint8)).save(osp.join(OUT, name))
+    Image.fromarray((cm.viridis(np.clip(crop(d.astype(np.float32)) / 1.2, 0, 1))[..., :3] * 255).astype(np.uint8)).save(osp.join(OUT, name))
 
 
 def normal_png(d, name):
     n = depth_to_normal((d / 1000).astype(np.float32), B.VIEW / 224, B.VIEW / 224)
+    n = np.stack([crop(n[..., c]) for c in range(3)], -1)
     Image.fromarray(((n * 0.5 + 0.5) * 255).astype(np.uint8)).save(osp.join(OUT, name))
 
 
-Image.open(t).convert("RGB").save(osp.join(OUT, "frame.png"))
-Image.open(cand[len(cand) // 3]).convert("RGB").save(osp.join(OUT, "frame2.png"))
+def rgb_png(path, name):
+    a = np.array(Image.open(path).convert("RGB"))
+    Image.fromarray(np.stack([crop(a[..., c].astype(np.float32)) for c in range(3)], -1).clip(0, 255).astype(np.uint8)).save(osp.join(OUT, name))
+
+
+rgb_png(t, "frame.png"); rgb_png(cand[len(cand) // 3], "frame2.png")
 m0 = B.gt_depth_mm(OBJ, *f["tp"], f["p"]); m1 = B.gt_depth_mm(OBJ, *f["pose"], f["p"])
 depth_png(m0, "mesh_q0.png"); depth_png(m1, "label_depth.png"); normal_png(m1, "label_normal.png")
-# student prediction, pasted back into the full-frame canvas (the model sees the central 0.816 crop)
+# student prediction (already at the crop; written without re-cropping)
 pd, pn, _ = predict(t)
-side = int(round(224 * ds.fixed_crop)); o0 = (224 - side) // 2
-cd = np.zeros((224, 224), np.float32); cd[o0:o0 + side, o0:o0 + side] = np.array(Image.fromarray(pd).resize((side, side), Image.BILINEAR))
-cn = np.zeros((224, 224, 3), np.float32); cn[..., 2] = 1.0
-cn[o0:o0 + side, o0:o0 + side] = np.stack([np.array(Image.fromarray(pn[..., c]).resize((side, side), Image.BILINEAR)) for c in range(3)], -1)
-depth_png(np.clip(cd, 0, None), "out_depth.png")
-Image.fromarray(((cn * 0.5 + 0.5) * 255).clip(0, 255).astype(np.uint8)).save(osp.join(OUT, "out_normal.png"))
+Image.fromarray((cm.viridis(np.clip(pd / 1.2, 0, 1))[..., :3] * 255).astype(np.uint8)).save(osp.join(OUT, "out_depth.png"))
+Image.fromarray(((pn * 0.5 + 0.5) * 255).clip(0, 255).astype(np.uint8)).save(osp.join(OUT, "out_normal.png"))
 # object height map (top view of the mesh), lightly shaded
 zmap, LO, BB, PPM, RS = B.get_zmap(OBJ)
 h = np.where(zmap > 900, np.nan, zmap); h = np.nanmax(h) - h; h = np.nan_to_num(h, nan=0.0)
