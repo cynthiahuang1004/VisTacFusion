@@ -30,7 +30,8 @@ STY = {
     "+ Blender (physical)": ("#2a78d6", "s", "-"),
     "+ GAN-K (learned, strict)": ("#eb6834", "^", "-"),
     "+ GAN-full (leaky)": ("#1baf7a", "D", "--"),
-    "+ MAPL (ours, strict)": ("#8a4fd3", "*", "-"),
+    "+ self-training": ("#c9a227", "v", "-"),
+    "+ SnapTac (ours, strict)": ("#8a4fd3", "*", "-"),
 }
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
                      "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7,
@@ -63,14 +64,17 @@ def masked(run, split="val", key="c_mae"):
 
 
 def fig_kshot(out):
-    Ks = [0, 10, 25, 50, 100]
+    Ks = [10, 25, 50, 100]
     series = {
-        "Real only": [None, "B_k10_realonly", "B_k25_realonly", "B_k50_realonly", "B_k100_realonly"],
-        "+ Blender (physical)": ["B_k0_blender", "B_k10_blender", "B_k25_blender", "B_k50_blender", "B_k100_blender"],
-        "+ GAN-K (learned, strict)": [None, "B_k10_gank", "B_k25_gank", "B_k50_gank", "B_k100_gank"],
-        "+ GAN-full (leaky)": ["B_k0_ganfull", "B_k10_ganfull", "B_k25_ganfull", None, "B_k100_ganfull"],
-        "+ MAPL (ours, strict)": [None, "B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
+        "Real only": ["B_k10_realonly", "B_k25_realonly", "B_k50_realonly", "B_k100_realonly"],
+        "+ Blender (physical)": ["B_k10_blender", "B_k25_blender", "B_k50_blender", "B_k100_blender"],
+        "+ GAN-K (learned, strict)": ["B_k10_gank", "B_k25_gank", "B_k50_gank", "B_k100_gank"],
+        "+ self-training": ["B_k10_semipm_pseudo", "B_k25_semipm_pseudo", "B_k50_semipm_pseudo", "B_k100_semipm_pseudo"],
+        "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", None, "B_k100_ganfull"],
+        "+ SnapTac (ours, strict)": ["B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
     }
+    names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",
+             "+ GAN-full (leaky)": "Leaky renderer", "+ SnapTac (ours, strict)": "SnapTac (ours)"}
     fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.95))
     panels = [("depth_mse", "val", "(a) Depth MSE [mm$^2$]"), ("c_mae", "masked", "(b) Contact MAE [mm]"),
               ("pose_rot_deg", "rot", "(c) Rotation error [deg]")]
@@ -79,33 +83,27 @@ def fig_kshot(out):
             c, m, ls = STY[name]
             xs, ys = [], []
             for K, r in zip(Ks, runs):
-                if r is None or prefix_of(r) != "pilot150_" and "_al2" in r or f"{prefix_of(r)}{r}/val" not in MASKED:
-                    continue                      # MAPL points only from finished 150-epoch runs
-                if src == "masked":
-                    y = masked(r)
-                elif src == "rot":
-                    y = best(r, "pose_rot_deg", select="pose_rot_deg")
-                else:
-                    y = best(r)
+                if r is None or f"{prefix_of(r)}{r}/val" not in MASKED:
+                    continue
+                y = masked(r) if src == "masked" else best(r, "pose_rot_deg", select="pose_rot_deg") if src == "rot" else best(r)
                 xs.append(K); ys.append(y)
-            lab_name = {"+ Blender (physical)": "+ physical renderer", "+ GAN-K (learned, strict)": "+ learned renderer",
-                        "+ GAN-full (leaky)": "+ leaky renderer", "+ MAPL (ours, strict)": "+ MAPL (ours)"}.get(name, name)
-            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.6, ms=7 if m == "*" else 4.5, mec="white", mew=0.6, label=lab_name)
-        ax.set_xscale("symlog", linthresh=10)
-        ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks])
+            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.6, ms=7 if m == "*" else 4.5, mec="white", mew=0.6, label=names.get(name, name))
+        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
         ax.text(0.97, 0.95, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
-    ax = axes[3]                                              # second sensor (mesh-registered labels, renderer-free MAPL)
-    KB = [10, 25, 50, 100]
-    for name, suf in (("Real only", "realonly_m"), ("+ MAPL (ours, strict)", "maplnr_m")):
+    ax = axes[3]                                              # second sensor (mesh-registered labels); only real-only and SnapTac at every K
+    for name, suf in (("Real only", "realonly_m"), ("+ SnapTac (ours, strict)", "maplnr_m")):
         c, m, ls = STY[name]
-        ax.plot(KB, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in KB], color=c, marker=m, ls=ls, lw=1.6,
+        ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in Ks], color=c, marker=m, ls=ls, lw=1.6,
                 ms=7 if m == "*" else 4.5, mec="white", mew=0.6)
-    ax.set_xscale("symlog", linthresh=10); ax.set_xticks(KB); ax.set_xticklabels([str(k) for k in KB]); ax.set_xlim(8, 115)
+    for name, run in (("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m")):   # K=25 only
+        c, m, _ = STY[name]
+        ax.plot([25], [SB[f"pilot_S_k25_{run}/sensorB_mesh"]["c_mae"]], color=c, marker=m, ls="none", ms=4.5, mec="white", mew=0.6)
+    ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
     ax.set_xlabel("Labels per object, $K$"); ax.set_title("(d) Contact MAE [mm]", loc="left")
     ax.text(0.97, 0.95, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, frameon=False, ncol=5, loc="lower center", bbox_to_anchor=(0.5, -0.02), columnspacing=1.0, handletextpad=0.4)
+    fig.legend(h, l, frameon=False, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.02), columnspacing=1.0, handletextpad=0.4)
     fig.tight_layout(w_pad=0.8, rect=(0, 0.08, 1, 1))
     fig.savefig(osp.join(out, "fig_kshot.pdf")); plt.close(fig)
 
@@ -255,7 +253,7 @@ def fig_cross(out):
 
 
 def fig_align(out, K=25):
-    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (MAPL label) | reference."""
+    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (SnapTac label) | reference."""
     sys.path.insert(0, "scripts")
     import build_real_filtered_new as B
     B.VIEW = 0.017502
@@ -271,8 +269,8 @@ def fig_align(out, K=25):
             return (a & b).sum() / max(1, (a | b).sum())
         sc = sorted((iou_of(t), t) for t in cand[::7])
         rows.append(sc[len(sc) // 2][1])                       # the object's median-quality frame
-    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.2))
-    titles = ["unlabeled frame", "teacher depth", "mesh, teacher pose", "mesh, aligned", "GT"]
+    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.32))
+    titles = ["unlabeled\nframe", "teacher\ndepth", "mesh at\nteacher pose", "mesh at\naligned pose", "GT\n"]
     for r, t in enumerate(rows):
         f = fits[t]; o = t.split("/")[-5]
         gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
@@ -285,8 +283,8 @@ def fig_align(out, K=25):
             for sp in ax.spines.values():
                 sp.set_visible(False)
             if r == 0:
-                ax.set_title(titles[c], fontsize=5.5, pad=2)
-    fig.subplots_adjust(left=0.005, right=0.995, top=0.94, bottom=0.005, wspace=0.03, hspace=0.03)
+                ax.set_title(titles[c], fontsize=5.5, pad=2, linespacing=1.0)
+    fig.subplots_adjust(left=0.005, right=0.995, top=0.90, bottom=0.005, wspace=0.03, hspace=0.03)
     fig.savefig(osp.join(out, "fig_align.pdf"), dpi=300); plt.close(fig)
 
 
@@ -297,10 +295,10 @@ def _label_quality():
         t = open(path).read()
         g = lambda k: [float(v) for v in re.search(rf"{re.escape(k)}\s+\d+\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", t).groups()]
         te, me = g("teacher (all)"), g("mesh (kept)")
-        return te[0], me[0], te[2], me[2]
+        return te[0], me[0], None, te[1], me[1], None, te[2], me[2]
     L = "outputs/pilot_logs"
     A = {K: read(f"{L}/pseudo_k{K}_al.log") for K in (10, 50, 100)}
-    A[25] = (0.553, 0.712, 5.30, 1.10)                         # log of the K=25 run was overwritten; values of the alignment ablation table
+    A[25] = (0.553, 0.712, None, 0.32, 0.24, None, 5.30, 1.10)                         # log of the K=25 run was overwritten; values of the alignment ablation table
     Bq = {K: read(f"{L}/pseudo_S_k{K}_m_al.log") for K in (10, 25, 50, 100)}
     return A, Bq
 
@@ -310,22 +308,22 @@ def fig_labels(out):
     A, Bq = _label_quality(); Ks = [10, 25, 50, 100]
     series = [("Teacher, sensor A", A, 0, "#52514e", "o", 4.2), ("Aligned mesh, sensor A", A, 1, "#8a4fd3", "*", 6.8),
               ("Teacher, sensor B", Bq, 0, "#eb6834", "s", 4.0), ("Aligned mesh, sensor B", Bq, 1, "#1baf7a", "D", 3.8)]
-    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.8))
-    for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (2, "Pose error [deg] $\\downarrow$")]):
+    fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.7))
+    for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Pose error [deg] $\\downarrow$")]):
         for name, D, off, c, m, ms in series:
-            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=1.5, ms=ms, mec="white", mew=0.6, label=name)
+            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=1.4, ms=ms, mec="white", mew=0.6, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
-        ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
-    axes[1].set_ylim(0, None)
+        ax.set_xlabel("$K$"); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
+    axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, -0.03), columnspacing=1.2, handletextpad=0.4,
                handlelength=2.0, fontsize=6.5)
-    fig.tight_layout(w_pad=1.0, rect=(0, 0.17, 1, 1))
+    fig.tight_layout(w_pad=0.6, rect=(0, 0.19, 1, 1))
     fig.savefig(osp.join(out, "fig_labels.pdf")); plt.close(fig)
 
 
 def fig_qual(out):
-    """Held-out frames of both sensors at K=25: frame | real only | MAPL | reference.  Per object, the frame whose gain in
+    """Held-out frames of both sensors at K=25: frame | real only | SnapTac | reference.  Per object, the frame whose gain in
     contact MAE is the object's median gain (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "B_k25_realonly", "B_k25_al2", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A (GelSlim 5.0)"),
             ("B", "S_k25_realonly_m", "S_k25_mapl_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
@@ -346,7 +344,7 @@ def fig_qual(out):
                 for sp in ax.spines.values():
                     sp.set_visible(False)
                 if r == 0:
-                    ax.set_title(["frame", "real only", "MAPL (ours)", "GT"][c], fontsize=7, pad=2)
+                    ax.set_title(["frame", "real only", "SnapTac (ours)", "GT"][c], fontsize=7, pad=2)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
                     ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white")

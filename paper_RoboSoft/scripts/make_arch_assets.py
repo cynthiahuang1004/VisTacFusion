@@ -1,4 +1,4 @@
-"""Thumbnails of the MAPL architecture figure (paper_RoboSoft/architecture_diagram.tex), all from one real unlabeled frame
+"""Thumbnails of the SnapTac architecture figure (paper_RoboSoft/architecture_diagram.tex), all from one real unlabeled frame
 (K=25 run): the frame, the object height map, the mesh depth at the teacher pose and at the aligned pose, its normals,
 and the student's prediction on that frame.
 usage: python paper_RoboSoft/scripts/make_arch_assets.py
