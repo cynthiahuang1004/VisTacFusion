@@ -4,11 +4,11 @@
 \usepackage{graphicx,amsmath,amssymb,booktabs,multirow,cite,url,array,xcolor,colortbl,tabularx}
 \usepackage[protrusion=false]{microtype}
 \usepackage{caption}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
 
-\newcommand{\sensor}{GelSlim~5.0}
+\newcommand{\sensor}{\ifdefined\MeshTacAuthorVersion GelSlim~5.0\else sensor~A\fi}
 \newcommand{\sensorB}{GelSlim~4.0}
 \newcommand{\tableformat}{\small\setlength{\tabcolsep}{3.0pt}\renewcommand{\arraystretch}{1.02}}
 \newcommand{\metrichead}[2]{\shortstack[c]{\strut#1\\\strut#2\,$\downarrow$}}
@@ -19,10 +19,17 @@
 \title{\LARGE\bf MeshTac: Mesh-Aligned Pseudo-Labels for Label-Efficient\\
 Tactile Depth, Normal and Pose Estimation}
 
+% Anonymous by default for RoboSoft double-anonymous review.
+% Compile with \def\MeshTacAuthorVersion{1}\input{main.tex} for an author copy.
+\ifdefined\MeshTacAuthorVersion
 \author{I-Hsuan Huang$^{*}$, Xiaohao Xu$^{*}$, Xiangdong Wang, Xiaonan Huang, and Nima Fazeli%
 \thanks{$^{*}$Equal contribution. All authors are with the University of Michigan, Ann Arbor, MI, USA.
 Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 }
+\else
+\author{Anonymous submission}
+\fi
+\hypersetup{pdfauthor={},pdftitle={MeshTac},pdfsubject={},pdfkeywords={}}
 
 \begin{document}
 \maketitle
@@ -30,7 +37,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \pagestyle{empty}
 
 \begin{abstract}
-Vision-based tactile sensors need sensor-specific dense supervision, and labeled real contacts are expensive. Real-to-sim-to-real pipelines replace them by rendered contacts, but under a control that is usually missing---the renderer must not see the frames on which the model is tested---we find that a physically calibrated renderer does not improve dense prediction, that a learned renderer needs about $50$ labeled pairs per object before it does, and that the common leaky protocol overstates its benefit by $2$--$4\times$. Simulation does provide exact geometry; what is missing is the pose of that geometry in each real frame. We therefore propose \emph{MeshTac}, mesh-aligned pseudo-labeling, which turns unlabeled real frames, free to capture, into labeled ones: the $\Kreal$-shot model proposes a pose for each frame, a residual aligner trained on the same $\Kreal$ labeled frames snaps the object mesh onto the frame, and the mesh depth at the aligned pose becomes its label. With only $10$--$25$ labeled frames per object (less than a tenth of the training frames), MeshTac lowers contact error by $13$--$20\%$ on a \sensor{} sensor and by $33$--$36\%$ on a \sensorB{} sensor over real-only training. The gain persists up to $100$ labels, where MeshTac surpasses the leaky renderer; it halves the labels needed for a given error on both sensors and carries over to a second capture session. Applied at test time, the same aligner refines the predicted pose from $3$--$10^\circ$ to about $1^\circ$. The obvious alternatives---self-training on the model's own predictions and a render-and-compare search with the few-shot renderer---do not improve contact localization.
+Vision-based tactile sensors provide detailed contact images, but learning to recover geometry from them requires registered training data. We present MeshTac, a method that uses known object meshes to label additional real tactile images from only a few labeled contacts. A teacher predicts an initial contact pose, and a residual aligner refines it by comparing the real image with mesh depth rendered at the current estimate. The aligner is trained by perturbing the poses of the same labeled frames; the aligned mesh then supplies depth, normal and pose targets for a student. On 12 ridge-pattern objects, using $10$--$25$ labeled frames per object reduces contact-region depth error by $13$--$20\%$ on \sensor{} and $33$--$36\%$ on \sensorB{} relative to real-only training. Each sensor is trained separately under the same label budget. Ablations show that alignment improves pseudo-label quality beyond teacher predictions or an image-error pose search. Synthetic images are unnecessary for the within-session depth gains, but improve performance in a second capture session. The same aligner also refines test-time poses, reaching $0.4$--$1.2^\circ$ mean rotation error within the original session at $K\ge25$. These results support mesh alignment as a practical source of supervision for tactile perception of known objects.
 \end{abstract}
 
 \input{sections/01_intro}

@@ -5,7 +5,7 @@
   fig_loo.pdf        leave-object-out: depth and rotation on the three unseen objects
   fig_renders.png    same simulated contact rendered by Blender / GAN-K / GAN-full, plus a real frame
 
-usage: python ablation/pilot_robosoft/make_paper_figs.py <out_dir>
+usage: python paper_RoboSoft/scripts/make_paper_figs.py <out_dir>
 """
 import glob
 import json
@@ -76,8 +76,8 @@ def fig_kshot(out):
     names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Leaky renderer", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.95))
-    panels = [("depth_mse", "val", "(a) Depth MSE [mm$^2$]"), ("c_mae", "masked", "(b) Contact MAE [mm]"),
-              ("pose_rot_deg", "rot", "(c) Rotation error [deg]")]
+    panels = [("depth_mse", "val", "(a) Depth MSE [mm$^2$] $\\downarrow$"), ("c_mae", "masked", "(b) Contact MAE [mm] $\\downarrow$"),
+              ("pose_rot_deg", "rot", "(c) Rotation [deg] $\\downarrow$")]
     for ax, (key, src, lab) in zip(axes, panels):
         for name, runs in series.items():
             c, m, ls = STY[name]
@@ -100,7 +100,7 @@ def fig_kshot(out):
         c, m, _ = STY[name]
         ax.plot([25], [SB[f"pilot_S_k25_{run}/sensorB_mesh"]["c_mae"]], color=c, marker=m, ls="none", ms=4.5, mec="white", mew=0.6)
     ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
-    ax.set_xlabel("Labels per object, $K$"); ax.set_title("(d) Contact MAE [mm]", loc="left")
+    ax.set_xlabel("Labels per object, $K$"); ax.set_title("(d) Contact MAE [mm] $\\downarrow$", loc="left")
     ax.text(0.97, 0.95, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, frameon=False, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.02), columnspacing=1.0, handletextpad=0.4)
@@ -269,7 +269,7 @@ def fig_align(out, K=25):
             return (a & b).sum() / max(1, (a | b).sum())
         sc = sorted((iou_of(t), t) for t in cand[::7])
         rows.append(sc[len(sc) // 2][1])                       # the object's median-quality frame
-    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.32))
+    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.52))
     titles = ["unlabeled\nframe", "teacher\ndepth", "mesh at\nteacher pose", "mesh at\naligned pose", "GT\n"]
     for r, t in enumerate(rows):
         f = fits[t]; o = t.split("/")[-5]
@@ -284,7 +284,13 @@ def fig_align(out, K=25):
                 sp.set_visible(False)
             if r == 0:
                 ax.set_title(titles[c], fontsize=5.5, pad=2, linespacing=1.0)
-    fig.subplots_adjust(left=0.005, right=0.995, top=0.90, bottom=0.005, wspace=0.03, hspace=0.03)
+    fig.subplots_adjust(left=0.005, right=0.995, top=0.90, bottom=0.125, wspace=0.03, hspace=0.03)
+    from matplotlib.cm import ScalarMappable
+    cax = fig.add_axes([0.28, 0.085, 0.44, 0.015])
+    cb = fig.colorbar(ScalarMappable(norm=plt.Normalize(0, 1.2), cmap="viridis"), cax=cax,
+                      orientation="horizontal", ticks=[0, 0.4, 0.8, 1.2], extend="max")
+    cb.ax.tick_params(labelsize=5.5, pad=1, length=2)
+    cb.set_label("Depth [mm]", fontsize=5.5, labelpad=1)
     fig.savefig(osp.join(out, "fig_align.pdf"), dpi=300); plt.close(fig)
 
 
@@ -311,7 +317,7 @@ def fig_labels(out):
     fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.7))
     for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Pose error [deg] $\\downarrow$")]):
         for name, D, off, c, m, ms in series:
-            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=1.4, ms=ms, mec="white", mew=0.6, label=name)
+            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="--" if name.startswith("Teacher") else "-", lw=1.4, ms=ms, mec="white", mew=0.6, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("$K$"); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
     axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
@@ -325,10 +331,10 @@ def fig_labels(out):
 def fig_qual(out):
     """Held-out frames of both sensors at K=25: frame | real only | MeshTac | reference.  Per object, the frame whose gain in
     contact MAE is the object's median gain (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
-    sets = [("A", "B_k25_realonly", "B_k25_al2", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A (GelSlim 5.0)"),
+    sets = [("A", "B_k25_realonly", "B_k25_al2", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
             ("B", "S_k25_realonly_m", "S_k25_mapl_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
-    fig = plt.figure(figsize=(7.1, 2.75))
-    outer = fig.add_gridspec(1, 2, left=0.004, right=0.996, top=0.865, bottom=0.004, wspace=0.035)
+    fig = plt.figure(figsize=(7.1, 2.9))
+    outer = fig.add_gridspec(1, 2, left=0.004, right=0.996, top=0.865, bottom=0.14, wspace=0.035)
     for g, (name, r0, r1, objs, title) in zip(outer, sets):
         d = np.load(f"outputs/robosoft_qual/qual_{name}.npz")
         inner = g.subgridspec(3, 4, wspace=0.025, hspace=0.035)
@@ -336,7 +342,7 @@ def fig_qual(out):
         for r, o in enumerate(objs):
             ids = [i for i, k in enumerate(d["keys"]) if f"/{o}/" in str(k)]
             i = sorted(ids, key=lambda j: gain[j])[len(ids) // 2]
-            vmax = max(1.0, float(d["gt"][i].max()))
+            vmax = 1.2  # Fixed depth scale across all examples and both sensors.
             for c, im in enumerate([d["img"][i], d[f"pred_{r0}"][i].astype(np.float32), d[f"pred_{r1}"][i].astype(np.float32), d["gt"][i].astype(np.float32)]):
                 ax = fig.add_subplot(inner[r, c])
                 ax.imshow(im) if c == 0 else ax.imshow(im, cmap="viridis", vmin=0, vmax=vmax)
@@ -347,9 +353,16 @@ def fig_qual(out):
                     ax.set_title(["frame", "real only", "MeshTac (ours)", "GT"][c], fontsize=7, pad=2)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
-                    ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white")
+                    ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white",
+                            bbox=dict(facecolor="black", alpha=0.55, edgecolor="none", pad=1.1))
         bb = g.get_position(fig)
         fig.text((bb.x0 + bb.x1) / 2, 0.985, title, ha="center", va="top", fontsize=8, fontweight="bold")
+    from matplotlib.cm import ScalarMappable
+    cax = fig.add_axes([0.35, 0.085, 0.30, 0.018])
+    cb = fig.colorbar(ScalarMappable(norm=plt.Normalize(0, 1.2), cmap="viridis"), cax=cax,
+                      orientation="horizontal", ticks=[0, 0.4, 0.8, 1.2], extend="max")
+    cb.ax.tick_params(labelsize=6, pad=1, length=2)
+    cb.set_label("Depth [mm] (shared scale)", fontsize=6, labelpad=1)
     fig.savefig(osp.join(out, "fig_qual.pdf"), dpi=300); plt.close(fig)
 
 

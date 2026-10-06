@@ -1,12 +1,14 @@
 # RoboSoft 2027 paper — data provenance
 
-**Current state (2026-10-06): see `PAPER_NOTES.md`** — method name MeshTac, 6-page `main.tex` and
-15-page `main_long.tex`, where every number comes from, run-name mapping, conventions and pitfalls.
+**全文修訂紀錄：[`EDITORIAL_REVIEW.md`](EDITORIAL_REVIEW.md)**。`main.pdf` 為六頁匿名稿；`main_long.pdf` 為 extended version。原始結果未改，修訂包含論述、資料來源校正、圖表與排版。
+
+**Current state (editorial revision 2026-10-05, America/New_York): see `PAPER_NOTES.md`** — method name MeshTac, 6-page `main.tex` and
+14-page `main_long.tex`, where every number comes from, run-name mapping, conventions and pitfalls.
 The sections below are the original (2026-09-24) provenance notes of the renderer study and are kept
 for the run tables; where they disagree with `PAPER_NOTES.md`, the notes win.
 
 **Overleaf project**: `6ab1c9afe47f399544728ef3` (branch `main`). Sync with `./sync_overleaf.sh pull|push`
-(needs `OVERLEAF_TOKEN`). Deadline: **2026-10-15 23:59 PT** (PaperPlaza). Notification 2027-01-30.
+(needs `OVERLEAF_TOKEN`). Deadline date: **2026-10-15**; homepage says 23:59 PT but CFP says GMT—check PaperPlaza for the authoritative cutoff. Notification 2027-01-30.
 
 ## Layout
 

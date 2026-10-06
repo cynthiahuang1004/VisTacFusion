@@ -4,7 +4,7 @@ Sources (all produced by ablation/pilot_robosoft/*):
   <OUT>/pilot150_<run>/history.json  depth_mse / normal_mse (best val depth epoch), rot / trans (best val rot epoch),
                                      and the same for the held-out TEST objects (A runs)
   masked_results.json                contact MAE, IoU, normal angular error (contact region) on val / TEST
-  cross_session_results.json         curated cross-session set (68 frames)
+  cross_session_results.json         corrected cross-session set (854 frames; cross_session_fv)
   sensorB_results.json               GelSlim 4.0 test set (1620 frames)
   cross_sensor_results.json          zero-shot on GelSlim 4.0
   renderer_fidelity_all.log          contact-region L1 of every learned renderer
@@ -201,7 +201,7 @@ def cs(run, pre="pilot150_"):
     r = CROSS.get(f"{pre}{run}/cross_session_fv") or CROSS.get(f"pilot_{run}/cross_session_fv")
     return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib")) if r else None
 cross = [
-    ("Real only (all objects, session 1)", cs("A_realonly"), {}),
+    ("Real only (9 objects, session 1)", cs("A_realonly"), {}),
     ("+ Blender", cs("A_blender"), {}),
     ("+ Blender (domain rand.)", cs("A_dr"), {}),
     ("+ Blender, bg-norm.", cs("A_blender_bgsub"), {}),
@@ -244,7 +244,7 @@ for K in (10, 25, 50, 100):
     km.append(table(blk, cols5, bold_max=("iou",)))
 T["kshotmain"] = "\n\\midrule\n".join(km)
 T["crossmain"] = table([
-    ("all & Real only", cs("A_realonly"), {}), ("  & + physical renderer", cs("A_blender"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}),
+    ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("  & + physical renderer", cs("A_blender"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}),
     ("  & + leaky renderer", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + learned renderer", cs("B_k25_gank"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}),
     ("  & + MeshTac (ours)", cs("B_k25_al2"), {}), ("  & \\quad no renderer", cs("B_k25_rf"), {}), ("", None, {"sep": r"\midrule"}),
@@ -358,16 +358,27 @@ for K in (10, 25, 50, 100):
     sbs.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",)))
 T["sbshort"] = "\n\\midrule\n".join(sbs)
 T["crossshort"] = table([
-    ("all & Real only", cs("A_realonly"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}), ("", None, {"sep": r"\midrule"}),
+    ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}), ("  & + MeshTac (ours)", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}), ("  & + MeshTac (ours)", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 T["crossshortb"] = table([
-    ("all & Real only", cs("A_realonly"), {}), ("", None, {"sep": r"\midrule"}),
+    ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-train.", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-train.", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
 T["sbshortb"] = "\n".join(table([(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & MeshTac", sbm(f"S_k{K}_maplnr_m"), {})], [("c_mae", 3), ("iou", 3)], bold_max=("iou",)) for K in (10, 25, 50, 100))
+# Split the full result table at budget boundaries for readable two-column floats.
+blocks = T["kshot"].split("\n\\midrule\n")
+T["kshotfew"] = "\n\\midrule\n".join(blocks[:3])
+T["kshotmore"] = "\n\\midrule\n".join(blocks[3:])
+# Compact labels keep the ablation table readable without changing any metrics.
+for old, new in [("Teacher depth (self-training)", "Teacher depth"),
+                 ("Teacher depth + teacher pose", "Teacher depth + pose"),
+                 ("Mesh at L1-search pose", "L1-search mesh"),
+                 ("Mesh at aligned pose (MeshTac)", "MeshTac"),
+                 ("no renderer anywhere", "no renderer")]:
+    T["rcablmain"] = T["rcablmain"].replace(old, new)
 # ---------------- write ----------------
 with open("paper_RoboSoft/data/tables.tex", "w") as fh:
     for k, v in T.items():
