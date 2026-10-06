@@ -317,7 +317,7 @@ def fig_labels(out):
     fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.7))
     for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Pose error [deg] $\\downarrow$")]):
         for name, D, off, c, m, ms in series:
-            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="--" if name.startswith("Teacher") else "-", lw=1.4, ms=ms, mec="white", mew=0.6, label=name)
+            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=1.4, ms=ms, mec="white", mew=0.6, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("$K$"); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
     axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
