@@ -1,4 +1,18 @@
-# MeshTac 全文修訂紀錄（2026-10-05，美東時間）
+# MeshTac 全文修訂紀錄
+
+## 2026-10-06 作者回饋後的修訂（目前版本）
+
+- 兩版 Fig. 1 均直接引用作者指定的 `figures/fig_arch_v1.pdf`，PDF 本身未修改。Caption 補充圖中省略的 synthetic training 分支與 schematic output thumbnails。
+- 保留 Claude 已恢復的 Fig. 4 四條實線，未改動該圖或生成 script。
+- 摘要恢復 renderer label cost 的切入點與 24–26% depth-MSE 結果，明確指出 all-pairs renderer 超出 K 的訓練標籤預算，因此不能當成只用 K labels 的 simulation gain。
+- 摘要恢復「一半訓練標註」的具體證據：sensor A 50 vs. 100（depth MSE），sensor B 25 vs. 50（contact MAE），不擴張為所有 budgets 和 metrics。
+- Introduction/contributions 恢復 label-accounting study 作為獨立貢獻，不宣稱其他研究普遍洩漏測試資料。
+- 結論恢復「the results indicate that mesh-pose accuracy is a key bottleneck」的詮釋，限定為利用未標註 real contacts 產生監督的問題。
+- Extended version 恢復 practical recipe 和 reporting，納入 renderer-free 起點、跨 session synthetic augmentation、known-mesh pose coverage，以及各元件的資料與 checkpoint accounting。
+- 五項已查證錯誤的修正、50/150 epochs 區別、validation-label 成本和 physical tuning 的待確認來源均保留。
+- 編譯結果：短版 6 頁、長版 15 頁；無 undefined references、overfull boxes 或 oversized floats。
+
+## 2026-10-05 首輪修訂（歷史紀錄；部分編輯取捨已由上方更新）
 
 本輪以 RoboSoft 六頁稿為主，同步修訂 extended version。原始實驗數值、模型 checkpoint、資料切分與訓練程式未改；圖表由既有結果重建。這份文件記錄編輯判斷和仍需作者確認的實驗來源，不是新的實驗報告。
 

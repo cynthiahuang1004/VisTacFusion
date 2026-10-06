@@ -4,7 +4,7 @@ Vision-based tactile sensors image a soft elastomer as it deforms against an obj
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.97\textwidth]{figures/fig_arch_v1.pdf}
+    \includegraphics[width=0.97\textwidth]{figures/fig_arch.pdf}
     \caption{\textbf{Overview of MeshTac.} The teacher $f_0$, trained on the $\Kreal$ labeled frames, proposes a pose $q_0$ for an unlabeled frame. The aligner $A$ takes the frame and the mesh depth at the current pose and predicts a correction $\Delta q$, applied six times; $A$ is trained on the same $\Kreal$ labeled frames by regressing random offsets of their true pose. The mesh depth, normals and pose at the aligned pose become the frame's label. The student $f_1$, the same network as $f_0$, is trained on the $\Kreal$ labeled and the mesh-aligned frames; at test time it needs no mesh, and the same aligner can optionally refine its predicted pose. Colours: blue, perception network; orange, aligner; grey, geometry and pose quantities; purple, labels and loss. Thumbnails are a real unlabeled frame ($\Kreal=25$), its mesh depth at the teacher pose, its mesh-aligned label and the student's actual prediction.}
     \label{fig:mapl}
 \end{figure*}

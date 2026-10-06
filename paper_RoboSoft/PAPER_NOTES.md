@@ -1,12 +1,20 @@
 # MeshTac paper — notes for revising the manuscript
 
-Companion to `main.tex` (6-page RoboSoft 2027 submission) and `main_long.tex` (14-page extended
+Companion to `main.tex` (6-page RoboSoft 2027 submission) and `main_long.tex` (15-page extended
 version, same story, every result). Everything that is *in* the paper is not repeated here; this file
 says where the numbers come from, how paper terms map to code names, and what must not be changed
 without re-checking.
 
 Deadline date: RoboSoft 2027, **2026-10-15**. Official homepage says 23:59 PT but CFP says GMT; confirm the time in PaperPlaza. Page limit 6 + up to 2 paid pages; `main.pdf` is
 exactly 6 pages including references.
+
+## Author-directed follow-up (2026-10-06, America/New_York)
+
+Fig. 1 uses the original `fig_arch_v1.pdf`; Fig. 4 retains Claude's four solid lines.
+Restored the abstract's label-accounting motivation and concrete half-budget comparisons,
+a separate label-accounting contribution, the qualified pose-bottleneck interpretation,
+and the extended version's practical recipe/reporting sections. All protocol corrections remain.
+Short version: 6 pages; extended: 15 pages.
 
 ## Editorial revision (2026-10-05, America/New_York)
 
@@ -24,7 +32,7 @@ Main sensor-A aligner logs include synthetic examples (24 real + 40 synthetic pe
 | 6-page paper | `main.tex`, `sections/01_intro … 06_conclusion.tex` |
 | Extended version | `main_long.tex`, `sections_long/01_intro, 02_related, 03_setup, 04_mapl, 05_experiments, 06_conclusion.tex` |
 | Shared | `refs.bib`, `ieeeconf.cls`, `data/tables.tex` (generated), `figures/` |
-| Overview figure (Fig. 1) | `architecture_diagram.tex` → `figures/fig_arch.pdf`; `_v2` = three-step variant, not used |
+| Overview figure (Fig. 1) | **`figures/fig_arch_v1.pdf`**, explicitly selected by the author; both versions include this PDF directly. Do not replace it with `fig_arch.pdf`. |
 | Tables | `scripts/build_tables.py` → `data/tables.tex`; one `\newcommand{\tab<name>}` per table body |
 | Figures | `scripts/make_paper_figs.py`; `scripts/make_arch_assets.py` (thumbnails of Fig. 1); `scripts/dump_qual_preds.py` (predictions for Fig. 5) |
 | Overleaf | project `6ab1c9afe47f399544728ef3`; `OVERLEAF_TOKEN=… bash sync_overleaf.sh push "<msg>"` (also `pull`) |
@@ -166,7 +174,7 @@ self-training 0.300/0.707, MeshTac 0.252/0.743 (no renderer 0.288/0.707).
   (pattern_37, the hardest object, is not shown but is in every average). Predictions are cached in
   `/media/hdd2/ihsuan/VisTacFusion/outputs/robosoft_qual/qual_{A,B}.npz` (130 MB each; keep them out of
   `data/`, which is synced to Overleaf).
-- **Fig. 1**: revised vector overview shows real-image and mesh inputs; it no longer contains GT thumbnails in student-output positions.
+- **Fig. 1**: the author restored the original `fig_arch_v1.pdf`. Student-output thumbnails are schematic (GT assets); the caption says so and notes the synthetic training branches omitted from the drawing. **Fig. 4 must retain four solid lines.**
 - **Second round** (student as teacher) gives no gain (K=10: 0.0570 vs 0.0559; K=25: 0.0445 vs 0.0450).
   Unlabeled fraction 25/50/100 %: 0.0453/0.0452/0.0447 (long version only).
 - **Leave-object-out**: held-out objects pattern_04_3_lines_angle_2, pattern_31_rod, pattern_33
