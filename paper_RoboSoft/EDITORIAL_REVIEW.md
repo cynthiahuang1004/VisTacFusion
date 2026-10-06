@@ -1,5 +1,15 @@
 # MeshTac 全文修訂紀錄
 
+## 2026-10-06 三項貢獻與風險陳述（目前版本）
+
+- 將原本四項貢獻整合為三項較完整的主張：**MeshTac 方法**、**matched-budget label accounting**、以及涵蓋兩個 sensors、第二個 session、held-out objects、消融與 test-time refinement 的**系統性實證**。原第 4 點 test-time refinement 併入實證，不再獨立包裝為同等層級的方法貢獻。
+- 摘要與引言在開頭明確限定為 **known-object tactile perception**：object identity 與 mesh 已知，而昂貴的是把每張真實 contact 註冊到 mesh。
+- 與一般 pose refinement 的差異寫得更明確：aligner 的主要用途是把 refined mesh state 轉成 depth、normal、pose training targets；student 在標準推論時不需要 mesh input。相同 aligner 的 test-time refinement 是額外用途。
+- 限制段明確交代：evaluated predictor 使用 object identity；mesh 用於 pseudo-labeling 與 optional refinement；mesh-derived targets 衡量 registered object geometry，不是實際 elastomer deformation。
+- 將 ridge objects 說明為受控的 contact-localization/pose 測試，不宣稱可推廣到 curved、textured 或 unknown objects；也直接指出本文驗證 perception，尚未證明 downstream manipulation 效益。
+- 未修改實驗數字、結果表格或圖檔。短版維持 6 頁，長版維持 15 頁。
+- 已同步至 Overleaf commit `58fa81c`。
+
 ## 2026-10-06 文獻寫法參考與全文修飾（最新）
 
 依作者最新要求，兩版摘要改為約 198 字的定性敘述，不列改善百分比、K 值、誤差或測試角度。原先數字仍在實驗正文與表格；「一半標註」的具體比較保留於 label-efficiency 段落。這項選擇取代前一輪「在摘要恢復數字」的編輯方向。
@@ -20,7 +30,7 @@
 ### 修改內容
 
 - **摘要**：mesh supervision 的問題 → teacher / residual aligner / student → qualitative evidence → renderer label accounting 與適用情境。保留 label-accounting 研究發現，縮減支線細節。
-- **引言**：從 tactile geometry 的需求收斂至註冊成本，再說明 renderer budget 的問題與 alignment 動機。四項貢獻均保留，方法放第一項；短版精簡重複背景，長版保留較完整銜接。
+- **引言**：從 tactile geometry 的需求收斂至註冊成本，再說明 renderer budget 的問題與 alignment 動機。本輪當時保留四項貢獻，已由上方最新修訂整合為三項。
 - **Related work**：由逐項列舉改成依問題組織，明確交代 simulation、representation、pseudo-labeling 與 pose refinement 和本稿的關係。
 - **方法／設定**：新增簡短流程導讀，改善長句及不完整句子；主 aligner 的 real/synthetic 資料、訓練預算與 checkpoint 規則均保留。
 - **實驗**：各節先說比較目的；詳細版將原本一段內的六項 ablation 拆成 aligner training、synthetic student data、unlabeled data/filtering、repeated alignment 等段落。合併重複跨 session 敘述，保留實驗數值及比較。

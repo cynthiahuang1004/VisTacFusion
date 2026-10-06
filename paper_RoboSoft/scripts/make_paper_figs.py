@@ -70,7 +70,7 @@ def fig_kshot(out):
         "+ Blender (physical)": ["B_k10_blender", "B_k25_blender", "B_k50_blender", "B_k100_blender"],
         "+ GAN-K (learned, strict)": ["B_k10_gank", "B_k25_gank", "B_k50_gank", "B_k100_gank"],
         "+ self-training": ["B_k10_semipm_pseudo", "B_k25_semipm_pseudo", "B_k50_semipm_pseudo", "B_k100_semipm_pseudo"],
-        "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", None, "B_k100_ganfull"],
+        "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", "B_k50_ganfull", "B_k100_ganfull"],
         "+ MeshTac (ours, strict)": ["B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
     }
     names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",

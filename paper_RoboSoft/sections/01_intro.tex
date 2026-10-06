@@ -1,6 +1,6 @@
 \section{Introduction}
 
-Contact geometry tells a robot where an object meets its fingertip and how it is oriented. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} image a deforming elastomer to capture this information. Their images vary with illumination, elastomer properties and camera response, so learning requires examples of the target sensor's appearance with accurate geometric labels. For mesh-based datasets, obtaining those labels means registering each contact to the object mesh.
+Contact geometry tells a robot where an object meets its fingertip and how it is oriented. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} image a deforming elastomer to capture this information. Their images vary with illumination, elastomer properties and camera response, so learning requires examples of the target sensor's appearance with accurate geometric labels. We consider known-object perception: object identity and a mesh are available, but registering every captured contact to that mesh is costly.
 
 \begin{figure*}[t]
     \centering
@@ -15,12 +15,11 @@ Our renderer study demonstrates the consequence. Synthetic images appear substan
 
 Unlabeled tactile images already contain the target sensor's appearance. With a known mesh, their geometric labels depend on the contact state: in-plane rotation, translation and indentation. A model trained on a small labeled set can initialize this state, but pose errors shift the projected contact and corrupt its dense labels. Accurate alignment is therefore central to making the additional images useful for learning.
 
-MeshTac learns a residual aligner that compares the real image with candidate mesh depth and predicts a contact-state correction (Fig.~\ref{fig:mapl}). Perturbing registered contacts supplies training examples without additional real labels. The refined mesh provides depth, normal and pose targets for a student with the teacher's architecture, retaining real contact appearance while constraining the labels through geometry.
+MeshTac learns a residual aligner that compares the real image with candidate mesh depth and predicts a contact-state correction (Fig.~\ref{fig:mapl}). Perturbing registered contacts supplies training examples without additional real labels. Unlike refinement used only at inference, MeshTac converts each corrected state into depth, normal and pose targets for training on real images. The student retains real contact appearance during training and predicts without a mesh at standard inference.
 
 We compare real-only training, synthetic-data augmentation, self-training and MeshTac under matched training-label budgets. Our contributions are:
 \begin{itemize}
-    \item Mesh-aligned pseudo-labeling that learns contact-state refinement from available labeled contacts and supplies depth, normal and pose targets for unlabeled real images.
-    \item A label-accounting study separating simulation gains under matched budgets from gains obtained with additional renderer supervision.
-    \item Evaluation on two sensors with separately trained models, with alignment and renderer ablations and a second capture session to test changed appearance and object placement.
-    \item Test-time reuse of the aligner for pose refinement, including on held-out objects with known meshes.
+    \item MeshTac, a mesh-aligned pseudo-labeling method for known-object tactile perception, turns contact-state refinements learned from a small registered set into depth, normal and pose targets for unlabeled real images. Its student is mesh-free at standard inference.
+    \item A controlled label-accounting study gives the renderer and predictor the same real training-label budget, separating synthetic-data gains from gains due to additional paired real contacts.
+    \item Experiments across two sensors, a second capture session and held-out objects isolate the roles of alignment and synthetic data, and evaluate the same aligner for optional test-time pose refinement without retraining.
 \end{itemize}

@@ -10,7 +10,7 @@ exactly 6 pages including references.
 
 ## Latest prose revision (2026-10-06)
 
-The author now prefers an abstract without quantitative results. Both abstracts use qualitative findings; exact effect sizes and half-budget comparisons remain in Experiments. This supersedes the earlier request to restore numbers in the abstract. The four contributions, qualified pose-bottleneck conclusion, and extended practical recipe/reporting remain. Introduction, related work, method transitions and experimental paragraphs were revised using TACTO, Taxim, DeepIM and Sparsh as structural references (see `EDITORIAL_REVIEW.md`). No figure, result table or bibliography changed. Short: 6 pages; extended: 15 pages.
+The author now prefers an abstract without quantitative results. Both abstracts use qualitative findings; exact effect sizes and half-budget comparisons remain in Experiments. This supersedes the earlier request to restore numbers in the abstract. The contributions are consolidated into three: the MeshTac method, matched-budget label accounting, and systematic empirical characterization (including optional test-time refinement). The qualified pose-bottleneck conclusion and extended practical recipe/reporting remain. Introduction, related work, method transitions and experimental paragraphs were revised using TACTO, Taxim, DeepIM and Sparsh as structural references (see `EDITORIAL_REVIEW.md`). The paper explicitly targets known-object tactile perception and distinguishes mesh-projected geometry from physical elastomer deformation. No figure, result table or bibliography changed. Short: 6 pages; extended: 15 pages.
 
 ## Author-directed follow-up (2026-10-06, America/New_York)
 
