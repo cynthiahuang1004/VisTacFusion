@@ -1,0 +1,46 @@
+% Reproducible vector overview. The image thumbnails are inputs and geometric labels.
+\documentclass[border=4pt]{standalone}
+\usepackage{tikz,graphicx,amsmath,amssymb}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\definecolor{blue}{HTML}{E6EFF8}
+\definecolor{purple}{HTML}{EFE6F7}
+\definecolor{green}{HTML}{E7F1EB}
+\definecolor{ink}{HTML}{344356}
+\tikzset{
+ block/.style={draw=ink!60,rounded corners=2pt,align=center,font=\sffamily\small,inner sep=5pt,minimum height=0.95cm},
+ arrow/.style={-{Stealth[length=4pt]},draw=ink,line width=0.65pt},
+ note/.style={font=\sffamily\scriptsize,align=center,text=ink},
+ thumb/.style={inner sep=0pt},
+}
+\begin{document}
+\begin{tikzpicture}
+\node[note,anchor=west,font=\sffamily\small\bfseries] at (-0.55,3.05) {(a) Label real training images};
+\node[thumb] (image) at (0,2) {\includegraphics[width=0.9cm]{figures/arch/frame.png}};
+\node[note,below=2pt of image] {Unlabeled image $I$};
+\node[block,fill=blue,text width=2cm] (teacher) at (2.4,2) {Teacher $f_0$\\[-2pt]{\scriptsize $K$ labels/object}};
+\node[block,fill=green,text width=2.0cm] (depth) at (5.5,2) {Mesh depth\\[-2pt]$d(M,q_t)$};
+\node[block,fill=purple,text width=2.1cm] (align) at (8.8,2) {Aligner $A$\\[-2pt]{\scriptsize RGB + depth}};
+\node[block,fill=green,text width=3cm] (label) at (13.0,2) {Aligned mesh at $q_6$\\[-2pt]{\scriptsize depth, normals, pose}};
+\draw[arrow] (image) -- (teacher);
+\draw[arrow] (teacher) -- node[note,above] {$q_0$} (depth);
+\draw[arrow] (depth) -- (align);
+\draw[arrow] (align) -- node[note,above,text width=1.2cm] {6 updates} (label);
+\draw[arrow] (image.north) -- ++(0,0.52) -| (align.north);
+\node[thumb] (mesh) at (2.5,0.35) {\includegraphics[width=0.78cm]{figures/arch/mesh.png}};
+\node[note,below=2pt of mesh] {Known mesh $M$};
+\draw[arrow] (mesh.east) -| (depth.south);
+\draw[arrow,dashed] (align.south) -- ++(0,-0.65) -| node[note,pos=0.4,below] {$q_{t+1}=q_t+\Delta q_t$} (depth.south);
+\node[note,align=left,anchor=west] at (10.4,0.55) {Training: perturbed contact states;\\same $K$ real labels, optional renders.};
+
+\node[note,anchor=west,font=\sffamily\small\bfseries] at (-0.55,-0.9) {(b) Train and deploy the student};
+\node[block,fill=blue,text width=3.1cm] (real) at (1.25,-1.8) {$K$ labeled real frames\\+ mesh-aligned real frames};
+\node[block,fill=purple,text width=2.7cm] (student) at (5.7,-1.8) {Student $f_1$\\[-2pt]{\scriptsize frozen SITR\\DPT + pose MLP}};
+\node[block,fill=green,text width=2.7cm] (output) at (9.4,-1.8) {Depth and normals\\Planar pose\\[-2pt]{\scriptsize mesh-free inference}};
+\node[block,fill=blue,text width=2.7cm] (refine) at (13.1,-1.8) {Pose refinement\\[-2pt]{\scriptsize optional: same $A$\\with image and mesh}};
+\draw[arrow] (real) -- (student);
+\draw[arrow] (student) -- (output);
+\draw[arrow] (output) -- (refine);
+\node[note,align=left,anchor=north] at (5.7,-2.6) {Optional synthetic training data:\\renderer retrained on labeled + aligned pairs.};
+\draw[arrow,dashed] (5.7,-2.6) -- (student.south);
+\end{tikzpicture}
+\end{document}
