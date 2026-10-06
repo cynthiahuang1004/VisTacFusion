@@ -1,29 +1,12 @@
 # RoboSoft 2027 paper — data provenance
 
-**Overleaf project**: `6ab1c9afe47f399544728ef3` (branch `main`). This directory is a mirror of the
-Overleaf sources plus the data and scripts behind every number. Sync with `./sync_overleaf.sh pull|push`
-(needs `OVERLEAF_TOKEN`). Compile: `pdflatex main && bibtex main && pdflatex main && pdflatex main`.
+**Current state (2026-10-06): see `PAPER_NOTES.md`** — method name MeshTac, 6-page `main.tex` and
+15-page `main_long.tex`, where every number comes from, run-name mapping, conventions and pitfalls.
+The sections below are the original (2026-09-24) provenance notes of the renderer study and are kept
+for the run tables; where they disagree with `PAPER_NOTES.md`, the notes win.
 
-Deadline: **2026-10-15 23:59 PT** (PaperPlaza). Notification 2027-01-30.
-
-Title (working): *How Much Real Data Does a Tactile Renderer Need? A Leakage-Controlled
-Real-to-Sim-to-Real Study of Tactile Depth and Pose Estimation.* Earlier draft under the name
-TactiOS (Overleaf `6a342fc902f6a42d1376e4f0`) — inverse-rendering framing, no data.
-
-## Status (2026-09-24)
-
-- Rewritten around depth / normal / pose with equal weight. All main tables use the **150-epoch**
-  runs (`pilot150_*`, 26 configs); the K=10 leaky row and the variants table use 50-epoch pilots.
-  Seeds (3, 50 ep) at K=25/100 are quoted in the text.
-- New sections: rotation coverage + background-conditioned GAN (methods 6 and 1), cross-session
-  (curated 68 frames + reference-free IoU on 1,109 frames), cross-sensor (GelSlim 4.0, zero-shot +
-  K-shot with its own pairs), physics-guided GAN negative results.
-- Tables are generated: `python paper_RoboSoft/scripts/build_tables.py` -> `data/tables.tex`
-  (`\tabloo`, `\tabkshot`, `\tabseeds`, `\tabcross`, `\tabsensorb`, `\tabvariants`).
-  Figures: `python paper_RoboSoft/scripts/make_paper_figs.py paper_RoboSoft/figures`.
-- 8 pages incl. references (RoboSoft: 6 + up to 2 paid extra pages). Candidates for further cuts:
-  Table V (variants) -> text, Sec. II, the Q5 paragraph.
-- Not yet pushed to Overleaf (needs `OVERLEAF_TOKEN`): `./sync_overleaf.sh push "150-ep rewrite"`.
+**Overleaf project**: `6ab1c9afe47f399544728ef3` (branch `main`). Sync with `./sync_overleaf.sh pull|push`
+(needs `OVERLEAF_TOKEN`). Deadline: **2026-10-15 23:59 PT** (PaperPlaza). Notification 2027-01-30.
 
 ## Layout
 

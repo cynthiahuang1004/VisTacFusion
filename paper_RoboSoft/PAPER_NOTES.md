@@ -1,0 +1,188 @@
+# MeshTac paper — notes for revising the manuscript
+
+Companion to `main.tex` (6-page RoboSoft 2027 submission) and `main_long.tex` (15-page extended
+version, same story, every result). Everything that is *in* the paper is not repeated here; this file
+says where the numbers come from, how paper terms map to code names, and what must not be changed
+without re-checking.
+
+Deadline: RoboSoft 2027, **2026-10-15 23:59 PT**. Page limit 6 + up to 2 paid pages; `main.pdf` is
+exactly 6 pages including references.
+
+## 1. Files
+
+| What | Where |
+|---|---|
+| 6-page paper | `main.tex`, `sections/01_intro … 06_conclusion.tex` |
+| Extended version | `main_long.tex`, `sections_long/01_intro, 02_related, 03_setup, 04_mapl, 05_experiments, 06_conclusion.tex` |
+| Shared | `refs.bib`, `ieeeconf.cls`, `data/tables.tex` (generated), `figures/` |
+| Overview figure (Fig. 1) | `architecture_diagram.tex` → `figures/fig_arch.pdf`; `_v2` = three-step variant, not used |
+| Tables | `scripts/build_tables.py` → `data/tables.tex`; one `\newcommand{\tab<name>}` per table body |
+| Figures | `scripts/make_paper_figs.py`; `scripts/make_arch_assets.py` (thumbnails of Fig. 1); `scripts/dump_qual_preds.py` (predictions for Fig. 5) |
+| Overleaf | project `6ab1c9afe47f399544728ef3`; `OVERLEAF_TOKEN=… bash sync_overleaf.sh push "<msg>"` (also `pull`) |
+
+Compile from this directory: `pdflatex main; bibtex main; pdflatex main; pdflatex main` (same for
+`main_long`). Regenerate tables/figures from the repo root (`/media/hdd2/ihsuan/VisTacFusion`):
+
+```
+conda run -n vistacfusion python paper_RoboSoft/scripts/build_tables.py
+conda run -n vistacfusion python paper_RoboSoft/scripts/make_paper_figs.py paper_RoboSoft/figures
+cd paper_RoboSoft && pdflatex -output-directory=figures -jobname=fig_arch architecture_diagram.tex
+```
+
+Short-paper tables use the `*short`/`*main` macros (`\tabkshotshort`, `\tabrcablmain`, `\tabcrossshortb`,
+`\tabsbshortb`, `\tabposeref`, `\tabloomain`); the long version uses the full ones (`\tabkshot`,
+`\tabseeds`, `\tabrcabl`, `\tabcross`, `\tabsbmapl`, `\tabsensorb`, `\tabloo`, `\tabvariants`).
+
+## 2. Paper term ↔ code / run name
+
+The method was called MAPL (and briefly SnapTac) during development; code, run directories and result
+keys still use the old names. Do **not** rename anything in code.
+
+| Paper | Runs / dirs (sensor A) | Runs (sensor B) |
+|---|---|---|
+| Real only | `B_k{K}_realonly` | `S_k{K}_realonly_m` |
+| Physical renderer | `B_k{K}_blender` | — |
+| Learned renderer (GAN-K) | `B_k{K}_gank`; renderer `outputs/tactile_gan_k{K}` | `S_k25_gan40m`; `outputs/tactile_gan40_k25` |
+| Self-training (teacher depth as label) | `B_k{K}_semipm_pseudo` | `S_k25_semipm_m` |
+| Teacher depth + teacher pose | `B_k25_tp` | — |
+| L1 render-and-compare search (½ gated) | `B_k25_rcp` (also `rc50`, `rc100`, `rcp00/25/75`) | — |
+| **MeshTac** (aligner labels, renderer retrained on aligned pairs) | `B_k{K}_al2`; labels `gs_blender/real_pseudo_k{K}_al`; renderer `outputs/tactile_gan_al_k{K}`, sim images `renders_v3/*/samples_a_k{K}`; aligner `outputs/aligner_k{K}` | `S_k25_mapl_m`; labels `real_pseudo_S_k25_m_al`; renderer `tactile_gan40m_al_k25`; aligner `outputs/aligner_S_k{K}_m` |
+| MeshTac, no renderer (real-only teacher, no synthetic frames) | `B_k{K}_rf`; labels `real_pseudo_k{K}_ro_al`; aligner `outputs/aligner_k{K}_realonly` | `S_k{K}_maplnr_m`; labels `real_pseudo_S_k{K}_m_al` |
+| MeshTac, sim-free student only | `B_k{K}_al0` | — |
+| Unlabeled fraction 25/50 % | `B_k25_al2u25`, `B_k25_al2u50` | — |
+| Second round (student as teacher) | `B_k{10,25}_al2_r2` | — |
+| Leaky renderer (GAN-full) | `B_k{K}_ganfull` | — |
+| Teacher f0 | the `gank` model of the same K (sensor A); the `realonly_m` model (sensor B) | |
+
+Prefix `pilot150_` = 150-epoch run (all main sensor-A numbers), `pilot_` = 50-epoch run (seeds, ablation
+table, all sensor-B runs). Seeds: `<run>_seed1`, `<run>_seed2` (seed 0 has no suffix). Checkpoints in
+`/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2/<prefix><run>/{best_depth.pt,best_pose.pt,history.json}`
+(`latest.pt` was deleted to free disk; nothing in the paper needs it). Logs: `outputs/pilot_logs/`.
+
+Method code: `scripts/tactile_render/train_aligner.py` (aligner), `scripts/tactile_render/pseudo_label.py`
+(teacher labels), `scripts/tactile_render/pseudo_label_rc.py` (alignment / L1 search → mesh labels),
+`scripts/tactile_render/train_tactile_gan.py` + `generate_tactile.py` (learned renderer),
+`scripts/tactile_render/fit_mesh_pose.py` + `scripts/canonicalize_gs40_poses.py` + `scripts/build_gelslim40_mesh.py`
+(sensor-B mesh registration), `ablation/pilot_robosoft/eval_masked.py`, `eval_cross_session.py`,
+`eval_pose_refine.py` (evaluation).
+
+## 3. Where every number comes from
+
+All result files are in `ablation/pilot_robosoft/` (repo root). Keys are `<prefix><run>/<split or tag>`.
+
+| Quantity | File / key | Notes |
+|---|---|---|
+| Depth MSE, normal MSE, rotation, translation (val) | `<outputs>/<run>/history.json` via `build_tables.hist()` | depth metrics at the best-val-depth epoch, pose at the best-val-rotation epoch |
+| Contact MAE, IoU, normal angular error (val, TEST) | `masked_results.json`, keys `…/val`, `…/TEST` | TEST = the three held-out objects (A runs) |
+| Second session (sensor A) | `cross_session_results.json`, tag **`cross_session_fv`** only | tags `cross_session_curated` / `curated361` / `curated854` are from a label-scale bug and must not be used |
+| Sensor B | `sensorB_results.json`, tag `sensorB_mesh` (mesh-registered labels, used in the paper) and `sensorB_test` (original public labels, mentioned once) | |
+| Test-time alignment | `pose_refine_results.json`, keys `pilot150_<run>/{val,session2}`, fields `rot`, `rot_al`, medians, IoU/cMAE of mesh@aligned | |
+| Label quality of pseudo labels (IoU / contact MAE / pose error vs withheld GT) | `outputs/pilot_logs/pseudo_k{K}_al.log` (sensor A, K=10,50,100), `pseudo_S_k{K}_m_al.log` (sensor B), lines `teacher (all)` / `mesh (kept)`; also `stats` in `gs_blender/real_pseudo_*/pseudo_manifest.json` | the sensor-A K=25 log was overwritten; its values (teacher 0.55/0.32/5.3°, aligned 0.71/0.24/1.1°) are hard-coded in `make_paper_figs._label_quality` and in `\tabrcablmain` via `labq("real_pseudo_k25_al", …)` |
+| Renderer fidelity | `outputs/pilot_logs/renderer_fidelity_all.log`, `data/renderer_fidelity*.txt` | |
+| Seeds (mean ± std) | `build_tables.seeds()` over seed 0/1/2 of `pilot_<run>` | |
+
+Numbers quoted in prose (percentages, "halves the labels", "93 %") are derived by hand from the tables;
+if a table changes, re-derive them. Current canonical values:
+
+**Sensor A, 150 ep (depth MSE / contact MAE / IoU / rot°), real only → MeshTac**
+K=10: 0.0642/0.330/0.625/9.6 → 0.0559/0.288/0.682/4.0 · K=25: 0.0558/0.312/0.664/5.6 → 0.0450/0.249/0.727/3.7 ·
+K=50: 0.0482/0.283/0.690/4.3 → 0.0307/0.206/0.769/3.7 · K=100: 0.0369/0.235/0.744/3.2 → 0.0232/0.168/0.803/3.7.
+Leaky K=100: 0.0274/0.205/0.777. No-renderer MeshTac: 0.0521/0.0433/0.0291/0.0227.
+Seeds (50 ep) K=25: 0.0447±0.0009 vs 0.0551±0.0010; K=100: 0.0229±0.0003 vs 0.0366±0.0008.
+Derived: depth MSE −13/−19/−36/−37 %, contact MAE −13/−20/−27/−28 %.
+
+**Sensor B, 50 ep, mesh-registered labels, real only → MeshTac (no renderer)**
+K=10: 0.0314/0.180/0.780/14.0 → 0.0170/0.121/0.856/9.5 · K=25: 0.0182/0.127/0.847/13.4 → 0.0076/0.081/0.911/9.2 ·
+K=50: 0.0088/0.083/0.899/9.0 → 0.0041/0.061/0.933/9.8 · K=100: 0.0051/0.066/0.932/8.4 → 0.0034/0.056/0.944/9.1.
+K=25 with renderer: 0.0075/0.078/0.904/9.9; learned renderer 0.0148/0.111/0.877; self-training 0.0175/0.135/0.846.
+Seeds K=25: real 0.0179±0.0004 / 0.127±0.001 / 0.849; MeshTac 0.0075±0.0001 / 0.078±0.0003 / 0.903.
+Original public labels, K=25: contact MAE 0.137 → 0.098. Derived: contact MAE −33/−36/−26/−15 %, depth MSE −46/−58/−53/−33 %.
+
+**Label quality (IoU, teacher → aligned)**: sensor A 0.53→0.65, 0.55→0.71, 0.64→0.76, 0.66→0.81 (pose 1.6/1.1/1.1/0.7°);
+sensor B 0.78→0.85, 0.85→0.91, 0.90→0.94, 0.93→0.95 (pose 2.3/1.4/0.9/0.8°, teacher 6.6–11.4°).
+
+**Cross-session (sensor A, `cross_session_fv`, contact MAE / IoU)**: all-real 0.315/0.675; K=25 real 0.368/0.598,
+self-training 0.335/0.598, MeshTac 0.310/0.660 (no renderer 0.306/0.654); K=100 real 0.351/0.657,
+self-training 0.300/0.707, MeshTac 0.252/0.743 (no renderer 0.288/0.707).
+
+**Test-time alignment (rot°, pred → aligned)**: val, real only 9.6/5.6/4.3/3.2 → 2.8/1.2/1.2/0.4; MeshTac
+4.0/3.7/3.7/3.7 → 1.5/0.9/1.2/0.8. Session 2, real only 20.2/16.2/13.8/12.9 → 11.4/5.5/4.8/4.9; MeshTac
+8.8/9.0/10.6/10.2 → 4.9/4.8/5.2/4.8. Unseen objects (aligner trained on 9 objects): 4.8–6.8° → 0.6–1.0°.
+
+## 4. Terminology and conventions (keep)
+
+- **GT** = ground truth = the object mesh projected at the recorded pose (sensor A) or at the pose fitted
+  to the public label (sensor B). Defined once in Setup ("ground-truth (GT) depth and normals are …");
+  use "GT" everywhere afterwards, not "reference" (the word "reference" is kept only for "leaky
+  reference" / "as a reference for common practice").
+- Method name **MeshTac**; expanded as "mesh-aligned pseudo-labeling". Earlier names MAPL/SnapTac must
+  not reappear (MAPL and TacAlign collide with existing papers).
+- `$\Kreal$` = K, labeled frames per object. Few-label regime = K ≤ 25 (3 % and 7 % of sensor-A training
+  frames); K = 50, 100 are "the trend". Headline claims use K = 10–25; do not advertise "10–100".
+- Table rows are **methods** ("Real only", "Learned renderer", "Self-training", "MeshTac (ours)",
+  "Leaky renderer"), no "+" prefix; column header "Method". Leaky rows italic, never bold.
+- Caption style: short bold noun-phrase title ("Overview of MeshTac.", "K-shot results on sensor A."),
+  details after, conclusions in the text.
+- Teacher = f0, student = f1, aligner = A; the same aligner is used for labeling and for test-time
+  refinement (same weights). Student architecture = teacher architecture = standard frozen SITR-B/18
+  encoder + DPT decoder + pose MLP; the contribution is the labeling, not the network.
+- Sensor A = GelSlim 5.0 (`\sensor`), sensor B = GelSlim 4.0 (`\sensorB`, public dataset, Sipos et al.).
+- Metrics: depth MSE over all pixels (mm²); contact MAE (mm) and IoU inside the GT contact region;
+  normal angular error inside the contact (deg); rotation error (deg). Dense metrics come from
+  `best_depth.pt`, pose metrics from `best_pose.pt`.
+
+## 5. Facts that are easy to get wrong
+
+- **Sensor B labels were re-registered to the meshes.** The public labels are mesh depth clipped at
+  1 mm and Gaussian-blurred, not exact projections. We fitted the mesh pose that best explains each label
+  (0.018 mm mean residual) and canonicalized it against the object's rotational symmetry. Every method is
+  trained and tested on these labels (`real_gelslim40_{train,test}_mesh`); the paper also reports
+  MeshTac vs real-only on the original labels (`sensorB_test`) as a check. An earlier sensor-B result
+  (MeshTac contact MAE 0.227/0.210, "MAPL does not help on sensor B", "condition: aligned mesh must beat
+  the teacher") came from a gel-view bug and is **invalid**; it survives only in git history and in
+  `*_bugview` directories. Nothing in the paper may cite it.
+- **Second session**: only tag `cross_session_fv` (labels re-rendered at the full view by
+  `scripts/fix_session2_view.py`) is correct; earlier tags scored against labels magnified 1.225×.
+- **"93 % of the frames"**: at K = 25 the few-shot renderer's render at the *true* pose is farther from
+  the frame (image L1) than its render at the pose the search selected, on 93 % of frames — i.e. the
+  renderer scores a wrong pose above the true one. It does not mean the search is wrong on 93 %.
+- **"halves the labels"**: MeshTac at K lands at or below real only at 2K (sensor A: 0.0307 at K=50 vs
+  0.0369 at K=100; sensor B contact MAE 0.081 at 25 vs 0.083 at 50, 0.061 at 50 vs 0.066 at 100).
+- **Rotation on sensor B** improves only at K = 10, 25 (14.0→9.5°, 13.4→9.2°); at K ≥ 50 it is ≈9° either
+  way. Sensor-A rotation at K = 100: real only 3.2° < MeshTac 3.7° until test-time alignment.
+- **No K = 0 points** in Fig. 3: real only, learned renderer, self-training and MeshTac need labels;
+  only the physical and leaky renderers exist at K = 0 (reported in the long version only).
+- **Fig. 5 frames** are chosen by rule (per object, the frame whose contact-MAE improvement is the
+  object's median), not hand-picked; the sensor-B objects shown are pattern_04, pattern_33, pattern_06
+  (pattern_37, the hardest object, is not shown but is in every average). Predictions are cached in
+  `/media/hdd2/ihsuan/VisTacFusion/outputs/robosoft_qual/qual_{A,B}.npz` (130 MB each; keep them out of
+  `data/`, which is synced to Overleaf).
+- **Fig. 1 thumbnails**: the student's "Depth/Normal" output thumbnails are drawn from the GT of that
+  frame, not from an actual prediction (schematic). The caption does not claim otherwise.
+- **Second round** (student as teacher) gives no gain (K=10: 0.0570 vs 0.0559; K=25: 0.0445 vs 0.0450).
+  Unlabeled fraction 25/50/100 %: 0.0453/0.0452/0.0447 (long version only).
+- **Leave-object-out**: held-out objects pattern_04_3_lines_angle_2, pattern_31_rod, pattern_33
+  (1,244 frames); runs `A_*` (prefix `pilot150_` for the main rows).
+- The renderer-free variant is equal or better *within* a session but worse *across* sessions
+  (K=100 contact MAE 0.288 vs 0.252); that is why the renderer stays in the main method.
+- Real data counts: sensor A 4,669 frames (222–568 per object, 472 val, one session per object), session 2
+  854 curated frames of 11 objects; sensor B 1,620 test frames, ~270 training frames per object.
+  Simulated contacts: 5,345. Trainable parameters: 12 M. Unlabeled pool per K: 4,077 / 3,897 / 3,597 /
+  2,997 frames (sensor A), 3,120 / 2,940 / 2,640 / 2,040 (sensor B).
+
+## 6. Known weaknesses a reviewer will raise (address in wording, not by over-claiming)
+
+1. Only 12 ridge-pattern objects; no curved or textured objects. Not fixable without new data.
+2. Needs the mesh and the identity of the object in every unlabeled frame; test-time alignment needs
+   them at test time too. Scope: known objects (industrial parts, calibration objects).
+3. No downstream robot task.
+4. Sensor-B GT is our re-registration of public labels (see §5); seeds on sensor B only at K = 25.
+5. GT is a geometric projection, not a measured membrane deformation (both sensors).
+6. RoboSoft audience: keep the first paragraph of the introduction readable for non-ML reviewers; avoid
+   unexplained ML jargon.
+
+## 7. Authors and metadata
+
+I-Hsuan Huang*, Xiaohao Xu*, Xiangdong Wang, Xiaonan Huang, Nima Fazeli (University of Michigan;
+* equal contribution). Correspondence `{ihsuan, xiaohaox}@umich.edu`. Check the author list before
+submission.
