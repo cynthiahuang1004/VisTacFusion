@@ -98,7 +98,7 @@
 % ====================================================================
 \node[thumb] (f2) at (0.12, -1.33) {\img{frame2.png}};
 \node[thumb] (f1) at (0, -1.45) {\img{frame.png}};
-\node[capt, below=1pt of f1] {$K$ labeled $+$\\[-2pt]aligned frames};
+\node[capt, below=1pt of f1] {$K$ labeled $+$\\[-2pt]mesh-aligned frames};
 
 \node[frozen, fill=cTac, draw=cTacB, minimum width=1.9cm, minimum height=0.9cm] (enc) at (2.75, -1.45)
   {\textbf{Tactile Enc.}\\[-2pt]{\tiny SITR-B/18}};
@@ -130,7 +130,7 @@
 % test-time use of the aligner (optional)
 \node[smallblk, fill=cTac, draw=cTacB, minimum width=1.5cm] (al2) at (11.55, -2.0) {\textbf{Aligner $A$}\\[-3pt]{\tiny with mesh $M$}};
 \node[smallblk, fill=cOut, draw=cOutB, minimum width=1.3cm] (rp) at (13.55, -2.0) {\textbf{Refined}\\[-3pt]{\tiny pose}};
-\draw[arr] (se2.east) -- node[lbl, pos=0.72, above] {test time} (al2.west);
+\draw[arr] (se2.east) -- node[lbl, pos=0.4, above] {test time} (al2.west);
 \draw[arr] (al2) -- (rp);
 \draw[garr] (lane_lab.south) |- node[lbl, pos=0.75, above, text=cGate!85!black] {supervision} (loss.east);
 
