@@ -4,14 +4,14 @@
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.98\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Simulation transfers pose through geometry, but not contact appearance.} Sensor A; three held-out objects ($1{,}244$ frames) with no real data, whose meshes remain available to simulation.}
+    \caption{\textbf{Unseen objects} (sensor A; three held-out objects, $1{,}244$ frames, no real data; their meshes remain available to simulation).}
     \label{fig:kshot}
 \end{figure*}
 
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Sensor A}, real validation split ($472$ frames). All methods share the same $\Kreal$ labeled frames per object; self-training and SnapTac also use the unlabeled training frames. The leaky renderer (italic) is trained on all real pairs.}
+\caption{\textbf{Sensor A}, real validation split ($472$ frames). All methods share the same $\Kreal$ labeled frames per object; self-training and MeshTac also use the unlabeled training frames. The leaky renderer (italic) is trained on all real pairs.}
 \label{tab:kshot}
 \setlength{\tabcolsep}{3.0pt}
 \begin{tabularx}{\columnwidth}{@{}rXrrrr@{}}
@@ -25,11 +25,11 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-Table~\ref{tab:kshot} and Fig.~\ref{fig:kshot} compare five ways of training the same model from the same $\Kreal$ labeled frames per object. \emph{Real only} uses nothing else. The \emph{physical} and \emph{learned renderer} add synthetic frames, the latter rendered by GAN-$\Kreal$ trained on the same $\Kreal$ pairs. \emph{Self-training} adds the unlabeled training frames with the teacher's own depth prediction as label (pose loss on the labeled frames only). \emph{SnapTac} adds the same unlabeled frames with mesh-aligned labels. The \emph{leaky renderer} is GAN-full, trained on all real pairs, and is listed only to show what the common protocol reports.
+Table~\ref{tab:kshot} and Fig.~\ref{fig:kshot} compare five ways of training the same model from the same $\Kreal$ labeled frames per object. \emph{Real only} uses nothing else. The \emph{physical} and \emph{learned renderer} add synthetic frames, the latter rendered by GAN-$\Kreal$ trained on the same $\Kreal$ pairs. \emph{Self-training} adds the unlabeled training frames with the teacher's own depth prediction as label (pose loss on the labeled frames only). \emph{MeshTac} adds the same unlabeled frames with mesh-aligned labels. The \emph{leaky renderer} is GAN-full, trained on all real pairs, and is listed only to show what the common protocol reports.
 
 \noindent\textbf{Simulation alone.} Neither leakage-free renderer improves dense error for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), the physical one by at most $5\%$.
 
-\noindent\textbf{SnapTac} improves on real-only training at every budget. In the few-label regime it lowers depth MSE by $13\%$ and $19\%$ and contact MAE by $13\%$ and $20\%$ ($\Kreal=10$, $25$), where no renderer helps; at $\Kreal=50$ and $100$ the gains grow to $36$--$37\%$ and $27$--$28\%$. IoU rises by $0.06$--$0.08$ throughout. Over three seeds the depth MSE at $\Kreal=25$ is $0.0447\pm0.0009$ against $0.0551\pm0.0010$, and at $\Kreal=100$ $0.0229\pm0.0003$ against $0.0366\pm0.0008$. SnapTac with $50$ labels per object ($0.0307$) is ahead of real-only training with $100$ ($0.0369$), and at $\Kreal=100$ it is \emph{better} than the leaky renderer in every dense metric. Its rotation error is the lowest for $\Kreal\le50$; at $\Kreal=100$ real-only training is ahead until the aligner is also used at test time (Sec.~\ref{sec:tta}). SnapTac does not need the renderer for these numbers: with a real-only teacher and no synthetic frame at all, depth MSE is $0.0521$, $0.0433$, $0.0291$ and $0.0227$ at the four budgets, equal to or better than with it; the renderer earns its place across sessions (Sec.~\ref{sec:general}).
+\noindent\textbf{MeshTac} improves on real-only training at every budget. In the few-label regime it lowers depth MSE by $13\%$ and $19\%$ and contact MAE by $13\%$ and $20\%$ ($\Kreal=10$, $25$), where no renderer helps; at $\Kreal=50$ and $100$ the gains grow to $36$--$37\%$ and $27$--$28\%$. IoU rises by $0.06$--$0.08$ throughout. Over three seeds the depth MSE at $\Kreal=25$ is $0.0447\pm0.0009$ against $0.0551\pm0.0010$, and at $\Kreal=100$ $0.0229\pm0.0003$ against $0.0366\pm0.0008$. MeshTac with $50$ labels per object ($0.0307$) is ahead of real-only training with $100$ ($0.0369$), and at $\Kreal=100$ it is \emph{better} than the leaky renderer in every dense metric. Its rotation error is the lowest for $\Kreal\le50$; at $\Kreal=100$ real-only training is ahead until the aligner is also used at test time (Sec.~\ref{sec:tta}). MeshTac does not need the renderer for these numbers: with a real-only teacher and no synthetic frame at all, depth MSE is $0.0521$, $0.0433$, $0.0291$ and $0.0227$ at the four budgets, equal to or better than with it; the renderer earns its place across sessions (Sec.~\ref{sec:general}).
 
 \begin{table}[t]
 \centering
@@ -70,7 +70,7 @@ Table~\ref{tab:abl} varies only how the unlabeled frames are labeled. \emph{Self
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Generalization.} Left: second session of sensor A ($854$ frames, objects re-placed; ``all'': every session-1 label). Right: sensor B ($1{,}620$ test frames; SnapTac without synthetic frames).}
+\caption{\textbf{Generalization.} Left: second session of sensor A ($854$ frames, objects re-placed; ``all'': every session-1 label). Right: sensor B ($1{,}620$ test frames; MeshTac without synthetic frames).}
 \label{tab:general}
 \setlength{\tabcolsep}{2.2pt}
 \begin{minipage}[t]{0.5\columnwidth}\centering
@@ -95,9 +95,9 @@ $\Kreal$ & \multicolumn{1}{c}{Sensor B} & \metrichead{Cont.}{MAE} & \shortstack[
 
 \subsection{A Second Session and a Second Sensor}
 \label{sec:general}
-\noindent\textbf{Second session.} On frames captured on another day (Table~\ref{tab:general}, left) SnapTac has the lowest contact MAE and the highest IoU of its budget, $16\%$ and $28\%$ less contact error than real-only training at $\Kreal=25$ and $100$; at $\Kreal=100$ it is ahead of the model trained on \emph{all} session-1 labels. Here the synthetic frames matter: without the renderer SnapTac loses its advantage over self-training at $\Kreal=100$ (contact MAE $0.288$), although it is as accurate within the session.
+\noindent\textbf{Second session.} On frames captured on another day (Table~\ref{tab:general}, left) MeshTac has the lowest contact MAE and the highest IoU of its budget, $16\%$ and $28\%$ less contact error than real-only training at $\Kreal=25$ and $100$; at $\Kreal=100$ it is ahead of the model trained on \emph{all} session-1 labels. Here the synthetic frames matter: without the renderer MeshTac loses its advantage over self-training at $\Kreal=100$ (contact MAE $0.288$), although it is as accurate within the session.
 
-\noindent\textbf{Second sensor.} On \sensorB{} SnapTac transfers without any change of settings (Table~\ref{tab:general}, right; Fig.~\ref{fig:kshot}d). The few-shot teacher is already accurate on this sensor, yet the aligner improves on it at every budget (Fig.~\ref{fig:labels}). SnapTac lowers contact MAE by $15$--$36\%$ and depth MSE by $33$--$58\%$; over three seeds at $\Kreal=25$ contact MAE is $0.078\pm0.0003$ against $0.127\pm0.001\,$mm. The learned renderer ($0.111$) and self-training ($0.135$) gain far less. Fig.~\ref{fig:qual} shows representative predictions on both sensors.
+\noindent\textbf{Second sensor.} On \sensorB{} MeshTac transfers without any change of settings (Table~\ref{tab:general}, right; Fig.~\ref{fig:kshot}d). The few-shot teacher is already accurate on this sensor, yet the aligner improves on it at every budget (Fig.~\ref{fig:labels}). MeshTac lowers contact MAE by $15$--$36\%$ and depth MSE by $33$--$58\%$; over three seeds at $\Kreal=25$ contact MAE is $0.078\pm0.0003$ against $0.127\pm0.001\,$mm. The learned renderer ($0.111$) and self-training ($0.135$) gain far less. Fig.~\ref{fig:qual} shows representative predictions on both sensors.
 
 \begin{table}[t]
 \centering
@@ -109,7 +109,7 @@ $\Kreal$ & \multicolumn{1}{c}{Sensor B} & \metrichead{Cont.}{MAE} & \shortstack[
 \toprule
 & \multicolumn{4}{c}{Validation (session 1)} & \multicolumn{4}{c}{Session 2} \\
 \cmidrule(lr){2-5}\cmidrule(lr){6-9}
-& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{SnapTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{SnapTac} \\
+& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} \\
 $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \midrule
 \tabposeref
@@ -119,7 +119,7 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 
 \subsection{Test-Time Alignment}
 \label{sec:tta}
-The $\Kreal$-shot aligner can refine the pose predicted on a test frame (Table~\ref{tab:poseref}). Within the session rotation error falls to about $1^\circ$ from $\Kreal=25$ on, whichever model proposes the pose. On the second session it falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $9$--$11^\circ$ to about $5^\circ$ (SnapTac), with a median of $1.5$--$2.2^\circ$: the mean is dominated by a minority of failed alignments. The aligner also generalizes across objects: trained on nine objects and applied to three held-out ones, known only by their mesh, it lowers rotation error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
+The $\Kreal$-shot aligner can refine the pose predicted on a test frame (Table~\ref{tab:poseref}). Within the session rotation error falls to about $1^\circ$ from $\Kreal=25$ on, whichever model proposes the pose. On the second session it falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $9$--$11^\circ$ to about $5^\circ$ (MeshTac), with a median of $1.5$--$2.2^\circ$: the mean is dominated by a minority of failed alignments. The aligner also generalizes across objects: trained on nine objects and applied to three held-out ones, known only by their mesh, it lowers rotation error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
 
 \begin{table}[t]
 \centering
@@ -137,7 +137,7 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 
 \subsection{What Simulation Contributes Under Leakage Control}
 \label{sec:study}
-The baselines come from a controlled study whose findings motivate SnapTac.
+The baselines come from a controlled study whose findings motivate MeshTac.
 
 \noindent\textbf{Geometry transfers, contact appearance does not.} On objects without any real data (Table~\ref{tab:loo}) pose error falls from $65^\circ$ to $5$--$7^\circ$ with either renderer, including the physical one calibrated from a single no-contact frame; removing the held-out meshes from simulation returns it to $51^\circ$, so the gain is mesh coverage. Dense error improves by at most $13\%$ in depth MSE, against $30\%$ for the leaky renderer.
 

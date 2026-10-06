@@ -1,4 +1,4 @@
-"""Predictions for the qualitative figure (fig_qual): real-only vs SnapTac at K=25 on held-out frames of both sensors.
+"""Predictions for the qualitative figure (fig_qual): real-only vs MeshTac at K=25 on held-out frames of both sensors.
 Writes outputs/robosoft_qual/qual_{A,B}.npz (frame, reference depth, predicted depth per run, per-frame contact MAE).
 usage: python paper_RoboSoft/scripts/dump_qual_preds.py [--device cuda:0]
 """

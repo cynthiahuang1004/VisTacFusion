@@ -1,0 +1,106 @@
+% MeshTac overview — three steps, three networks (v2).  Old data-flow version: architecture_diagram_v1.tex / figures/fig_arch_v1.pdf
+% Compile (from paper_RoboSoft/): pdflatex -output-directory=figures -jobname=fig_arch architecture_diagram.tex
+\documentclass[border=4pt]{standalone}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shapes.geometric}
+
+\definecolor{cTac}{HTML}{FDEBD0}      \definecolor{cTacB}{HTML}{E59866}   % aligner (orange)
+\definecolor{cVis}{HTML}{D6EAF8}      \definecolor{cVisB}{HTML}{5DADE2}   % teacher (blue)
+\definecolor{cTrunk}{HTML}{D5F5E3}    \definecolor{cTrunkB}{HTML}{58D68D} % step frames (green)
+\definecolor{cDpt}{HTML}{FFF3CD}      \definecolor{cDptB}{HTML}{F0C040}   % labels / decoder (yellow)
+\definecolor{cHead}{HTML}{E8DAEF}     \definecolor{cHeadB}{HTML}{AF7AC5}  % pose (purple)
+\definecolor{cOut}{HTML}{F2F3F4}      \definecolor{cOutB}{HTML}{808080}
+\definecolor{cGate}{HTML}{E57373}
+
+\tikzset{
+  blk/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=3pt, line width=0.5pt, minimum height=0.75cm},
+  frozen/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=3pt, line width=0.7pt, dashed},
+  smallblk/.style={draw, rounded corners=1.5pt, align=center, font=\scriptsize, inner sep=2pt, line width=0.4pt, minimum height=0.5cm},
+  arr/.style={-{Stealth[length=3.5pt,width=2.5pt]}, line width=0.5pt, color=black!60},
+  garr/.style={-{Stealth[length=3.5pt,width=2.5pt]}, line width=0.6pt, dashed, color=cGate},
+  lbl/.style={font=\tiny, text=black!55},
+  capt/.style={font=\tiny, text=black!70, align=center},
+  thumb/.style={inner sep=0pt, draw=black!35, line width=0.3pt},
+  lane/.style={draw=#1, rounded corners=4pt, line width=0.8pt},
+  steptitle/.style={font=\scriptsize\bfseries, anchor=north west, text=black!75},
+}
+\newcommand{\img}[2][0.8cm]{\includegraphics[width=#1]{figures/arch/#2}}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+% ---- lanes ----
+\draw[lane=cTrunkB, fill=cTrunk!18] (-0.6,0.05) rectangle (5.2,4.6);
+\draw[lane=cTrunkB, fill=cTrunk!18] (5.6,0.05) rectangle (15.2,4.6);
+\draw[lane=cTrunkB, fill=cTrunk!18] (15.6,0.05) rectangle (22.5,4.6);
+\node[steptitle] at (-0.5,4.52) {Step 1 \; Train on the $K$ labeled frames};
+\node[steptitle] at (5.7,4.52) {Step 2 \; Label every unlabeled frame};
+\node[steptitle] at (15.7,4.52) {Step 3 \; Train the student};
+\draw[arr, line width=0.8pt] (5.2,0.5) -- node[lbl, above] {$f_0,\,A$} (5.6,0.5);
+\draw[arr, line width=0.8pt] (15.2,0.5) -- node[lbl, above] {labels} (15.6,0.5);
+
+% ===================== STEP 1 =====================
+\node[thumb] (k2) at (0.37, 2.97) {\img{frame2.png}};
+\node[thumb] (k1) at (0.25, 2.85) {\img{frame.png}};
+\node[capt, below=2pt of k1, text width=1.55cm] {$K$ labeled frames per object (image, GT depth, GT pose)};
+\node[blk, fill=cVis, draw=cVisB, minimum width=2.2cm, minimum height=0.85cm] (teach) at (3.3, 3.35)
+  {\textbf{Teacher $f_0$}\\[-2pt]{\tiny depth, normal, pose network}};
+\node[blk, fill=cTac, draw=cTacB, minimum width=2.2cm, minimum height=0.85cm] (alig) at (3.3, 2.0)
+  {\textbf{Aligner $A$}\\[-2pt]{\tiny ResNet-18, 4-channel input}};
+\draw[arr] (k1.east) -- ++(0.4,0) |- (teach.west);
+\draw[arr] (k1.east) -- ++(0.4,0) |- (alig.west);
+\node[lbl, align=left, anchor=north west] at (1.35, 1.3)
+  {training $A$: perturb the GT pose by $\delta$,\\[-1pt] render $d(M,q^\ast{+}\delta)$, regress $-\delta$\\[-1pt] $\Rightarrow$ unlimited pairs from $K$ frames};
+
+% ===================== STEP 2 =====================
+\node[thumb] (uf) at (6.35, 3.15) {\img{frame.png}};
+\node[capt, below=1pt of uf] {unlabeled frame $I$};
+\node[thumb] (um) at (6.35, 1.5) {\img{mesh.png}};
+\node[capt, below=1pt of um] {object mesh $M$};
+\node[blk, fill=cVis, draw=cVisB, minimum width=1.0cm, minimum height=0.6cm] (f0) at (7.85, 3.15) {$f_0$};
+\node[smallblk, fill=cOut, draw=cOutB, minimum width=0.7cm] (q0) at (9.0, 3.15) {$q_0$};
+\node[lbl, right=2pt of q0] {initial pose};
+\draw[arr] (uf) -- (f0); \draw[arr] (f0) -- (q0);
+\node[blk, fill=white, draw=cOutB, minimum width=1.35cm, minimum height=0.7cm] (rend) at (7.85, 1.5) {\textbf{Mesh depth}\\[-2pt]{\tiny $d(M,q)$}};
+\node[draw=black!60, circle, inner sep=0.6pt, font=\scriptsize, fill=white] (cat2) at (9.5, 1.5) {$\oplus$};
+\node[blk, fill=cTac, draw=cTacB, minimum width=1.1cm, minimum height=0.7cm] (A2) at (10.55, 1.5) {\textbf{$A$}};
+\node[smallblk, fill=cHead, draw=cHeadB, minimum width=0.8cm] (dq) at (11.6, 1.5) {$\Delta q$};
+\draw[arr] (um) -- (rend);
+\draw[arr] (q0.south) -- ++(0,-0.55) -| node[lbl, pos=0.3, above] {$q\leftarrow q_0$} (rend.north);
+\draw[arr] (rend) -- (cat2);
+\draw[arr] (uf.north) -- ++(0,0.4) -| node[lbl, pos=0.3, below] {frame $I$} (cat2.north);
+\draw[arr] (cat2) -- (A2); \draw[arr] (A2) -- (dq);
+\draw[garr] (dq.south) -- ++(0,-0.6) -| node[lbl, pos=0.25, below, text=cGate!85!black] {$q\leftarrow q+\Delta q$, repeat $\times6$} (rend.south);
+% label
+\node[thumb] (ld) at (13.3, 3.1) {\img[0.72cm]{label_depth.png}};
+\node[thumb] (ln) at (14.15, 3.1) {\img[0.72cm]{label_normal.png}};
+\node[capt, above=0.5pt of ld] {depth}; \node[capt, above=0.5pt of ln] {normal};
+\node[smallblk, fill=cOut, draw=cOutB, minimum width=1.55cm] (lq) at (13.725, 2.15) {\textbf{pose} $q$};
+\begin{scope}[on background layer]
+  \node[lane=cDptB, fill=cDpt!45, fit=(ld)(ln)(lq), inner xsep=5pt, inner ysep=11pt, yshift=2pt] (lab2) {};
+\end{scope}
+\node[font=\tiny\bfseries, text=cDptB!55!black, anchor=south] at ($(lab2.north)+(0,-1pt)$) {mesh-aligned label};
+\draw[arr] (dq.east) -- ++(0.3,0) |- node[lbl, pos=0.8, below] {\scriptsize $d(M,q),\,n(M,q),\,q$} (lab2.west);
+
+% ===================== STEP 3 =====================
+\node[thumb] (s2) at (16.52, 2.62) {\img{frame2.png}};
+\node[thumb] (s1) at (16.4, 2.5) {\img{frame.png}};
+\node[capt, below=1pt of s1] {$K$ labeled $+$\\[-2pt]mesh-aligned frames};
+\node[frozen, fill=cTac!55, draw=cTacB, minimum width=1.2cm, minimum height=0.8cm] (enc) at (18.1, 2.5) {\textbf{Enc.}\\[-2pt]{\tiny frozen}};
+\node[blk, fill=cDpt, draw=cDptB, minimum width=1.75cm, minimum height=0.55cm, font=\scriptsize] (dpt) at (19.9, 3.05) {\textbf{DPT decoder}};
+\node[blk, fill=cHead, draw=cHeadB, minimum width=1.75cm, minimum height=0.55cm, font=\scriptsize] (pmlp) at (19.9, 1.95) {\textbf{Pose MLP}};
+\node[capt, anchor=west] (od) at (20.85, 3.05) {depth,\\[-2pt]normal};
+\node[capt, anchor=west] (op) at (20.85, 1.95) {pose};
+\draw[arr] (s1) -- (enc);
+\draw[arr] (enc.east) -- ++(0.25,0) |- (dpt.west);
+\draw[arr] (enc.east) -- ++(0.25,0) |- (pmlp.west);
+\draw[arr] (dpt) -- (od); \draw[arr] (pmlp) -- (op);
+\begin{scope}[on background layer]
+  \node[lane=cVisB, fill=cVis!35, fit=(enc)(dpt)(pmlp)(od)(op), inner xsep=5pt, inner ysep=6pt] (stud) {};
+\end{scope}
+\node[font=\scriptsize\bfseries, text=cVisB!65!black, anchor=south] at ($(stud.north)+(0,0pt)$) {Student $f_1$ (same network as $f_0$)};
+\node[lbl, align=center, anchor=north] at (19.05, 1.32) {loss on GT labels ($K$ frames) and\\[-1pt] mesh-aligned labels (all other frames)};
+\node[lbl, align=center, anchor=north, text=cGate!85!black] at (19.05, 0.8) {deployed without the mesh;\\[-1pt] optionally $A$ refines its pose at test time};
+\end{tikzpicture}
+\end{document}

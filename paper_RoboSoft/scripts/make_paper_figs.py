@@ -31,7 +31,7 @@ STY = {
     "+ GAN-K (learned, strict)": ("#eb6834", "^", "-"),
     "+ GAN-full (leaky)": ("#1baf7a", "D", "--"),
     "+ self-training": ("#c9a227", "v", "-"),
-    "+ SnapTac (ours, strict)": ("#8a4fd3", "*", "-"),
+    "+ MeshTac (ours, strict)": ("#8a4fd3", "*", "-"),
 }
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
                      "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7,
@@ -71,10 +71,10 @@ def fig_kshot(out):
         "+ GAN-K (learned, strict)": ["B_k10_gank", "B_k25_gank", "B_k50_gank", "B_k100_gank"],
         "+ self-training": ["B_k10_semipm_pseudo", "B_k25_semipm_pseudo", "B_k50_semipm_pseudo", "B_k100_semipm_pseudo"],
         "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", None, "B_k100_ganfull"],
-        "+ SnapTac (ours, strict)": ["B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
+        "+ MeshTac (ours, strict)": ["B_k10_al2", "B_k25_al2", "B_k50_al2", "B_k100_al2"],
     }
     names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",
-             "+ GAN-full (leaky)": "Leaky renderer", "+ SnapTac (ours, strict)": "SnapTac (ours)"}
+             "+ GAN-full (leaky)": "Leaky renderer", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.95))
     panels = [("depth_mse", "val", "(a) Depth MSE [mm$^2$]"), ("c_mae", "masked", "(b) Contact MAE [mm]"),
               ("pose_rot_deg", "rot", "(c) Rotation error [deg]")]
@@ -91,8 +91,8 @@ def fig_kshot(out):
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
         ax.text(0.97, 0.95, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
-    ax = axes[3]                                              # second sensor (mesh-registered labels); only real-only and SnapTac at every K
-    for name, suf in (("Real only", "realonly_m"), ("+ SnapTac (ours, strict)", "maplnr_m")):
+    ax = axes[3]                                              # second sensor (mesh-registered labels); only real-only and MeshTac at every K
+    for name, suf in (("Real only", "realonly_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
         c, m, ls = STY[name]
         ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in Ks], color=c, marker=m, ls=ls, lw=1.6,
                 ms=7 if m == "*" else 4.5, mec="white", mew=0.6)
@@ -253,7 +253,7 @@ def fig_cross(out):
 
 
 def fig_align(out, K=25):
-    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (SnapTac label) | reference."""
+    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (MeshTac label) | reference."""
     sys.path.insert(0, "scripts")
     import build_real_filtered_new as B
     B.VIEW = 0.017502
@@ -323,7 +323,7 @@ def fig_labels(out):
 
 
 def fig_qual(out):
-    """Held-out frames of both sensors at K=25: frame | real only | SnapTac | reference.  Per object, the frame whose gain in
+    """Held-out frames of both sensors at K=25: frame | real only | MeshTac | reference.  Per object, the frame whose gain in
     contact MAE is the object's median gain (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "B_k25_realonly", "B_k25_al2", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A (GelSlim 5.0)"),
             ("B", "S_k25_realonly_m", "S_k25_mapl_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
@@ -344,7 +344,7 @@ def fig_qual(out):
                 for sp in ax.spines.values():
                     sp.set_visible(False)
                 if r == 0:
-                    ax.set_title(["frame", "real only", "SnapTac (ours)", "GT"][c], fontsize=7, pad=2)
+                    ax.set_title(["frame", "real only", "MeshTac (ours)", "GT"][c], fontsize=7, pad=2)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
                     ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white")
