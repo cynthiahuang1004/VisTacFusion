@@ -83,8 +83,8 @@ def fig_kshot(out):
         "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", "B_k50_ganfull", "B_k100_ganfull"],
         "+ MeshTac (ours, strict)": ["B_k10_rf", "B_k25_rf", "B_k50_rf", "B_k100_rf"],
     }
-    names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",
-             "+ GAN-full (leaky)": "All-pairs renderer", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
+    names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
+             "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     from matplotlib.ticker import MaxNLocator
     fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.3))         # one row: narrow, tall panels so that nearby lines separate
     panels = [("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation"), ("pose_trans", "trans", "Translation")]
@@ -225,7 +225,7 @@ def fig_renders_small(out):
     """Column-width version for the 6-page paper: one simulated contact as GT depth | physical renderer | learned renderer (K=25) |
     all-pairs renderer, next to a real frame of the same object; two objects."""
     picks = [("pattern_31_rod", "session_003", 37), ("pattern_04_3_lines_angle_1", "session_002", 61)]
-    cols = [("GT depth", None), ("Physical", "samples"), ("Learned, $K$=25", "samples_g_k25"), ("All pairs", "samples_g"), ("Real frame", None)]
+    cols = [("GT depth", None), ("Physical", "samples"), ("Learned ($K$=25)", "samples_g_k25"), ("Learned (full)", "samples_g"), ("Real frame", None)]
     fig, axes = plt.subplots(len(picks), len(cols), figsize=(3.45, 0.74 * len(picks) + 0.2))
     for i, (obj, sess, idx) in enumerate(picks):
         u = f"{SIM}/{obj}/{sess}/sensor_0000"
@@ -389,11 +389,11 @@ def fig_qual(out):
     object's median MeshTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "B_k25_realonly", "B_k25_rf", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
             ("B", "S_k25_realonly_m", "S_k25_maplnr_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
-    fig = plt.figure(figsize=(7.1, 2.9))
-    outer = fig.add_gridspec(1, 2, left=0.004, right=0.996, top=0.865, bottom=0.14, wspace=0.035)
+    fig = plt.figure(figsize=(3.45, 1.62))
+    outer = fig.add_gridspec(1, 2, left=0.003, right=0.997, top=0.84, bottom=0.235, wspace=0.03)
     for g, (name, r0, r1, objs, title) in zip(outer, sets):
         d = np.load(f"outputs/robosoft_qual/qual_{name}.npz")
-        inner = g.subgridspec(3, 4, wspace=0.025, hspace=0.035)
+        inner = g.subgridspec(3, 4, wspace=0.02, hspace=0.03)
         err = d[f"cmae_{r1}"]                                       # select by MeshTac's own error, not by its gain over the baseline
         for r, o in enumerate(objs):
             ids = [i for i, k in enumerate(d["keys"]) if f"/{o}/" in str(k)]
@@ -406,19 +406,19 @@ def fig_qual(out):
                 for sp in ax.spines.values():
                     sp.set_visible(False)
                 if r == 0:
-                    ax.set_title(["frame", "real only", "MeshTac (ours)", "GT"][c], fontsize=7, pad=2)
+                    ax.set_title(["frame", "real only", "MeshTac", "GT"][c], fontsize=5.2, pad=1.5)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
-                    ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=6, color="white",
-                            bbox=dict(facecolor="black", alpha=0.55, edgecolor="none", pad=1.1))
+                    ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=5, color="white",
+                            bbox=dict(facecolor="black", alpha=0.55, edgecolor="none", pad=0.7))
         bb = g.get_position(fig)
-        fig.text((bb.x0 + bb.x1) / 2, 0.985, title, ha="center", va="top", fontsize=8, fontweight="bold")
+        fig.text((bb.x0 + bb.x1) / 2, 0.99, title, ha="center", va="top", fontsize=6, fontweight="bold")
     from matplotlib.cm import ScalarMappable
-    cax = fig.add_axes([0.35, 0.085, 0.30, 0.018])
+    cax = fig.add_axes([0.33, 0.135, 0.34, 0.025])
     cb = fig.colorbar(ScalarMappable(norm=plt.Normalize(0, 1.2), cmap="viridis"), cax=cax,
                       orientation="horizontal", ticks=[0, 0.4, 0.8, 1.2], extend="max")
-    cb.ax.tick_params(labelsize=6, pad=1, length=2)
-    cb.set_label("Depth [mm] (shared scale)", fontsize=6, labelpad=1)
+    cb.ax.tick_params(labelsize=5, pad=1, length=1.5)
+    cb.set_label("Depth [mm]", fontsize=5, labelpad=0.5)
     fig.savefig(osp.join(out, "fig_qual.pdf"), dpi=300); plt.close(fig)
 
 

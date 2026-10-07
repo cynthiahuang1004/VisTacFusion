@@ -118,7 +118,7 @@ loo = [
     ("+ Blender $\\oplus$ GAN-LOO", row("A_mixloo", "TEST"), {}),
     ("+ refiner (0 labels)", row("A_refloo", "TEST"), {}),
     ("+ refiner on domain rand.\\ (0 labels, no calib.)", row("A_refdrloo", "TEST"), {}),
-    ("+ GAN-full (all pairs)", row("A_ganfull", "TEST"), {"leaky": True}),
+    ("+ GAN-full (full real set)", row("A_ganfull", "TEST"), {"leaky": True}),
 ]
 cols6 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)]
 T["loo"] = table(loo, cols6, bold_max=("iou",))
@@ -140,7 +140,7 @@ for K in (0, 10, 25, 50, 100):
                               ("+ MeshTac (ours)", f"B_k{K}_rf", {}),
                               ("\\quad + synthetic frames", f"B_k{K}_al2", {}),
                               ("\\quad synthetic frames for the aligner only", f"B_k{K}_al0", {}),
-                              ("+ GAN-full (all pairs)", f"B_k{K}_ganfull", {"leaky": True})):
+                              ("+ GAN-full (full real set)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
         r = row(run)
@@ -215,7 +215,7 @@ cross = [
     ("+ bg-cond.\\ GAN-LOO", cs("A_bgcondloo"), {}),
     ("+ Blender $\\oplus$ GAN-LOO", cs("A_mixloo"), {}),
     ("+ refiner (0 labels)", cs("A_refloo"), {}),
-    ("+ GAN-full (all pairs)", cs("A_ganfull"), {"leaky": True}),
+    ("+ GAN-full (full real set)", cs("A_ganfull"), {"leaky": True}),
     ("", None, {"sep": r"\midrule"}),
     ("Blender only ($\\Kreal=0$)", cs("B_k0_blender"), {}),
     ("$\\Kreal=25$ real only", cs("B_k25_realonly"), {}),
@@ -244,7 +244,7 @@ for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ physical renderer", f"B_k{K}_blender", {}), (f"+ learned renderer", f"B_k{K}_gank", {}),
                               ("+ self-training", f"B_k{K}_semipm_pseudo", {}), ("+ MeshTac (ours)", f"B_k{K}_al2", {}), ("\\quad no renderer", f"B_k{K}_rf", {}),
-                              ("+ all-pairs renderer", f"B_k{K}_ganfull", {"leaky": True})):
+                              ("+ learned renderer (full)", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is None:
             continue
@@ -253,7 +253,7 @@ for K in (10, 25, 50, 100):
 T["kshotmain"] = "\n\\midrule\n".join(km)
 T["crossmain"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("  & + physical renderer", cs("A_blender"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}),
-    ("  & + all-pairs renderer", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
+    ("  & + learned renderer (full)", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + learned renderer", cs("B_k25_gank"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}),
     ("  & + MeshTac (ours)", cs("B_k25_al2"), {}), ("  & \\quad no renderer", cs("B_k25_rf"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + learned renderer", cs("B_k100_gank"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}),
@@ -262,7 +262,7 @@ T["crossmain"] = table([
 T["loomain"] = table([
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}), ("+ physical renderer", row("A_blender", "TEST"), {}),
     ("+ learned renderer", row("A_ganloo", "TEST"), {}), ("\\quad w/o held-out meshes", row("A_ganloo_9obj", "TEST"), {}),
-    ("\\quad background-conditioned", row("A_bgcondloo", "TEST"), {}), ("+ all-pairs renderer", row("A_ganfull", "TEST"), {"leaky": True}),
+    ("\\quad background-conditioned", row("A_bgcondloo", "TEST"), {}), ("+ learned renderer (full)", row("A_ganfull", "TEST"), {"leaky": True}),
 ], [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 _r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"]); _rt = labq("real_pseudo_k25_ro_al", ["teacher (all)"])
 T["rcablmain"] = "\n".join(x for x in (
@@ -392,8 +392,8 @@ T["selection"] = "\n".join(f"{lab} & " + " & ".join(f"{a:.4f}" if i == 0 else f"
 ks = []
 for K in (10, 25, 50, 100):
     blk = []
-    for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ learned renderer", f"B_k{K}_gank", {}), ("+ self-training", f"B_k{K}_semipm_pseudo", {}),
-                              ("+ MeshTac", f"B_k{K}_rf", {}), ("\\quad + synthetic", f"B_k{K}_al2", {}), ("+ all-pairs rend.", f"B_k{K}_ganfull", {"leaky": True})):
+    for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ learned renderer ($K$)", f"B_k{K}_gank", {}), ("+ self-training", f"B_k{K}_semipm_pseudo", {}),
+                              ("+ MeshTac", f"B_k{K}_rf", {}), ("\\quad + synthetic", f"B_k{K}_al2", {}), ("+ learned renderer (full)", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is not None:
             blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))

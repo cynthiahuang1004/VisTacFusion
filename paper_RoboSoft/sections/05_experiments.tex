@@ -4,7 +4,7 @@
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency on two tactile sensors.} Contact MAE (mm), rotation error (deg) and translation error (mm) against the number $K$ of labeled training contacts per object. (a--c) Sensor-A validation, 150 epochs; the all-pairs reference uses extra real labels and 50 epochs at $K=10$. (d--f) Sensor-B test, 50 epochs. Matched methods share the registered contacts; MeshTac uses no synthetic data; pose metrics at the final epoch.}
+    \caption{\textbf{Label efficiency on two tactile sensors.} Contact MAE (mm), rotation error (deg) and translation error (mm) against the number $K$ of labeled training contacts per object. (a--c) Sensor-A validation, 150 epochs; learned renderer (full) uses extra real labels and 50 epochs at $K=10$. (d--f) Sensor-B test, 50 epochs. Matched methods share the registered contacts; MeshTac uses no synthetic data; pose metrics at the final epoch.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -20,7 +20,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotshort
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Label-budget comparison on sensor A.} Validation: $472$ frames; $K$ labels per object. Self-training and MeshTac also use unlabeled images. \emph{+ synthetic} adds the $K$-pair renderer to MeshTac. Dense metrics: best-validation-depth checkpoint; pose: final epoch. Italic all-pairs rows exceed the budget ($K=10$: 50 epochs; others: 150). Bold marks the best matched result at each $K$.}
+\caption{\textbf{Label-budget comparison on sensor A.} Validation: $472$ frames; $K$ labels per object. Self-training and MeshTac also use unlabeled images. \emph{+ synthetic} adds the $K$-pair renderer to MeshTac. Dense metrics: best-validation-depth checkpoint; pose: final epoch. Italic rows (learned renderer trained on the full real set) exceed the budget ($K=10$: 50 epochs; others: 150). Bold marks the best matched result at each $K$.}
 \label{tab:kshot}
 \end{table}
 
@@ -74,12 +74,12 @@ L1 search gains less: at $K=25$ the renderer scores the search-selected pose bet
 
 From the teacher's pose, mean rotation error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object.
 
-\begin{figure*}[t]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.68\textwidth]{figures/fig_qual.pdf}
+    \includegraphics[width=\columnwidth]{figures/fig_qual.pdf}
     \caption{\textbf{Contact-depth reconstruction at $K=25$.} Each sensor shows three objects; each frame is the one with its object's median MeshTac contact MAE, chosen without reference to the baseline. Numbers are contact MAE (mm), and depth maps share a color scale.}
     \label{fig:qual}
-\end{figure*}
+\end{figure}
 
 \begin{table}[!htb]
 \centering
@@ -149,7 +149,7 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \tabloomain
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Renderer baselines on held-out objects.} Sensor A, $1{,}244$ frames from three objects. Matched methods exclude their real contacts from training; simulation can use their meshes, except in the \emph{w/o held-out meshes} control. \emph{Background-conditioned}: the learned renderer also receives a no-contact image of the session. The italic all-pairs reference also uses real training pairs from these objects. Bold marks the best matched result.}
+\caption{\textbf{Renderer baselines on held-out objects.} Sensor A, $1{,}244$ frames from three objects. Matched methods exclude their real contacts from training; simulation can use their meshes, except in the \emph{w/o held-out meshes} control. \emph{Background-conditioned}: the learned renderer also receives a no-contact image of the session. The italic learned renderer (full) also uses real training pairs from these objects. Bold marks the best matched result.}
 \label{tab:loo}
 \end{table}
 
@@ -157,4 +157,4 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \label{sec:study}
 We remove three objects from real training while allowing simulation to use their meshes (Table~\ref{tab:loo}). A control excludes those meshes as well. Simulated contacts lower rotation error from $64.7^\circ$ to $5$--$7^\circ$; removing the held-out meshes largely removes this gain. Dense MSE improves by at most $13\%$ among matched methods. In this setting, simulation provides more effective supervision for unseen-object pose than for dense reconstruction.
 
-We then compare renderers trained on the same $K$ registered contacts with the all-pairs reference. The latter lowers MSE by $24$--$26\%$ in the few-label regime, but has access to additional real training labels. It represents a larger supervision budget; validation images remain excluded. Across 14 matched settings, contact-region image L1 correlates with downstream MSE ($\rho=0.95$), which supports screening renderers by fidelity, although this pooled correlation does not establish causality.
+We then compare the learned renderer ($K$) with its full-data counterpart. The latter lowers MSE by $24$--$26\%$ in the few-label regime, but has access to additional real training labels. It represents a larger supervision budget; validation images remain excluded. Across 14 matched settings, contact-region image L1 correlates with downstream MSE ($\rho=0.95$), which supports screening renderers by fidelity, although this pooled correlation does not establish causality.
