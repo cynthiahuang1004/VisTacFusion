@@ -25,6 +25,9 @@ XS = json.load(open(f"{P}/cross_sensor_results.json"))
 GTF = json.load(open(f"{P}/cross_session_gtfree.json"))
 
 
+HALF_MM = 41.0   # sensor-A pose normalization: translations are stored as fractions of half the 82 mm object frame
+
+
 def hist(run, prefix="pilot150_"):
     p = f"{OUT}/{prefix}{run}/history.json"
     if not osp.exists(p):
@@ -32,12 +35,13 @@ def hist(run, prefix="pilot150_"):
     h = json.load(open(p))
     g = lambda e, s: next(iter(e[s].values()))
     bd = min(h, key=lambda e: g(e, "val")["depth_mse"])
-    br = min(h, key=lambda e: g(e, "val")["pose_rot_deg"])
-    r = {"val": {"depth_mse": g(bd, "val")["depth_mse"], "normal_mse": g(bd, "val")["normal_mse"],
-                 "rot": g(br, "val")["pose_rot_deg"], "trans": g(br, "val")["pose_trans"], "epochs": len(h)}}
+    br = h[-1]                                   # pose metrics: final epoch (no validation-based selection); the pose head does not overfit
+    r = {"val": {"depth_mse": g(bd, "val")["depth_mse"], "normal_mse": g(bd, "val")["normal_mse"], "depth_mse_last": g(br, "val")["depth_mse"],
+                 "rot": g(br, "val")["pose_rot_deg"], "trans": g(br, "val")["pose_trans"], "trans_mm": g(br, "val")["pose_trans"] * HALF_MM,
+                 "rot_bd": g(bd, "val")["pose_rot_deg"], "epochs": len(h)}}
     if "test" in bd and bd["test"]:
         r["TEST"] = {"depth_mse": g(bd, "test")["depth_mse"], "normal_mse": g(bd, "test")["normal_mse"],
-                     "rot": g(br, "test")["pose_rot_deg"], "trans": g(br, "test")["pose_trans"]}
+                     "rot": g(br, "test")["pose_rot_deg"], "trans": g(br, "test")["pose_trans"], "trans_mm": g(br, "test")["pose_trans"] * HALF_MM}
     return r
 
 
@@ -114,7 +118,7 @@ loo = [
     ("+ Blender $\\oplus$ GAN-LOO", row("A_mixloo", "TEST"), {}),
     ("+ refiner (0 labels)", row("A_refloo", "TEST"), {}),
     ("+ refiner on domain rand.\\ (0 labels, no calib.)", row("A_refdrloo", "TEST"), {}),
-    ("+ GAN-full (leaky)", row("A_ganfull", "TEST"), {"leaky": True}),
+    ("+ GAN-full (all pairs)", row("A_ganfull", "TEST"), {"leaky": True}),
 ]
 cols6 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans", 3)]
 T["loo"] = table(loo, cols6, bold_max=("iou",))
@@ -133,10 +137,10 @@ for K in (0, 10, 25, 50, 100):
                               ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo", {}),
                               ("\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
                               ("+ MeshTac, L1 search", f"B_k{K}_rcp", {}),
-                              ("+ MeshTac (with renderer)", f"B_k{K}_al2", {}),
-                              ("\\quad no synthetic frames", f"B_k{K}_al0", {}),
-                              ("+ MeshTac (no renderer)", f"B_k{K}_rf", {}),
-                              ("+ GAN-full (leaky)", f"B_k{K}_ganfull", {"leaky": True})):
+                              ("+ MeshTac (ours)", f"B_k{K}_rf", {}),
+                              ("\\quad + synthetic frames", f"B_k{K}_al2", {}),
+                              ("\\quad synthetic frames for the aligner only", f"B_k{K}_al0", {}),
+                              ("+ GAN-full (all pairs)", f"B_k{K}_ganfull", {"leaky": True})):
         if K == 0 and label in ("Real only", "+ GAN-0"):
             continue
         r = row(run)
@@ -160,7 +164,7 @@ T["kshot"] = "\n\\midrule\n".join(table(b, cols5, bold_max=("iou",)) for b in bl
 # seeds (50 ep, 3 seeds) for K=25 and K=100
 sd = []
 for K in (25, 100):
-    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ MeshTac, L1 search", f"B_k{K}_rcp"), ("+ MeshTac (with renderer)", f"B_k{K}_al2"), ("+ MeshTac", f"B_k{K}_rf")):
+    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ MeshTac, L1 search", f"B_k{K}_rcp"), ("+ MeshTac", f"B_k{K}_rf"), ("\\quad + synthetic frames", f"B_k{K}_al2")):
         s = seeds(run)
         sd.append(f"{K} & {label} & " + " & ".join(f"{s[k][0]:.{nd}f} $\\pm$ {s[k][1]:.{nd}f}" if s.get(k) else "--" for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\")
 T["seeds"] = "\n".join(sd)
@@ -184,6 +188,7 @@ def abl(label, run, dep, pose, n=1):
 _t = labq("real_pseudo_k25_rc100", ["teacher (all)"]); _m = labq("real_pseudo_k25_rc100", ["mesh (kept)"])
 _h = labq("real_pseudo_k25_rc", ["mesh (kept)", "teacher (rejected)"]); _hk = labq("real_pseudo_k25_rc", ["mesh (kept)"])
 _a = labq("real_pseudo_k25_al", ["mesh (kept)"])
+_r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"])
 T["rcabl"] = "\n".join(x for x in (
     abl("teacher & --", "B_k25_semipm_pseudo", _t, None, 3),
     abl("teacher & teacher", "B_k25_tp", _t, _t[2] if _t else None),
@@ -194,6 +199,7 @@ T["rcabl"] = "\n".join(x for x in (
     r"\midrule",
     abl("mesh & aligner$^{\\ddagger}$", "B_k25_al", _a, _a[2] if _a else None),
     abl("mesh & aligner$^{\\dagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
+    abl("mesh & aligner, no renderer", "B_k25_rf", _r, _r[2] if _r else None, 3),
 ) if x)
 # ---------------- Table 3: cross-session (curated 68 frames) ----------------
 def cs(run, pre="pilot150_"):
@@ -209,7 +215,7 @@ cross = [
     ("+ bg-cond.\\ GAN-LOO", cs("A_bgcondloo"), {}),
     ("+ Blender $\\oplus$ GAN-LOO", cs("A_mixloo"), {}),
     ("+ refiner (0 labels)", cs("A_refloo"), {}),
-    ("+ GAN-full (leaky)", cs("A_ganfull"), {"leaky": True}),
+    ("+ GAN-full (all pairs)", cs("A_ganfull"), {"leaky": True}),
     ("", None, {"sep": r"\midrule"}),
     ("Blender only ($\\Kreal=0$)", cs("B_k0_blender"), {}),
     ("$\\Kreal=25$ real only", cs("B_k25_realonly"), {}),
@@ -219,7 +225,8 @@ cross = [
     ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
     ("$\\Kreal=25$ + teacher-label self-training", cs("B_k25_semipm_pseudo"), {}),
     ("$\\Kreal=25$ + MeshTac, L1 search", cs("B_k25_rcp"), {}),
-    ("$\\Kreal=25$ + MeshTac", cs("B_k25_al2"), {}),
+    ("$\\Kreal=25$ + MeshTac", cs("B_k25_rf"), {}),
+    ("$\\Kreal=25$ + MeshTac + synthetic frames", cs("B_k25_al2"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
@@ -227,7 +234,8 @@ cross = [
     ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
     ("$\\Kreal=100$ + teacher-label self-training", cs("B_k100_semipm_pseudo"), {}),
     ("$\\Kreal=100$ + MeshTac, L1 search", cs("B_k100_rcp"), {}),
-    ("$\\Kreal=100$ + MeshTac", cs("B_k100_al2"), {}),
+    ("$\\Kreal=100$ + MeshTac", cs("B_k100_rf"), {}),
+    ("$\\Kreal=100$ + MeshTac + synthetic frames", cs("B_k100_al2"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- compact tables of the 8-page paper ----------------
@@ -236,7 +244,7 @@ for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ physical renderer", f"B_k{K}_blender", {}), (f"+ learned renderer", f"B_k{K}_gank", {}),
                               ("+ self-training", f"B_k{K}_semipm_pseudo", {}), ("+ MeshTac (ours)", f"B_k{K}_al2", {}), ("\\quad no renderer", f"B_k{K}_rf", {}),
-                              ("+ leaky renderer", f"B_k{K}_ganfull", {"leaky": True})):
+                              ("+ all-pairs renderer", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is None:
             continue
@@ -245,7 +253,7 @@ for K in (10, 25, 50, 100):
 T["kshotmain"] = "\n\\midrule\n".join(km)
 T["crossmain"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("  & + physical renderer", cs("A_blender"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}),
-    ("  & + leaky renderer", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
+    ("  & + all-pairs renderer", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + learned renderer", cs("B_k25_gank"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}),
     ("  & + MeshTac (ours)", cs("B_k25_al2"), {}), ("  & \\quad no renderer", cs("B_k25_rf"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + learned renderer", cs("B_k100_gank"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}),
@@ -254,15 +262,15 @@ T["crossmain"] = table([
 T["loomain"] = table([
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}), ("+ physical renderer", row("A_blender", "TEST"), {}),
     ("+ learned renderer", row("A_ganloo", "TEST"), {}), ("\\quad w/o held-out meshes", row("A_ganloo_9obj", "TEST"), {}),
-    ("\\quad background-conditioned", row("A_bgcondloo", "TEST"), {}), ("+ leaky renderer", row("A_ganfull", "TEST"), {"leaky": True}),
+    ("\\quad background-conditioned", row("A_bgcondloo", "TEST"), {}), ("+ all-pairs renderer", row("A_ganfull", "TEST"), {"leaky": True}),
 ], [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 _r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"]); _rt = labq("real_pseudo_k25_ro_al", ["teacher (all)"])
 T["rcablmain"] = "\n".join(x for x in (
     abl("Teacher depth (self-training)", "B_k25_semipm_pseudo", _t, None, 3),
     abl("Teacher depth + teacher pose", "B_k25_tp", _t, _t[2] if _t else None),
     abl("Mesh at L1-search pose$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
-    abl("Mesh at aligned pose (MeshTac)", "B_k25_al2", _a, _a[2] if _a else None, 3),
-    abl("\\quad no renderer anywhere$^{\\ddagger}$", "B_k25_rf", _r, _r[2] if _r else None, 3),
+    abl("Mesh at aligned pose (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
+    abl("\\quad + synthetic frames$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
 ) if x)
 # ---------------- test-time pose refinement with the aligner ----------------
 _pr = f"{P}/pose_refine_results.json"
@@ -271,8 +279,8 @@ pr = []
 for K in (10, 25, 50, 100):
     cells = []
     for split in ("val", "session2"):
-        for run in (f"B_k{K}_realonly", f"B_k{K}_al2"):
-            e = PR.get(f"pilot150_{run}/{split}")
+        for run in (f"B_k{K}_realonly", f"B_k{K}_rf"):
+            e = PR.get(f"pilot150_{run}_realonly/{split}") or PR.get(f"pilot150_{run}/{split}")
             cells += [f(e["rot"], 1), f(e["rot_al"], 1)] if e else ["--", "--"]
     pr.append(f"{K} & " + " & ".join(cells) + r" \\")
 T["poseref"] = "\n".join(pr)
@@ -355,31 +363,31 @@ sbl = []
 for K in (10, 25, 50, 100):
     blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}),
            ("  & + learned renderer", sbm(f"S_k{K}_gan40m"), {}), ("  & + self-training", sbm(f"S_k{K}_semipm_m"), {})]
+    blk.append(("  & + MeshTac (ours)", sbm(f"S_k{K}_maplnr_m"), {}))
     if K == 25:
-        blk.append(("  & + MeshTac (ours)", sbm("S_k25_mapl_m"), {}))
-    blk.append(("  & " + ("\\quad no renderer" if K == 25 else "+ MeshTac (ours), no renderer"), sbm(f"S_k{K}_maplnr_m"), {}))
+        blk.append(("  & \\quad + synthetic frames", sbm("S_k25_mapl_m"), {}))
     sbl.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",)))
 T["sbmapl"] = "\n\\midrule\n".join(sbl)
 # seeds version (mean ± std over three seeds) of the real-only vs renderer-free rows, all budgets
 T["sbseeds"] = "\n".join(f"{K} & {lab} & " + " & ".join(pm(run, k, nd) for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\"
-                          for K in (10, 25, 50, 100) for lab, run in (("Real only", f"S_k{K}_realonly_m"), ("MeshTac, no renderer", f"S_k{K}_maplnr_m")))
+                          for K in (10, 25, 50, 100) for lab, run in (("Real only", f"S_k{K}_realonly_m"), ("MeshTac", f"S_k{K}_maplnr_m")))
 # K-frame selection robustness (K=25, 50 ep): seed-0 selection (evenly spaced) vs two random selections (sel1, sel2)
 def mv(run):
     r = MASKED.get(f"pilot_{run}/val"); return (r["full_mse"], r["c_mae"], r["iou"]) if r else None
 T["selection"] = "\n".join(f"{lab} & " + " & ".join(f"{a:.4f}" if i == 0 else f"{a:.3f}" for i, a in enumerate(mv(run))) + r" \\"
                             for lab, run in (("Real only, selection 0", "B_k25_realonly"), ("Real only, selection 1", "B_k25_realonly_sel1"), ("Real only, selection 2", "B_k25_realonly_sel2"),
-                                             ("MeshTac (no renderer), selection 0", "B_k25_rf"), ("MeshTac (no renderer), selection 1", "B_k25_rf_sel1"), ("MeshTac (no renderer), selection 2", "B_k25_rf_sel2")) if mv(run))
+                                             ("MeshTac, selection 0", "B_k25_rf"), ("MeshTac, selection 1", "B_k25_rf_sel1"), ("MeshTac, selection 2", "B_k25_rf_sel2")) if mv(run))
 
 # ---------------- 6-page paper: both sensors in one table, short cross-session table ----------------
 ks = []
 for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ learned renderer", f"B_k{K}_gank", {}), ("+ self-training", f"B_k{K}_semipm_pseudo", {}),
-                              ("+ MeshTac (ours)", f"B_k{K}_al2", {}), ("+ leaky renderer", f"B_k{K}_ganfull", {"leaky": True})):
+                              ("+ MeshTac", f"B_k{K}_rf", {}), ("\\quad + synthetic", f"B_k{K}_al2", {}), ("+ all-pairs rend.", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is not None:
             blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
-    ks.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",)))
+    ks.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)], bold_max=("iou",)))
 T["kshotshort"] = "\n\\midrule\n".join(ks)
 sbs = []
 for K in (10, 25, 50, 100):
@@ -393,8 +401,8 @@ T["crossshort"] = table([
 ], [("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 T["crossshortb"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("", None, {"sep": r"\midrule"}),
-    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-training", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
-    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-training", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_al2"), {}),
+    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-training", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_rf"), {}), ("  & \\quad + synthetic frames", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-training", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_rf"), {}), ("  & \\quad + synthetic frames", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
 def sb_pm_rows(K):
     rows = []

@@ -14,6 +14,17 @@ This round edits only `sections/*.tex` and rebuilds `main.pdf` (6 pages). See th
 
 No long-version or shared figure/table/bibliography files were edited by this round. An external update to the long experiment section and shared plots was detected during the work and preserved; the final short captions were checked against the current six-panel K-shot plot. No Overleaf synchronization was run during editing; the author subsequently requested a push, and the six short-section files were pushed and verified at commit `a233bb8` (latest remote base: `89d0ac5`). Physical-renderer contact-tuning split provenance remains unconfirmed.
 
+## Reframing (2026-10-07, author decision after an external review)
+
+- **MeshTac = renderer-free pipeline** (code names `rf` / `maplnr_m`: real-only teacher, aligner trained on real perturbations only, student without synthetic frames). The former main configuration (`al2` / `mapl_m`, K-pair learned renderer in aligner, teacher and student) is now the variant "+ synthetic frames" and appears as an indented row under MeshTac. Fig. 3, Fig. 5 (predictions of the rf models), Table I-IV and all numbers in the text follow this. Do not swap back.
+- **Checkpoints**: dense metrics at the best-validation-depth checkpoint; pose metrics (rotation, translation) at the FINAL epoch, no selection (`build_tables.hist()`); the text also reports final-epoch depth MSE. The old "best-rotation checkpoint" policy is gone.
+- **Table I** has Normal (deg) and Trans. (mm) columns; translation = normalized L1 x 41 mm (`HALF_MM`).
+- **"leaky" is retired** -> "all-pairs renderer / all-pairs reference" everywhere (tables, figure legends, text).
+- **Fig. 5** frames = the object's median MeshTac contact MAE (not the median improvement).
+- **Aligner convergence** (`scripts/aligner_convergence.py` -> `ablation/pilot_robosoft/aligner_convergence.json`, Fig. in the long version `fig_conv.pdf`): from the teacher pose 5.6 -> 2.1 (1 it.) -> 1.1 deg (3 it.), min 1.05 at 5; six updates recover perturbations up to 15 deg (0.6 deg), 20 deg -> 0.8, 25 -> 1.5, 30 -> 3.2.
+- Contribution 2 is phrased as an empirical finding (renderer study), contribution 3 no longer claims MeshTac on held-out objects. Title: "Contact Geometry" (was "Tactile Geometry").
+- Test-time refinement table uses the rf models (`pose_refine_results.json` keys `pilot150_B_k{K}_rf_realonly/*`).
+
 ## Abstract and terminology (2026-10-07, author decision)
 
 The abstract now leads with the registration needed to obtain mesh-derived contact labels, introduces MeshTac in the second sentence, and groups its mechanism, experimental evidence, and implications in that order. It specifies sensor-specific models and ridge-pattern objects, adds the cross-session finding, and ends with the implications for alignment and renderer supervision. The quantitative findings remain: contact depth error -20% on sensor A and -36% on GelSlim 4.0 at K=25; all-pairs renderer 24-26% versus matched 0-3%. Keep these numbers; this supersedes the 2026-10-06 note below. The abstract structure was revised after directly reading seven related abstracts; see the latest entry in EDITORIAL_REVIEW.md. Both abstracts contain approximately 207 words; the compiled short and extended versions remain 6 and 15 pages.

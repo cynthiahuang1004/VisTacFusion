@@ -5,7 +5,7 @@ Contact geometry tells a robot where an object meets its fingertip and how the o
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_arch.pdf}
-    \caption{\textbf{MeshTac overview.} Teacher $f_0$ initializes the contact state, and aligner $A$ iteratively corrects it by comparing the tactile image with projected mesh depth. The aligned mesh provides depth, normal and planar-pose targets for student $f_1$. Every trainable component in the matched-budget pipeline shares the same $K$ registered contacts; the optional synthetic branch is omitted. At standard inference, $f_1$ predicts without rendering the mesh. Optional pose refinement reuses $A$ with the known mesh. The thumbnails show an actual $K=25$ example and prediction.}
+    \caption{\textbf{MeshTac overview.} Teacher $f_0$ initializes the contact state, and aligner $A$ iteratively corrects it by comparing the tactile image with projected mesh depth. The aligned mesh provides depth, normal and planar-pose targets for student $f_1$. Every trainable component in the matched-budget pipeline shares the same $K$ registered contacts; synthetic frames from a renderer are an optional addition evaluated separately. At standard inference, $f_1$ predicts without rendering the mesh. Optional pose refinement reuses $A$ with the known mesh. The thumbnails show an actual $K=25$ example and prediction.}
     \label{fig:mapl}
 \end{figure*}
 
@@ -18,6 +18,6 @@ MeshTac learns this alignment as a residual correction (Fig.~\ref{fig:mapl}). Gi
 We compare real-only training, synthetic augmentation, self-training and MeshTac under matched real-label budgets. Our contributions are:
 \begin{itemize}
     \item \textbf{Mesh-aligned pseudo-labeling.} The method learns contact-state corrections from a small registered set and converts unlabeled real images into depth, normal and pose supervision.
-    \item \textbf{Matched-budget evaluation of tactile simulation.} The renderer and the predictor receive the same real training labels, separating synthetic-data gains from access to additional paired contacts.
-    \item \textbf{Evaluation across conditions.} Experiments on two sensors, a second capture session and held-out objects identify the complementary roles of alignment and simulation, and evaluate the aligner for pose refinement without retraining.
+    \item \textbf{Controlled renderer study.} The apparent benefit of synthetic tactile augmentation depends strongly on whether the real image--label pairs used to train the renderer are counted in the supervision budget.
+    \item \textbf{Evaluation across conditions.} Experiments on two sensors and a second capture session evaluate MeshTac's label efficiency and robustness; a separate held-out-object study characterizes when synthetic supervision helps, and the aligner is evaluated for pose refinement without retraining.
 \end{itemize}

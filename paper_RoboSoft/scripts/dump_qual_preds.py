@@ -12,8 +12,8 @@ from vistacfusion.utils.config import merge_configs
 
 OUT = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2"; P = "ablation/pilot_robosoft"
 MODEL = "ablation/encoder/tac_sitr_single.yaml"; TRAIN = f"{P}/train_pilot_e50.yaml"
-SETS = {"A": dict(runs=[("pilot150_", "B_k25_realonly"), ("pilot150_", "B_k25_al2")], root=None, step=1),
-        "B": dict(runs=[("pilot_", "S_k25_realonly_m"), ("pilot_", "S_k25_mapl_m")], root="/media/hdd2/ihsuan/gs_blender/real_gelslim40_test_mesh", step=4)}
+SETS = {"A": dict(runs=[("pilot150_", "B_k25_realonly"), ("pilot150_", "B_k25_al2"), ("pilot150_", "B_k25_rf")], root=None, step=1),
+        "B": dict(runs=[("pilot_", "S_k25_realonly_m"), ("pilot_", "S_k25_mapl_m"), ("pilot_", "S_k25_maplnr_m")], root="/media/hdd2/ihsuan/gs_blender/real_gelslim40_test_mesh", step=4)}
 
 
 @torch.no_grad()

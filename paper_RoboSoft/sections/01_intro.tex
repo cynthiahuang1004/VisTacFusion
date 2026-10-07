@@ -5,11 +5,11 @@ Contact geometry tells a robot where an object meets its fingertip and how it is
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/fig_arch.pdf}
-    \caption{\textbf{MeshTac training and inference.} Teacher $f_0$ initializes an unlabeled contact's state. Aligner $A$ refines it using the image and projected mesh depth. The aligned mesh labels the image for student $f_1$. Teacher and student share an architecture; optional inference refinement reuses $A$. Sensor-specific training uses the same $K$ registered contacts per object. The synthetic branch is omitted; thumbnails show an actual $K=25$ example.}
+    \caption{\textbf{MeshTac training and inference.} Teacher $f_0$ initializes an unlabeled contact's state. Aligner $A$ refines it using the image and projected mesh depth. The aligned mesh labels the image for student $f_1$. Teacher and student share an architecture; optional inference refinement reuses $A$. Sensor-specific training uses the same $K$ registered contacts per object. Synthetic frames from a renderer are an optional addition (Sec.~\ref{sec:exp}); thumbnails show an actual $K=25$ example.}
     \label{fig:mapl}
 \end{figure*}
 
-Simulation generates labeled contacts from known geometry~\cite{wang2022tacto,si2022taxim,chen2023tacchi}, but its usefulness depends on how well rendered images represent the target sensor. Learned renderers can reduce this appearance gap using real image--label pairs. These pairs belong in the training-label budget; otherwise, apparent simulation gains may reflect additional real supervision.
+Simulation generates labeled contacts from known geometry~\cite{wang2022tacto,si2022taxim,chen2023tacchi}, but learned renderers close its appearance gap only with real image--label pairs, which belong in the training-label budget.
 
 Unlabeled real images already capture the target sensor's appearance. With a known mesh, the missing information is the contact state---in-plane rotation, translation and indentation. A teacher trained on a small registered set can estimate this state. Yet self-training with its depth predictions can preserve its errors, while projecting the mesh at an inaccurate state shifts the contact region and corrupts the dense labels.
 
@@ -18,6 +18,6 @@ MeshTac corrects the contact state before generating labels (Fig.~\ref{fig:mapl}
 Our contributions are:
 \begin{itemize}
     \item A mesh-aligned pseudo-labeling method that learns contact-state corrections from a small registered set and generates geometric supervision for unlabeled real images.
-    \item A matched-budget evaluation protocol that includes renderer supervision in the real training-label budget, distinguishing synthetic augmentation from access to additional paired contacts.
-    \item Experiments on two sensors, a second capture session and held-out objects that establish the roles of alignment and simulation, and evaluate the aligner for test-time pose refinement.
+    \item A controlled renderer study showing that the apparent benefit of synthetic tactile augmentation depends strongly on whether the real image--label pairs used to train the renderer are counted in the supervision budget.
+    \item Experiments on two sensors and a second capture session that evaluate MeshTac's label efficiency and robustness, a separate held-out-object study of when synthetic supervision helps, and an evaluation of the aligner for test-time pose refinement.
 \end{itemize}

@@ -31,6 +31,6 @@ where $q^\ast$ is the labeled state and $\delta$ is a sampled perturbation. The 
 \end{equation}
 clipping indentation to $[0.3,1.6]\,$mm. The final mesh depth, normals and planar pose label the image. We retain every pseudo-labeled training frame in the evaluated configuration (Sec.~\ref{sec:ablation}).
 
-\noindent\textbf{Training the student.} Student $f_1$ has the teacher's architecture and learns from the $K$ labeled frames and the mesh-aligned frames. Synthetic frames may be added independently; the renderer-free variant isolates the contribution of alignment. Pseudo-labels are generated exclusively from the training split.
+\noindent\textbf{Training the student.} Student $f_1$ has the teacher's architecture and learns from the $K$ labeled frames and the mesh-aligned frames. Synthetic frames from a renderer may be added as a separate variant; MeshTac itself uses none. Pseudo-labels are generated exclusively from the training split.
 
 \noindent\textbf{Optional test-time refinement.} The student predicts from an image without mesh rendering. When the object identity and mesh are available, the same fixed aligner can refine its predicted pose using the test image. We evaluate this additional inference step separately in Sec.~\ref{sec:tta}.

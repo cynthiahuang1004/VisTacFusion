@@ -21,7 +21,7 @@
 \input{data/tables}
 
 \title{\LARGE\bf MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient\\
-Tactile Geometry and Pose Estimation}
+Contact Geometry and Pose Estimation}
 
 % Anonymous by default for RoboSoft double-anonymous review.
 % Compile with \def\MeshTacAuthorVersion{1}\input{main.tex} for an author copy.
@@ -33,7 +33,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \else
 \author{Anonymous submission}
 \fi
-\hypersetup{pdfauthor={},pdftitle={MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient Tactile Geometry and Pose Estimation},pdfsubject={},pdfkeywords={}}
+\hypersetup{pdfauthor={},pdftitle={MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient Contact Geometry and Pose Estimation},pdfsubject={},pdfkeywords={}}
 
 \begin{document}
 \maketitle
@@ -41,7 +41,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \pagestyle{empty}\raggedbottom
 
 \begin{abstract}
-Known object meshes can provide geometric labels for vision-based tactile sensing, but registering each real contact to the mesh is costly. We propose MeshTac, a mesh-aligned pseudo-labeling method that learns registration from a small labeled set to label additional real tactile images. Given a teacher's initial contact estimate, a residual aligner iteratively corrects the contact state using the image and projected mesh geometry. The aligner learns from perturbed labeled contact states without additional real labels. The aligned mesh provides depth, normal, and pose targets for a student that predicts without mesh rendering. The aligner also supports mesh-assisted pose refinement at inference. We evaluate sensor-specific models on ridge-pattern objects from two GelSlim-type sensors, comparing MeshTac with real-only training, synthetic augmentation, and self-training under matched real training-label budgets. With 25 labeled contacts per object, MeshTac reduces depth error within contact regions by $20\%$ and $36\%$ relative to real-only training, matching models trained with twice as many labels. These gains persist without a renderer, while synthetic augmentation improves robustness across capture sessions. Training a renderer on all real training pairs reduces depth MSE by $24$--$26\%$, compared with $0$--$3\%$ under the 25-label-per-object budget. Alignment thus improves supervision on real images, while simulation gains must be evaluated with renderer training labels included.
+Known object meshes can provide geometric labels for vision-based tactile sensing, but registering each real contact to the mesh is costly. We propose MeshTac, a mesh-aligned pseudo-labeling method that learns registration from a small labeled set to label additional real tactile images. Given a teacher's initial contact estimate, a residual aligner iteratively corrects the contact state using the image and projected mesh geometry. The aligner learns from perturbed labeled contact states without additional real labels. The aligned mesh provides depth, normal, and pose targets for a student that predicts without mesh rendering. The aligner also supports mesh-assisted pose refinement at inference. We evaluate sensor-specific models on ridge-pattern objects from two GelSlim-type sensors, comparing MeshTac with real-only training, synthetic augmentation, and self-training under matched real training-label budgets. With 25 labeled contacts per object and no synthetic data, MeshTac reduces depth error within contact regions by $21\%$ and $36\%$ relative to real-only training, matching models trained with twice as many labels. Adding synthetic augmentation does not improve these within-session results but helps across capture sessions. Training a renderer on all real training pairs reduces depth MSE by $24$--$26\%$, compared with $0$--$3\%$ under the 25-label-per-object budget. Alignment thus improves supervision on real images, while simulation gains must be evaluated with renderer training labels included.
 \end{abstract}
 
 \input{sections/01_intro}

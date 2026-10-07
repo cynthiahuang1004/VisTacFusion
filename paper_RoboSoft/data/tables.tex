@@ -1,66 +1,66 @@
 % ---- loo ----
 \newcommand{\tabloo}{%
-Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.7 & 0.099 \\
-Blender & 0.0657 & 0.346 & 0.592 & 30.3 & 6.8 & \textbf{0.032} \\
+Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 30.4 & 64.8 & 0.099 \\
+Blender & 0.0657 & 0.346 & 0.592 & 30.3 & 6.9 & \textbf{0.032} \\
 Blender (domain rand.) & 0.0635 & 0.342 & 0.601 & 30.4 & 8.9 & 0.038 \\
-Blender, bg-norm. & 0.0672 & 0.348 & 0.589 & 30.3 & 5.3 & 0.033 \\
-Blender, 1 rotation / object & 0.0645 & 0.354 & 0.585 & 30.4 & 10.3 & 0.039 \\
-Blender, 2 rotations / object & 0.0670 & 0.345 & 0.590 & 30.8 & 7.5 & 0.042 \\
-GAN-LOO & 0.0631 & 0.331 & 0.618 & 29.9 & 5.7 & 0.035 \\
-\quad w/o held-out meshes (control) & 0.0647 & 0.340 & 0.604 & 30.0 & 50.6 & 0.111 \\
+Blender, bg-norm. & 0.0672 & 0.348 & 0.589 & 30.3 & 5.1 & 0.033 \\
+Blender, 1 rotation / object & 0.0645 & 0.354 & 0.585 & 30.4 & 10.2 & 0.039 \\
+Blender, 2 rotations / object & 0.0670 & 0.345 & 0.590 & 30.8 & 7.6 & 0.042 \\
+GAN-LOO & 0.0631 & 0.331 & 0.618 & 29.9 & 5.6 & 0.035 \\
+\quad w/o held-out meshes (control) & 0.0647 & 0.340 & 0.604 & 30.0 & 50.5 & 0.111 \\
 Bg-cond.\ GAN-LOO & \textbf{0.0581} & \textbf{0.323} & \textbf{0.633} & \textbf{29.1} & 4.8 & 0.038 \\
-GAN-LOO, rotate-then-render & 0.0625 & 0.345 & 0.606 & 29.6 & \textbf{4.4} & 0.034 \\
-Multi-sensor GAN-LOO & 0.0695 & 0.358 & 0.579 & 30.9 & 8.6 & 0.039 \\
-Blender $\oplus$ GAN-LOO & 0.0661 & 0.349 & 0.601 & 30.7 & 5.6 & 0.034 \\
-Refiner (0 labels) & 0.0673 & 0.349 & 0.590 & 30.5 & 7.5 & 0.046 \\
-Refiner on domain rand.\ (0 labels, no calib.) & 0.0691 & 0.353 & 0.583 & 30.8 & 7.2 & 0.045 \\
-\textit{GAN-full (leaky)} & \textit{0.0467} & \textit{0.277} & \textit{0.676} & \textit{25.8} & \textit{4.6} & \textit{0.035} \\
+GAN-LOO, rotate-then-render & 0.0625 & 0.345 & 0.606 & 29.6 & \textbf{4.5} & 0.033 \\
+Multi-sensor GAN-LOO & 0.0695 & 0.358 & 0.579 & 30.9 & 8.9 & 0.039 \\
+Blender $\oplus$ GAN-LOO & 0.0661 & 0.349 & 0.601 & 30.7 & 5.5 & 0.034 \\
+Refiner (0 labels) & 0.0673 & 0.349 & 0.590 & 30.5 & 7.7 & 0.045 \\
+Refiner on domain rand.\ (0 labels, no calib.) & 0.0691 & 0.353 & 0.583 & 30.8 & 7.1 & 0.045 \\
+\textit{GAN-full (all pairs)} & \textit{0.0467} & \textit{0.277} & \textit{0.676} & \textit{25.8} & \textit{4.5} & \textit{0.034} \\
 }
 
 % ---- kshot ----
 \newcommand{\tabkshot}{%
-0 & Blender only & \textbf{0.0793} & \textbf{0.408} & \textbf{0.572} & \textbf{48.6} & \textbf{8.4} \\ % pilot150_B_k0_blender (150 ep)
-   & \textit{GAN-full (leaky) only} & \textit{0.0459} & \textit{0.274} & \textit{0.705} & \textit{44.6} & \textit{7.0} \\ % pilot150_B_k0_ganfull (150 ep)
+0 & Blender only & \textbf{0.0793} & \textbf{0.408} & \textbf{0.572} & \textbf{48.6} & \textbf{8.6} \\ % pilot150_B_k0_blender (150 ep)
+   & \textit{GAN-full (all pairs) only} & \textit{0.0459} & \textit{0.274} & \textit{0.705} & \textit{44.6} & \textit{7.2} \\ % pilot150_B_k0_ganfull (150 ep)
 \midrule
-10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.6 \\ % pilot150_B_k10_realonly (150 ep)
+10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.8 \\ % pilot150_B_k10_realonly (150 ep)
   & Blender & 0.0636 & 0.367 & 0.602 & 30.8 & 5.2 \\ % pilot150_B_k10_blender (150 ep)
   & GAN-10 & 0.0624 & 0.354 & 0.597 & 30.6 & 5.9 \\ % pilot150_B_k10_gank (150 ep)
-  & Teacher-label self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.5 \\ % pilot150_B_k10_semipm_pseudo (150 ep)
-  & MeshTac, L1 search & 0.0545 & 0.320 & 0.639 & 27.3 & 4.6 \\ % pilot150_B_k10_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & 4.0 \\ % pilot150_B_k10_al2 (150 ep)
-  & \quad no synthetic frames & 0.0571 & 0.293 & 0.678 & 27.3 & \textbf{3.2} \\ % pilot150_B_k10_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\ % pilot150_B_k10_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\ % pilot_B_k10_ganfull (50 ep)
+  & Teacher-label self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.6 \\ % pilot150_B_k10_semipm_pseudo (150 ep)
+  & MeshTac, L1 search & 0.0545 & 0.320 & 0.639 & 27.3 & 4.7 \\ % pilot150_B_k10_rcp (150 ep)
+  & MeshTac (ours) & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\ % pilot150_B_k10_rf (150 ep)
+  & \quad + synthetic frames & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & 4.0 \\ % pilot150_B_k10_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0571 & 0.293 & 0.678 & 27.3 & \textbf{3.2} \\ % pilot150_B_k10_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.3} \\ % pilot_B_k10_ganfull (50 ep)
 \midrule
 25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\ % pilot150_B_k25_realonly (150 ep)
-  & Blender & 0.0549 & 0.329 & 0.656 & 27.5 & 4.7 \\ % pilot150_B_k25_blender (150 ep)
+  & Blender & 0.0549 & 0.329 & 0.656 & 27.5 & 4.8 \\ % pilot150_B_k25_blender (150 ep)
   & GAN-25 & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 \\ % pilot150_B_k25_gank (150 ep)
   & Blender $\oplus$ GAN-25 & 0.0554 & 0.324 & 0.667 & 27.4 & 4.8 \\ % pilot150_B_k25_mix (150 ep)
-  & Refiner-25 (0 labels) & 0.0551 & 0.297 & 0.672 & 27.1 & 5.5 \\ % pilot150_B_k25_ref (150 ep)
-  & Refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.6 \\ % pilot150_B_k25_refufull (150 ep)
-  & Self-trained GAN-25 (renderer only) & 0.0538 & 0.326 & 0.641 & 28.0 & 4.8 \\ % pilot150_B_k25_pseudo (150 ep)
-  & Teacher-label self-training, model only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.2 \\ % pilot150_B_k25_semipm (150 ep)
-  & \quad center window only (no stitching) & 0.0518 & 0.328 & 0.643 & 26.7 & 8.4 \\ % pilot150_B_k25_semipm_c1 (150 ep)
-  & Teacher-label self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
-  & \quad round 2 & 0.0500 & 0.310 & 0.642 & 26.0 & 6.2 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
+  & Refiner-25 (0 labels) & 0.0551 & 0.297 & 0.672 & 27.1 & 5.7 \\ % pilot150_B_k25_ref (150 ep)
+  & Refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.8 \\ % pilot150_B_k25_refufull (150 ep)
+  & Self-trained GAN-25 (renderer only) & 0.0538 & 0.326 & 0.641 & 28.0 & 4.9 \\ % pilot150_B_k25_pseudo (150 ep)
+  & Teacher-label self-training, model only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.3 \\ % pilot150_B_k25_semipm (150 ep)
+  & \quad center window only (no stitching) & 0.0518 & 0.328 & 0.643 & 26.7 & 8.5 \\ % pilot150_B_k25_semipm_c1 (150 ep)
+  & Teacher-label self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.3 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
+  & \quad round 2 & 0.0500 & 0.310 & 0.642 & 26.0 & 6.3 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
   & MeshTac, L1 search & 0.0482 & 0.291 & 0.655 & 25.5 & 4.5 \\ % pilot150_B_k25_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\ % pilot150_B_k25_al2 (150 ep)
-  & \quad no synthetic frames & 0.0456 & 0.259 & 0.715 & 24.7 & \textbf{2.7} \\ % pilot150_B_k25_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & 2.8 \\ % pilot150_B_k25_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\ % pilot150_B_k25_ganfull (150 ep)
+  & MeshTac (ours) & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & \textbf{2.8} \\ % pilot150_B_k25_rf (150 ep)
+  & \quad + synthetic frames & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\ % pilot150_B_k25_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0456 & 0.259 & 0.715 & 24.7 & 2.8 \\ % pilot150_B_k25_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{5.0} \\ % pilot150_B_k25_ganfull (150 ep)
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & 4.3 \\ % pilot150_B_k50_realonly (150 ep)
   & Blender & 0.0478 & 0.270 & 0.701 & 25.2 & 4.5 \\ % pilot150_B_k50_blender (150 ep)
   & GAN-50 & 0.0434 & 0.260 & 0.716 & 24.3 & 4.7 \\ % pilot150_B_k50_gank (150 ep)
   & Teacher-label self-training & 0.0381 & 0.255 & 0.706 & 22.7 & 5.5 \\ % pilot150_B_k50_semipm_pseudo (150 ep)
-  & MeshTac, L1 search & 0.0384 & 0.247 & 0.714 & 22.7 & 4.1 \\ % pilot150_B_k50_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\ % pilot150_B_k50_al2 (150 ep)
-  & \quad no synthetic frames & 0.0332 & 0.215 & 0.764 & 21.1 & 3.0 \\ % pilot150_B_k50_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\ % pilot150_B_k50_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} \\ % pilot150_B_k50_ganfull (150 ep)
+  & MeshTac, L1 search & 0.0384 & 0.247 & 0.714 & 22.7 & 4.2 \\ % pilot150_B_k50_rcp (150 ep)
+  & MeshTac (ours) & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\ % pilot150_B_k50_rf (150 ep)
+  & \quad + synthetic frames & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\ % pilot150_B_k50_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0332 & 0.215 & 0.764 & 21.1 & 3.0 \\ % pilot150_B_k50_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} \\ % pilot150_B_k50_ganfull (150 ep)
 \midrule
 100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & 3.2 \\ % pilot150_B_k100_realonly (150 ep)
-  & Blender & 0.0350 & 0.232 & 0.727 & 22.0 & 4.0 \\ % pilot150_B_k100_blender (150 ep)
+  & Blender & 0.0350 & 0.232 & 0.727 & 22.0 & 4.1 \\ % pilot150_B_k100_blender (150 ep)
   & GAN-100 & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 \\ % pilot150_B_k100_gank (150 ep)
   & Blender $\oplus$ GAN-100 & 0.0329 & 0.213 & 0.760 & 20.5 & 4.2 \\ % pilot150_B_k100_mix (150 ep)
   & Refiner-100 (0 labels) & 0.0340 & 0.224 & 0.761 & 21.1 & 4.9 \\ % pilot150_B_k100_ref (150 ep)
@@ -70,39 +70,40 @@ Refiner on domain rand.\ (0 labels, no calib.) & 0.0691 & 0.353 & 0.583 & 30.8 &
   & Teacher-label self-training & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\ % pilot150_B_k100_semipm_pseudo (150 ep)
   & \quad round 2 & 0.0295 & 0.217 & 0.736 & 20.2 & 4.9 \\ % pilot150_B_k100_semipm_pseudo_r2 (150 ep)
   & MeshTac, L1 search & 0.0276 & 0.203 & 0.771 & 19.4 & 4.1 \\ % pilot150_B_k100_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\ % pilot150_B_k100_al2 (150 ep)
-  & \quad no synthetic frames & 0.0237 & 0.168 & 0.809 & 17.1 & 2.7 \\ % pilot150_B_k100_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\ % pilot150_B_k100_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
+  & MeshTac (ours) & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\ % pilot150_B_k100_rf (150 ep)
+  & \quad + synthetic frames & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\ % pilot150_B_k100_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0237 & 0.168 & 0.809 & 17.1 & 2.7 \\ % pilot150_B_k100_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
 % ---- seeds ----
 \newcommand{\tabseeds}{%
-25 & Real only & 0.0551 $\pm$ 0.0010 & 0.314 $\pm$ 0.010 & 0.665 $\pm$ 0.004 & 5.5 $\pm$ 0.0 \\
-25 & GAN-25 & 0.0536 $\pm$ 0.0013 & 0.314 $\pm$ 0.008 & 0.655 $\pm$ 0.032 & 6.0 $\pm$ 0.1 \\
-25 & Teacher-label self-training & 0.0507 $\pm$ 0.0001 & 0.310 $\pm$ 0.004 & 0.624 $\pm$ 0.002 & 7.2 $\pm$ 0.1 \\
-25 & MeshTac, L1 search & 0.0482 $\pm$ 0.0004 & 0.289 $\pm$ 0.004 & 0.648 $\pm$ 0.010 & 5.5 $\pm$ 0.1 \\
-25 & MeshTac (with renderer) & 0.0447 $\pm$ 0.0009 & 0.246 $\pm$ 0.002 & 0.729 $\pm$ 0.002 & 4.9 $\pm$ 0.1 \\
+25 & Real only & 0.0551 $\pm$ 0.0010 & 0.314 $\pm$ 0.010 & 0.665 $\pm$ 0.004 & 5.6 $\pm$ 0.0 \\
+25 & GAN-25 & 0.0536 $\pm$ 0.0013 & 0.314 $\pm$ 0.008 & 0.655 $\pm$ 0.032 & 6.1 $\pm$ 0.0 \\
+25 & Teacher-label self-training & 0.0507 $\pm$ 0.0001 & 0.310 $\pm$ 0.004 & 0.624 $\pm$ 0.002 & 7.5 $\pm$ 0.1 \\
+25 & MeshTac, L1 search & 0.0482 $\pm$ 0.0004 & 0.289 $\pm$ 0.004 & 0.648 $\pm$ 0.010 & 5.5 $\pm$ 0.0 \\
 25 & MeshTac & 0.0433 $\pm$ 0.0004 & 0.247 $\pm$ 0.000 & 0.722 $\pm$ 0.000 & 4.0 $\pm$ 0.0 \\
+25 & \quad + synthetic frames & 0.0447 $\pm$ 0.0009 & 0.246 $\pm$ 0.002 & 0.729 $\pm$ 0.002 & 4.9 $\pm$ 0.1 \\
 100 & Real only & 0.0366 $\pm$ 0.0008 & 0.234 $\pm$ 0.006 & 0.750 $\pm$ 0.004 & 3.9 $\pm$ 0.0 \\
 100 & GAN-100 & 0.0299 $\pm$ 0.0004 & 0.201 $\pm$ 0.002 & 0.779 $\pm$ 0.001 & 5.5 $\pm$ 0.0 \\
-100 & Teacher-label self-training & 0.0280 $\pm$ 0.0001 & 0.209 $\pm$ 0.002 & 0.743 $\pm$ 0.007 & 6.1 $\pm$ 0.0 \\
-100 & MeshTac, L1 search & 0.0275 $\pm$ 0.0002 & 0.201 $\pm$ 0.003 & 0.767 $\pm$ 0.005 & 5.0 $\pm$ 0.1 \\
-100 & MeshTac (with renderer) & 0.0229 $\pm$ 0.0003 & 0.164 $\pm$ 0.000 & 0.818 $\pm$ 0.000 & 4.8 $\pm$ 0.0 \\
-100 & MeshTac & 0.0222 $\pm$ 0.0004 & 0.163 $\pm$ 0.002 & 0.821 $\pm$ 0.002 & 3.8 $\pm$ 0.0 \\
+100 & Teacher-label self-training & 0.0280 $\pm$ 0.0001 & 0.209 $\pm$ 0.002 & 0.743 $\pm$ 0.007 & 6.1 $\pm$ 0.1 \\
+100 & MeshTac, L1 search & 0.0275 $\pm$ 0.0002 & 0.201 $\pm$ 0.003 & 0.767 $\pm$ 0.005 & 5.0 $\pm$ 0.0 \\
+100 & MeshTac & 0.0222 $\pm$ 0.0004 & 0.163 $\pm$ 0.002 & 0.821 $\pm$ 0.002 & 3.8 $\pm$ 0.1 \\
+100 & \quad + synthetic frames & 0.0229 $\pm$ 0.0003 & 0.164 $\pm$ 0.000 & 0.818 $\pm$ 0.000 & 4.8 $\pm$ 0.0 \\
 }
 
 % ---- rcabl ----
 \newcommand{\tabrcabl}{%
-teacher & -- & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.2 \\
-teacher & teacher & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 5.9 \\
+teacher & -- & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.5 \\
+teacher & teacher & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 6.0 \\
 \midrule
-mesh$^{1/2}$ & L1$^{1/2}$ & 0.63 & 0.30 & 1.4 & 0.0485 & 0.286 & 0.639 & 6.3 \\
-mesh & L1 & 0.64 & 0.30 & 2.5 & 0.0489 & 0.292 & 0.657 & 5.4 \\
+mesh$^{1/2}$ & L1$^{1/2}$ & 0.63 & 0.30 & 1.4 & 0.0485 & 0.286 & 0.639 & 6.5 \\
+mesh & L1 & 0.64 & 0.30 & 2.5 & 0.0489 & 0.292 & 0.657 & 5.5 \\
 mesh$^{1/2}$ & L1 & 0.63 & 0.30 & 2.5 & 0.0482 & 0.289 & 0.648 & 5.5 \\
 \midrule
 mesh & aligner$^{\ddagger}$ & 0.71 & 0.24 & 1.1 & 0.0447 & 0.248 & 0.730 & 5.0 \\
 mesh & aligner$^{\dagger}$ & 0.71 & 0.24 & 1.1 & 0.0447 & 0.246 & 0.729 & 4.9 \\
+mesh & aligner, no renderer & 0.72 & 0.23 & 1.1 & 0.0433 & 0.247 & 0.722 & 4.0 \\
 }
 
 % ---- cross ----
@@ -115,7 +116,7 @@ GAN-LOO & 0.272 & 0.723 & 24.1 & 11.1 & 5.2 \\
 Bg-cond.\ GAN-LOO & 0.270 & 0.727 & 24.2 & 10.5 & 4.7 \\
 Blender $\oplus$ GAN-LOO & 0.275 & 0.724 & 24.0 & 9.8 & 4.8 \\
 Refiner (0 labels) & 0.290 & 0.714 & 24.6 & 12.0 & 5.3 \\
-\textit{GAN-full (leaky)} & \textit{0.259} & \textit{0.748} & \textit{22.9} & \textit{10.1} & \textit{4.8} \\
+\textit{GAN-full (all pairs)} & \textit{0.259} & \textit{0.748} & \textit{22.9} & \textit{10.1} & \textit{4.8} \\
 \midrule
 Blender only ($\Kreal=0$) & 0.425 & 0.561 & 50.7 & 25.2 & 5.6 \\
 $\Kreal=25$ real only & 0.368 & 0.598 & 30.7 & 20.8 & 5.4 \\
@@ -125,7 +126,8 @@ $\Kreal=25$ + refiner-25 (0 labels) & 0.338 & 0.635 & 29.5 & 15.5 & 5.6 \\
 $\Kreal=25$ + self-trained GAN-25 & 0.363 & 0.606 & 29.1 & 20.4 & 5.5 \\
 $\Kreal=25$ + teacher-label self-training & 0.335 & 0.598 & 27.5 & 13.1 & 5.5 \\
 $\Kreal=25$ + MeshTac, L1 search & 0.322 & 0.621 & 27.4 & 17.2 & 5.1 \\
-$\Kreal=25$ + MeshTac & 0.310 & 0.660 & 27.2 & 13.8 & 5.3 \\
+$\Kreal=25$ + MeshTac & 0.306 & 0.654 & 27.3 & 17.3 & 5.2 \\
+$\Kreal=25$ + MeshTac + synthetic frames & 0.310 & 0.660 & 27.2 & 13.8 & 5.3 \\
 $\Kreal=100$ real only & 0.351 & 0.657 & 27.5 & 17.5 & 5.5 \\
 $\Kreal=100$ + Blender & 0.299 & 0.647 & 25.3 & 16.4 & 5.1 \\
 $\Kreal=100$ + GAN-100 & 0.295 & 0.713 & 25.6 & 13.7 & 5.4 \\
@@ -133,26 +135,27 @@ $\Kreal=100$ + refiner-100 (0 labels) & 0.330 & 0.688 & 26.2 & 16.9 & 6.1 \\
 $\Kreal=100$ + self-trained GAN-100 & 0.310 & 0.715 & 26.1 & 12.1 & 4.9 \\
 $\Kreal=100$ + teacher-label self-training & 0.300 & 0.707 & 24.2 & 11.0 & 4.9 \\
 $\Kreal=100$ + MeshTac, L1 search & 0.293 & 0.718 & 23.5 & 12.5 & 5.0 \\
-$\Kreal=100$ + MeshTac & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 14.4 & 5.2 \\
+$\Kreal=100$ + MeshTac & 0.288 & 0.707 & 24.6 & 15.1 & 4.7 \\
+$\Kreal=100$ + MeshTac + synthetic frames & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 14.4 & 5.2 \\
 }
 
 % ---- kshotmain ----
 \newcommand{\tabkshotmain}{%
-10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.6 \\
+10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.8 \\
   & Physical renderer & 0.0636 & 0.367 & 0.602 & 30.8 & 5.2 \\
   & Learned renderer & 0.0624 & 0.354 & 0.597 & 30.6 & 5.9 \\
-  & Self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.5 \\
+  & Self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.6 \\
   & MeshTac (ours) & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & \textbf{4.0} \\
   & \quad no renderer & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\
-   & \textit{Leaky renderer} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\
+   & \textit{All-pairs renderer} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.3} \\
 \midrule
 25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\
-  & Physical renderer & 0.0549 & 0.329 & 0.656 & 27.5 & 4.7 \\
+  & Physical renderer & 0.0549 & 0.329 & 0.656 & 27.5 & 4.8 \\
   & Learned renderer & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 \\
-  & Self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\
+  & Self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.3 \\
   & MeshTac (ours) & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\
   & \quad no renderer & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & \textbf{2.8} \\
-   & \textit{Leaky renderer} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\
+   & \textit{All-pairs renderer} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{5.0} \\
 \midrule
 50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & 4.3 \\
   & Physical renderer & 0.0478 & 0.270 & 0.701 & 25.2 & 4.5 \\
@@ -160,15 +163,15 @@ $\Kreal=100$ + MeshTac & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 14.4 
   & Self-training & 0.0381 & 0.255 & 0.706 & 22.7 & 5.5 \\
   & MeshTac (ours) & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\
   & \quad no renderer & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\
-   & \textit{Leaky renderer} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} \\
+   & \textit{All-pairs renderer} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} \\
 \midrule
 100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & 3.2 \\
-  & Physical renderer & 0.0350 & 0.232 & 0.727 & 22.0 & 4.0 \\
+  & Physical renderer & 0.0350 & 0.232 & 0.727 & 22.0 & 4.1 \\
   & Learned renderer & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 \\
   & Self-training & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\
   & MeshTac (ours) & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\
   & \quad no renderer & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\
-   & \textit{Leaky renderer} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\
+   & \textit{All-pairs renderer} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\
 }
 
 % ---- crossmain ----
@@ -176,7 +179,7 @@ $\Kreal=100$ + MeshTac & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 14.4 
 $\dagger$ & Real only & 0.315 & 0.675 & 25.4 & 16.4 \\
   & Physical renderer & 0.294 & 0.701 & 24.9 & 11.5 \\
   & Learned renderer & 0.270 & 0.727 & 24.2 & \textbf{10.5} \\
-   & \textit{Leaky renderer} & \textit{0.259} & \textit{0.748} & \textit{22.9} & \textit{10.1} \\
+   & \textit{All-pairs renderer} & \textit{0.259} & \textit{0.748} & \textit{22.9} & \textit{10.1} \\
 \midrule
 25 & Real only & 0.368 & 0.598 & 30.7 & 20.8 \\
   & Learned renderer & 0.342 & 0.589 & 28.7 & 25.7 \\
@@ -193,29 +196,29 @@ $\dagger$ & Real only & 0.315 & 0.675 & 25.4 & 16.4 \\
 
 % ---- loomain ----
 \newcommand{\tabloomain}{%
-Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 64.7 \\
-Physical renderer & 0.0657 & 0.346 & 0.592 & 6.8 \\
-Learned renderer & 0.0631 & 0.331 & 0.618 & 5.7 \\
-\quad w/o held-out meshes & 0.0647 & 0.340 & 0.604 & 50.6 \\
+Real only (9 objects) & 0.0665 & 0.356 & 0.582 & 64.8 \\
+Physical renderer & 0.0657 & 0.346 & 0.592 & 6.9 \\
+Learned renderer & 0.0631 & 0.331 & 0.618 & 5.6 \\
+\quad w/o held-out meshes & 0.0647 & 0.340 & 0.604 & 50.5 \\
 \quad background-conditioned & \textbf{0.0581} & \textbf{0.323} & \textbf{0.633} & \textbf{4.8} \\
-\textit{Leaky renderer} & \textit{0.0467} & \textit{0.277} & \textit{0.676} & \textit{4.6} \\
+\textit{All-pairs renderer} & \textit{0.0467} & \textit{0.277} & \textit{0.676} & \textit{4.5} \\
 }
 
 % ---- rcablmain ----
 \newcommand{\tabrcablmain}{%
-Teacher depth & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.2 \\
-Teacher depth + pose & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 5.9 \\
+Teacher depth & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.5 \\
+Teacher depth + pose & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 6.0 \\
 L1-search mesh$^{1/2}$ & 0.63 & 0.30 & 2.5 & 0.0482 & 0.289 & 0.648 & 5.5 \\
-MeshTac & 0.71 & 0.24 & 1.1 & 0.0447 & 0.246 & 0.729 & 4.9 \\
-\quad no renderer$^{\ddagger}$ & 0.72 & 0.23 & 1.1 & 0.0433 & 0.247 & 0.722 & 4.0 \\
+MeshTac & 0.72 & 0.23 & 1.1 & 0.0433 & 0.247 & 0.722 & 4.0 \\
+\quad + synthetic frames$^{\ddagger}$ & 0.71 & 0.24 & 1.1 & 0.0447 & 0.246 & 0.729 & 4.9 \\
 }
 
 % ---- poseref ----
 \newcommand{\tabposeref}{%
-10 & 9.6 & 2.8 & 4.0 & 1.5 & 20.2 & 11.4 & 8.8 & 4.9 \\
-25 & 5.6 & 1.2 & 3.7 & 0.9 & 16.2 & 5.5 & 9.0 & 4.8 \\
-50 & 4.3 & 1.2 & 3.7 & 1.2 & 13.8 & 4.8 & 10.6 & 5.2 \\
-100 & 3.2 & 0.4 & 3.7 & 0.8 & 12.9 & 4.9 & 10.2 & 4.8 \\
+10 & 9.6 & 2.8 & 4.7 & 2.4 & 20.2 & 11.4 & 14.2 & 7.0 \\
+25 & 5.6 & 1.2 & 2.8 & 0.9 & 16.2 & 5.5 & 10.9 & 5.2 \\
+50 & 4.3 & 1.2 & 2.7 & 1.0 & 13.8 & 4.8 & 11.3 & 7.4 \\
+100 & 3.2 & 0.4 & 2.5 & 0.4 & 12.9 & 4.9 & 10.1 & 4.9 \\
 }
 
 % ---- sensorb ----
@@ -246,21 +249,21 @@ MeshTac & 0.71 & 0.24 & 1.1 & 0.0447 & 0.246 & 0.729 & 4.9 \\
 
 % ---- variants ----
 \newcommand{\tabvariants}{%
-Real only & -- & 0.312 & -- & 0.356 & 64.7 \\
-GAN-$\Kreal$ / GAN-LOO & 0.108 & 0.321 & 0.068 & 0.331 & 5.7 \\
+Real only & -- & 0.312 & -- & 0.356 & 64.8 \\
+GAN-$\Kreal$ / GAN-LOO & 0.108 & 0.321 & 0.068 & 0.331 & 5.6 \\
 \quad Blender-pretrained & 0.111 & 0.335 & 0.084 & 0.356 & 8.5 \\
-\quad difference image & 0.108 & 0.339 & 0.066 & 0.346 & 6.3 \\
+\quad difference image & 0.108 & 0.339 & 0.066 & 0.346 & 6.2 \\
 \quad background-conditioned & \textbf{0.101} & 0.330 & \textbf{0.062} & \textbf{0.323} & \textbf{4.8} \\
 \quad physics-conditioned & 0.114 & -- & -- & -- & -- \\
 \quad physics residual & 0.119 & -- & -- & -- & -- \\
 \quad physics + background & 0.104 & -- & -- & -- & -- \\
 \quad self-trained (+ pseudo pairs) & 0.102 & 0.326 & -- & -- & -- \\
-Refiner, unpaired (0 labels) & 0.159 & 0.297 & 0.159 & 0.349 & 7.5 \\
+Refiner, unpaired (0 labels) & 0.159 & 0.297 & 0.159 & 0.349 & 7.7 \\
 \quad + self-regularization & -- & -- & 0.156 & 0.360 & 7.4 \\
-\quad on domain-rand.\ render & -- & -- & 0.159 & 0.353 & 7.2 \\
-Blender (calibrated) & -- & 0.329 & 0.179 & 0.346 & 6.8 \\
+\quad on domain-rand.\ render & -- & -- & 0.159 & 0.353 & 7.1 \\
+Blender (calibrated) & -- & 0.329 & 0.179 & 0.346 & 6.9 \\
 Blender (domain rand.) & -- & 0.320 & -- & 0.342 & 8.9 \\
-Blender, bg-norm. & -- & 0.338 & -- & 0.348 & 5.3 \\
+Blender, bg-norm. & -- & 0.338 & -- & 0.348 & 5.1 \\
 Real only, mask head + grad.\ loss & -- & 0.309 & -- & -- & -- \\
 GAN-$\Kreal$, mask head + grad.\ loss & -- & 0.302 & -- & -- & -- \\
 Blender pretrain $\to$ real fine-tune & -- & \textbf{0.294} & -- & -- & -- \\
@@ -272,35 +275,35 @@ Blender pretrain $\to$ real fine-tune & -- & \textbf{0.294} & -- & -- & -- \\
 10 & Real only & 0.0314 & 0.180 & 0.780 & 22.5 & 14.0 \\
   & Learned renderer & 0.0290 & 0.173 & 0.801 & 21.7 & 14.0 \\
   & Self-training & 0.0301 & 0.202 & 0.773 & 22.5 & 15.3 \\
-  & MeshTac (ours), no renderer & \textbf{0.0170} & \textbf{0.121} & \textbf{0.856} & \textbf{19.7} & \textbf{9.5} \\
+  & MeshTac (ours) & \textbf{0.0170} & \textbf{0.121} & \textbf{0.856} & \textbf{19.7} & \textbf{9.5} \\
 \midrule
 25 & Real only & 0.0182 & 0.127 & 0.847 & 19.6 & 13.4 \\
   & Learned renderer & 0.0148 & 0.111 & 0.877 & 18.3 & 11.4 \\
   & Self-training & 0.0175 & 0.135 & 0.846 & 19.7 & 13.1 \\
-  & MeshTac (ours) & \textbf{0.0075} & \textbf{0.078} & 0.904 & \textbf{16.2} & 9.9 \\
-  & \quad no renderer & 0.0076 & 0.081 & \textbf{0.911} & 16.3 & \textbf{9.2} \\
+  & MeshTac (ours) & 0.0076 & 0.081 & \textbf{0.911} & 16.3 & \textbf{9.2} \\
+  & \quad + synthetic frames & \textbf{0.0075} & \textbf{0.078} & 0.904 & \textbf{16.2} & 9.9 \\
 \midrule
 50 & Real only & 0.0088 & 0.083 & 0.899 & 16.9 & \textbf{9.0} \\
   & Learned renderer & 0.0070 & 0.075 & 0.910 & 16.0 & 10.6 \\
   & Self-training & 0.0081 & 0.084 & 0.901 & 16.4 & 12.5 \\
-  & MeshTac (ours), no renderer & \textbf{0.0041} & \textbf{0.061} & \textbf{0.933} & \textbf{14.8} & 9.7 \\
+  & MeshTac (ours) & \textbf{0.0041} & \textbf{0.061} & \textbf{0.933} & \textbf{14.8} & 9.7 \\
 \midrule
 100 & Real only & 0.0051 & 0.066 & 0.932 & 15.1 & \textbf{8.4} \\
   & Learned renderer & 0.0052 & 0.063 & 0.928 & 15.0 & 9.8 \\
   & Self-training & 0.0047 & 0.070 & 0.933 & 14.9 & 11.9 \\
-  & MeshTac (ours), no renderer & \textbf{0.0034} & \textbf{0.056} & \textbf{0.944} & \textbf{14.4} & 9.1 \\
+  & MeshTac (ours) & \textbf{0.0034} & \textbf{0.056} & \textbf{0.944} & \textbf{14.4} & 9.1 \\
 }
 
 % ---- sbseeds ----
 \newcommand{\tabsbseeds}{%
 10 & Real only & 0.0317\,\scalebox{0.8}{$\pm$0.0003} & 0.181\,\scalebox{0.8}{$\pm$0.006} & 0.780\,\scalebox{0.8}{$\pm$0.001} & 13.5\,\scalebox{0.8}{$\pm$0.4} \\
-10 & MeshTac, no renderer & 0.0169\,\scalebox{0.8}{$\pm$0.0001} & 0.121\,\scalebox{0.8}{$\pm$0.0003} & 0.855\,\scalebox{0.8}{$\pm$0.0002} & 10.1\,\scalebox{0.8}{$\pm$0.5} \\
+10 & MeshTac & 0.0169\,\scalebox{0.8}{$\pm$0.0001} & 0.121\,\scalebox{0.8}{$\pm$0.0003} & 0.855\,\scalebox{0.8}{$\pm$0.0002} & 10.1\,\scalebox{0.8}{$\pm$0.5} \\
 25 & Real only & 0.0179\,\scalebox{0.8}{$\pm$0.0004} & 0.127\,\scalebox{0.8}{$\pm$0.001} & 0.849\,\scalebox{0.8}{$\pm$0.002} & 12.3\,\scalebox{0.8}{$\pm$0.8} \\
-25 & MeshTac, no renderer & 0.0076\,\scalebox{0.8}{$\pm$0.0001} & 0.082\,\scalebox{0.8}{$\pm$0.002} & 0.912\,\scalebox{0.8}{$\pm$0.001} & 9.0\,\scalebox{0.8}{$\pm$0.1} \\
+25 & MeshTac & 0.0076\,\scalebox{0.8}{$\pm$0.0001} & 0.082\,\scalebox{0.8}{$\pm$0.002} & 0.912\,\scalebox{0.8}{$\pm$0.001} & 9.0\,\scalebox{0.8}{$\pm$0.1} \\
 50 & Real only & 0.0089\,\scalebox{0.8}{$\pm$0.0001} & 0.084\,\scalebox{0.8}{$\pm$0.002} & 0.900\,\scalebox{0.8}{$\pm$0.001} & 9.2\,\scalebox{0.8}{$\pm$0.5} \\
-50 & MeshTac, no renderer & 0.0041\,\scalebox{0.8}{$\pm$0.0001} & 0.063\,\scalebox{0.8}{$\pm$0.002} & 0.933\,\scalebox{0.8}{$\pm$0.001} & 9.8\,\scalebox{0.8}{$\pm$0.05} \\
+50 & MeshTac & 0.0041\,\scalebox{0.8}{$\pm$0.0001} & 0.063\,\scalebox{0.8}{$\pm$0.002} & 0.933\,\scalebox{0.8}{$\pm$0.001} & 9.8\,\scalebox{0.8}{$\pm$0.05} \\
 100 & Real only & 0.0050\,\scalebox{0.8}{$\pm$0.0001} & 0.067\,\scalebox{0.8}{$\pm$0.002} & 0.933\,\scalebox{0.8}{$\pm$0.0001} & 9.3\,\scalebox{0.8}{$\pm$0.7} \\
-100 & MeshTac, no renderer & 0.0033\,\scalebox{0.8}{$\pm$0.00002} & 0.054\,\scalebox{0.8}{$\pm$0.002} & 0.944\,\scalebox{0.8}{$\pm$0.0003} & 9.4\,\scalebox{0.8}{$\pm$0.4} \\
+100 & MeshTac & 0.0033\,\scalebox{0.8}{$\pm$0.00002} & 0.054\,\scalebox{0.8}{$\pm$0.002} & 0.944\,\scalebox{0.8}{$\pm$0.0003} & 9.4\,\scalebox{0.8}{$\pm$0.4} \\
 }
 
 % ---- selection ----
@@ -308,36 +311,40 @@ Blender pretrain $\to$ real fine-tune & -- & \textbf{0.294} & -- & -- & -- \\
 Real only, selection 0 & 0.0558 & 0.303 & 0.666 \\
 Real only, selection 1 & 0.0578 & 0.314 & 0.655 \\
 Real only, selection 2 & 0.0585 & 0.324 & 0.650 \\
-MeshTac (no renderer), selection 0 & 0.0435 & 0.247 & 0.722 \\
-MeshTac (no renderer), selection 1 & 0.0426 & 0.252 & 0.724 \\
-MeshTac (no renderer), selection 2 & 0.0425 & 0.244 & 0.718 \\
+MeshTac, selection 0 & 0.0435 & 0.247 & 0.722 \\
+MeshTac, selection 1 & 0.0426 & 0.252 & 0.724 \\
+MeshTac, selection 2 & 0.0425 & 0.244 & 0.718 \\
 }
 
 % ---- kshotshort ----
 \newcommand{\tabkshotshort}{%
-10 & Real only & 0.0642 & 0.330 & 0.625 & 9.6 \\
-  & Learned renderer & 0.0624 & 0.354 & 0.597 & 5.9 \\
-  & Self-training & 0.0574 & 0.341 & 0.592 & 6.5 \\
-  & MeshTac (ours) & \textbf{0.0559} & \textbf{0.288} & \textbf{0.682} & \textbf{4.0} \\
-   & \textit{Leaky renderer} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{6.1} \\
+10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.8 & 1.71 \\
+  & Learned renderer & 0.0624 & 0.354 & 0.597 & 30.6 & 5.9 & 1.44 \\
+  & Self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.6 & 1.67 \\
+  & MeshTac & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 & \textbf{1.13} \\
+  & \quad + synthetic & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & \textbf{4.0} & 1.14 \\
+   & \textit{All-pairs rend.} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.3} & \textit{1.50} \\
 \midrule
-25 & Real only & 0.0558 & 0.312 & 0.664 & 5.6 \\
-  & Learned renderer & 0.0544 & 0.321 & 0.626 & 5.1 \\
-  & Self-training & 0.0508 & 0.307 & 0.628 & 6.1 \\
-  & MeshTac (ours) & \textbf{0.0450} & \textbf{0.249} & \textbf{0.727} & \textbf{3.7} \\
-   & \textit{Leaky renderer} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{4.9} \\
+25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 & 1.13 \\
+  & Learned renderer & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 & 1.21 \\
+  & Self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.3 & 1.51 \\
+  & MeshTac & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & \textbf{2.8} & \textbf{0.91} \\
+  & \quad + synthetic & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 & 1.00 \\
+   & \textit{All-pairs rend.} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{5.0} & \textit{1.14} \\
 \midrule
-50 & Real only & 0.0482 & 0.283 & 0.690 & 4.3 \\
-  & Learned renderer & 0.0434 & 0.260 & 0.716 & 4.7 \\
-  & Self-training & 0.0381 & 0.255 & 0.706 & 5.5 \\
-  & MeshTac (ours) & \textbf{0.0307} & \textbf{0.206} & \textbf{0.769} & \textbf{3.7} \\
-   & \textit{Leaky renderer} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{4.7} \\
+50 & Real only & 0.0482 & 0.283 & 0.690 & 25.5 & 4.3 & 0.89 \\
+  & Learned renderer & 0.0434 & 0.260 & 0.716 & 24.3 & 4.7 & 1.10 \\
+  & Self-training & 0.0381 & 0.255 & 0.706 & 22.7 & 5.5 & 1.30 \\
+  & MeshTac & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} & \textbf{0.73} \\
+  & \quad + synthetic & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 & 0.95 \\
+   & \textit{All-pairs rend.} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} & \textit{1.07} \\
 \midrule
-100 & Real only & 0.0369 & 0.235 & 0.744 & \textbf{3.2} \\
-  & Learned renderer & 0.0311 & 0.210 & 0.773 & 4.5 \\
-  & Self-training & 0.0285 & 0.211 & 0.750 & 4.9 \\
-  & MeshTac (ours) & \textbf{0.0232} & \textbf{0.168} & \textbf{0.803} & 3.7 \\
-   & \textit{Leaky renderer} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{4.4} \\
+100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & 3.2 & 0.71 \\
+  & Learned renderer & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 & 1.01 \\
+  & Self-training & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 & 1.16 \\
+  & MeshTac & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} & \textbf{0.70} \\
+  & \quad + synthetic & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 & 0.90 \\
+   & \textit{All-pairs rend.} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} & \textit{1.02} \\
 }
 
 % ---- sbshort ----
@@ -375,11 +382,13 @@ $\dagger$ & Real only & 0.315 & 0.675 \\
 \midrule
 25 & Real only & 0.368 & 0.598 \\
   & Self-training & 0.335 & 0.598 \\
-  & MeshTac & 0.310 & 0.660 \\
+  & MeshTac & 0.306 & 0.654 \\
+  & \quad + synthetic frames & 0.310 & 0.660 \\
 \midrule
 100 & Real only & 0.351 & 0.657 \\
   & Self-training & 0.300 & 0.707 \\
-  & MeshTac & \textbf{0.252} & \textbf{0.743} \\
+  & MeshTac & 0.288 & 0.707 \\
+  & \quad + synthetic frames & \textbf{0.252} & \textbf{0.743} \\
 }
 
 % ---- sbshortb ----
@@ -399,35 +408,35 @@ $\dagger$ & Real only & 0.315 & 0.675 \\
 
 % ---- kshotfew ----
 \newcommand{\tabkshotfew}{%
-0 & Blender only & \textbf{0.0793} & \textbf{0.408} & \textbf{0.572} & \textbf{48.6} & \textbf{8.4} \\ % pilot150_B_k0_blender (150 ep)
-   & \textit{GAN-full (leaky) only} & \textit{0.0459} & \textit{0.274} & \textit{0.705} & \textit{44.6} & \textit{7.0} \\ % pilot150_B_k0_ganfull (150 ep)
+0 & Blender only & \textbf{0.0793} & \textbf{0.408} & \textbf{0.572} & \textbf{48.6} & \textbf{8.6} \\ % pilot150_B_k0_blender (150 ep)
+   & \textit{GAN-full (all pairs) only} & \textit{0.0459} & \textit{0.274} & \textit{0.705} & \textit{44.6} & \textit{7.2} \\ % pilot150_B_k0_ganfull (150 ep)
 \midrule
-10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.6 \\ % pilot150_B_k10_realonly (150 ep)
+10 & Real only & 0.0642 & 0.330 & 0.625 & 29.8 & 9.8 \\ % pilot150_B_k10_realonly (150 ep)
   & Blender & 0.0636 & 0.367 & 0.602 & 30.8 & 5.2 \\ % pilot150_B_k10_blender (150 ep)
   & GAN-10 & 0.0624 & 0.354 & 0.597 & 30.6 & 5.9 \\ % pilot150_B_k10_gank (150 ep)
-  & Teacher-label self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.5 \\ % pilot150_B_k10_semipm_pseudo (150 ep)
-  & MeshTac, L1 search & 0.0545 & 0.320 & 0.639 & 27.3 & 4.6 \\ % pilot150_B_k10_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & 4.0 \\ % pilot150_B_k10_al2 (150 ep)
-  & \quad no synthetic frames & 0.0571 & 0.293 & 0.678 & 27.3 & \textbf{3.2} \\ % pilot150_B_k10_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\ % pilot150_B_k10_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.1} \\ % pilot_B_k10_ganfull (50 ep)
+  & Teacher-label self-training & 0.0574 & 0.341 & 0.592 & 28.3 & 6.6 \\ % pilot150_B_k10_semipm_pseudo (150 ep)
+  & MeshTac, L1 search & 0.0545 & 0.320 & 0.639 & 27.3 & 4.7 \\ % pilot150_B_k10_rcp (150 ep)
+  & MeshTac (ours) & \textbf{0.0521} & 0.293 & 0.660 & \textbf{26.5} & 4.7 \\ % pilot150_B_k10_rf (150 ep)
+  & \quad + synthetic frames & 0.0559 & \textbf{0.288} & \textbf{0.682} & 27.2 & 4.0 \\ % pilot150_B_k10_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0571 & 0.293 & 0.678 & 27.3 & \textbf{3.2} \\ % pilot150_B_k10_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0484} & \textit{0.281} & \textit{0.693} & \textit{28.5} & \textit{6.3} \\ % pilot_B_k10_ganfull (50 ep)
 \midrule
 25 & Real only & 0.0558 & 0.312 & 0.664 & 28.2 & 5.6 \\ % pilot150_B_k25_realonly (150 ep)
-  & Blender & 0.0549 & 0.329 & 0.656 & 27.5 & 4.7 \\ % pilot150_B_k25_blender (150 ep)
+  & Blender & 0.0549 & 0.329 & 0.656 & 27.5 & 4.8 \\ % pilot150_B_k25_blender (150 ep)
   & GAN-25 & 0.0544 & 0.321 & 0.626 & 28.3 & 5.1 \\ % pilot150_B_k25_gank (150 ep)
   & Blender $\oplus$ GAN-25 & 0.0554 & 0.324 & 0.667 & 27.4 & 4.8 \\ % pilot150_B_k25_mix (150 ep)
-  & Refiner-25 (0 labels) & 0.0551 & 0.297 & 0.672 & 27.1 & 5.5 \\ % pilot150_B_k25_ref (150 ep)
-  & Refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.6 \\ % pilot150_B_k25_refufull (150 ep)
-  & Self-trained GAN-25 (renderer only) & 0.0538 & 0.326 & 0.641 & 28.0 & 4.8 \\ % pilot150_B_k25_pseudo (150 ep)
-  & Teacher-label self-training, model only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.2 \\ % pilot150_B_k25_semipm (150 ep)
-  & \quad center window only (no stitching) & 0.0518 & 0.328 & 0.643 & 26.7 & 8.4 \\ % pilot150_B_k25_semipm_c1 (150 ep)
-  & Teacher-label self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.1 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
-  & \quad round 2 & 0.0500 & 0.310 & 0.642 & 26.0 & 6.2 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
+  & Refiner-25 (0 labels) & 0.0551 & 0.297 & 0.672 & 27.1 & 5.7 \\ % pilot150_B_k25_ref (150 ep)
+  & Refiner-U (0 labels, all unlabeled) & 0.0566 & 0.309 & 0.666 & 27.8 & 5.8 \\ % pilot150_B_k25_refufull (150 ep)
+  & Self-trained GAN-25 (renderer only) & 0.0538 & 0.326 & 0.641 & 28.0 & 4.9 \\ % pilot150_B_k25_pseudo (150 ep)
+  & Teacher-label self-training, model only & 0.0517 & 0.300 & 0.611 & 26.5 & 8.3 \\ % pilot150_B_k25_semipm (150 ep)
+  & \quad center window only (no stitching) & 0.0518 & 0.328 & 0.643 & 26.7 & 8.5 \\ % pilot150_B_k25_semipm_c1 (150 ep)
+  & Teacher-label self-training & 0.0508 & 0.307 & 0.628 & 26.5 & 6.3 \\ % pilot150_B_k25_semipm_pseudo (150 ep)
+  & \quad round 2 & 0.0500 & 0.310 & 0.642 & 26.0 & 6.3 \\ % pilot150_B_k25_semipm_pseudo_r2 (150 ep)
   & MeshTac, L1 search & 0.0482 & 0.291 & 0.655 & 25.5 & 4.5 \\ % pilot150_B_k25_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\ % pilot150_B_k25_al2 (150 ep)
-  & \quad no synthetic frames & 0.0456 & 0.259 & 0.715 & 24.7 & \textbf{2.7} \\ % pilot150_B_k25_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & 2.8 \\ % pilot150_B_k25_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{4.9} \\ % pilot150_B_k25_ganfull (150 ep)
+  & MeshTac (ours) & \textbf{0.0433} & \textbf{0.245} & 0.726 & \textbf{23.3} & \textbf{2.8} \\ % pilot150_B_k25_rf (150 ep)
+  & \quad + synthetic frames & 0.0450 & 0.249 & \textbf{0.727} & 24.0 & 3.7 \\ % pilot150_B_k25_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0456 & 0.259 & 0.715 & 24.7 & 2.8 \\ % pilot150_B_k25_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0417} & \textit{0.262} & \textit{0.724} & \textit{25.5} & \textit{5.0} \\ % pilot150_B_k25_ganfull (150 ep)
 }
 
 % ---- kshotmore ----
@@ -436,14 +445,14 @@ $\dagger$ & Real only & 0.315 & 0.675 \\
   & Blender & 0.0478 & 0.270 & 0.701 & 25.2 & 4.5 \\ % pilot150_B_k50_blender (150 ep)
   & GAN-50 & 0.0434 & 0.260 & 0.716 & 24.3 & 4.7 \\ % pilot150_B_k50_gank (150 ep)
   & Teacher-label self-training & 0.0381 & 0.255 & 0.706 & 22.7 & 5.5 \\ % pilot150_B_k50_semipm_pseudo (150 ep)
-  & MeshTac, L1 search & 0.0384 & 0.247 & 0.714 & 22.7 & 4.1 \\ % pilot150_B_k50_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\ % pilot150_B_k50_al2 (150 ep)
-  & \quad no synthetic frames & 0.0332 & 0.215 & 0.764 & 21.1 & 3.0 \\ % pilot150_B_k50_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\ % pilot150_B_k50_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} \\ % pilot150_B_k50_ganfull (150 ep)
+  & MeshTac, L1 search & 0.0384 & 0.247 & 0.714 & 22.7 & 4.2 \\ % pilot150_B_k50_rcp (150 ep)
+  & MeshTac (ours) & \textbf{0.0291} & \textbf{0.197} & 0.761 & \textbf{19.8} & \textbf{2.7} \\ % pilot150_B_k50_rf (150 ep)
+  & \quad + synthetic frames & 0.0307 & 0.206 & \textbf{0.769} & 20.4 & 3.7 \\ % pilot150_B_k50_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0332 & 0.215 & 0.764 & 21.1 & 3.0 \\ % pilot150_B_k50_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0363} & \textit{0.239} & \textit{0.747} & \textit{22.7} & \textit{4.7} \\ % pilot150_B_k50_ganfull (150 ep)
 \midrule
 100 & Real only & 0.0369 & 0.235 & 0.744 & 22.1 & 3.2 \\ % pilot150_B_k100_realonly (150 ep)
-  & Blender & 0.0350 & 0.232 & 0.727 & 22.0 & 4.0 \\ % pilot150_B_k100_blender (150 ep)
+  & Blender & 0.0350 & 0.232 & 0.727 & 22.0 & 4.1 \\ % pilot150_B_k100_blender (150 ep)
   & GAN-100 & 0.0311 & 0.210 & 0.773 & 20.8 & 4.5 \\ % pilot150_B_k100_gank (150 ep)
   & Blender $\oplus$ GAN-100 & 0.0329 & 0.213 & 0.760 & 20.5 & 4.2 \\ % pilot150_B_k100_mix (150 ep)
   & Refiner-100 (0 labels) & 0.0340 & 0.224 & 0.761 & 21.1 & 4.9 \\ % pilot150_B_k100_ref (150 ep)
@@ -453,9 +462,9 @@ $\dagger$ & Real only & 0.315 & 0.675 \\
   & Teacher-label self-training & 0.0285 & 0.211 & 0.750 & 19.7 & 4.9 \\ % pilot150_B_k100_semipm_pseudo (150 ep)
   & \quad round 2 & 0.0295 & 0.217 & 0.736 & 20.2 & 4.9 \\ % pilot150_B_k100_semipm_pseudo_r2 (150 ep)
   & MeshTac, L1 search & 0.0276 & 0.203 & 0.771 & 19.4 & 4.1 \\ % pilot150_B_k100_rcp (150 ep)
-  & MeshTac (with renderer) & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\ % pilot150_B_k100_al2 (150 ep)
-  & \quad no synthetic frames & 0.0237 & 0.168 & 0.809 & 17.1 & 2.7 \\ % pilot150_B_k100_al0 (150 ep)
-  & MeshTac (no renderer) & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\ % pilot150_B_k100_rf (150 ep)
-   & \textit{GAN-full (leaky)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
+  & MeshTac (ours) & \textbf{0.0227} & \textbf{0.166} & \textbf{0.818} & \textbf{16.9} & \textbf{2.5} \\ % pilot150_B_k100_rf (150 ep)
+  & \quad + synthetic frames & 0.0232 & 0.168 & 0.803 & 17.1 & 3.7 \\ % pilot150_B_k100_al2 (150 ep)
+  & \quad synthetic frames for the aligner only & 0.0237 & 0.168 & 0.809 & 17.1 & 2.7 \\ % pilot150_B_k100_al0 (150 ep)
+   & \textit{GAN-full (all pairs)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
