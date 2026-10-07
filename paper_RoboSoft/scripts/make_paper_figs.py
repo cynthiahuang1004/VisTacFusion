@@ -75,7 +75,7 @@ def fig_kshot(out):
     }
     names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Leaky renderer", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
-    fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.95))
+    fig, axes = plt.subplots(1, 4, figsize=(7.1, 2.25))
     panels = [("depth_mse", "val", "(a) Depth MSE [mm$^2$] $\\downarrow$"), ("c_mae", "masked", "(b) Contact MAE [mm] $\\downarrow$"),
               ("pose_rot_deg", "rot", "(c) Rotation [deg] $\\downarrow$")]
     for ax, (key, src, lab) in zip(axes, panels):
@@ -87,24 +87,24 @@ def fig_kshot(out):
                     continue
                 y = masked(r) if src == "masked" else best(r, "pose_rot_deg", select="pose_rot_deg") if src == "rot" else best(r)
                 xs.append(K); ys.append(y)
-            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.6, ms=7 if m == "*" else 4.5, mec="white", mew=0.6, label=names.get(name, name))
+            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.0, ms=5.5 if m == "*" else 3.4, mec="white", mew=0.5, label=names.get(name, name))
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
         ax.text(0.97, 0.95, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
     ax = axes[3]                                              # second sensor (mesh-registered labels); only real-only and MeshTac at every K
     for name, suf in (("Real only", "realonly_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
         c, m, ls = STY[name]
-        ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in Ks], color=c, marker=m, ls=ls, lw=1.6,
-                ms=7 if m == "*" else 4.5, mec="white", mew=0.6)
+        ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in Ks], color=c, marker=m, ls=ls, lw=1.0,
+                ms=5.5 if m == "*" else 3.4, mec="white", mew=0.5)
     for name, run in (("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m")):   # K=25 only
         c, m, _ = STY[name]
-        ax.plot([25], [SB[f"pilot_S_k25_{run}/sensorB_mesh"]["c_mae"]], color=c, marker=m, ls="none", ms=4.5, mec="white", mew=0.6)
+        ax.plot([25], [SB[f"pilot_S_k25_{run}/sensorB_mesh"]["c_mae"]], color=c, marker=m, ls="none", ms=3.6, mec="white", mew=0.5)
     ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
     ax.set_xlabel("Labels per object, $K$"); ax.set_title("(d) Contact MAE [mm] $\\downarrow$", loc="left")
     ax.text(0.97, 0.95, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, frameon=False, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.02), columnspacing=1.0, handletextpad=0.4)
-    fig.tight_layout(w_pad=0.8, rect=(0, 0.08, 1, 1))
+    fig.tight_layout(w_pad=0.9, rect=(0, 0.07, 1, 1))
     fig.savefig(osp.join(out, "fig_kshot.pdf")); plt.close(fig)
 
 
