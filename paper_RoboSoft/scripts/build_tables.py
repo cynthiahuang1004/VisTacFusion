@@ -343,7 +343,14 @@ def sbm_seeds(run):
             {k: (st.pstdev(v[kk] for v in vs) if len(vs) > 1 else 0.0) for k, kk in keys.items()}, len(vs))
 def pm(run, key, nd):
     m, sd, n = sbm_seeds(run)
-    return "--" if m is None else (f"{m[key]:.{nd}f}" if n < 2 else f"{m[key]:.{nd}f}\\,\\scalebox{{0.8}}{{$\\pm${sd[key]:.{nd}f}}}")
+    if m is None:
+        return "--"
+    if n < 2:
+        return f"{m[key]:.{nd}f}"
+    d = nd
+    while d < nd + 2 and round(sd[key], d) == 0:      # a std that rounds to 0 is shown with one more digit (±0.0003), not as ±0.000
+        d += 1
+    return f"{m[key]:.{nd}f}\\,\\scalebox{{0.8}}{{$\\pm${sd[key]:.{d}f}}}"
 sbl = []
 for K in (10, 25, 50, 100):
     blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {})]
@@ -394,7 +401,7 @@ def sb_pm_rows(K):
     for label, run, m, other in ((f"{K} & Real only", f"S_k{K}_realonly_m", mr, mm), ("  & MeshTac", f"S_k{K}_maplnr_m", mm, mr)):
         cells = []
         for key, nd, better in (("c_mae", 3, min), ("iou", 3, max)):
-            c = pm(run, key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.72}")   # compact: ±.006
+            c = pm(run, key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.68}")   # compact: ±.006
             if m and other and better(m[key], other[key]) == m[key]:
                 c = f"\\textbf{{{c}}}"
             cells.append(c)
