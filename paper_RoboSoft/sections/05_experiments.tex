@@ -1,16 +1,14 @@
 \section{Experiments}
 \label{sec:exp}
 
-The experiments examine label efficiency, isolate the role of alignment, test different sessions and sensors, reuse the aligner at inference, and audit the renderer baselines.
-
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.86\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Performance across label budgets.} (a--c) Sensor-A validation results after 150 epochs ($K=10$ leaky reference: 50). (d--f) Sensor-B test results after 50 epochs; MeshTac uses no renderer. All methods share the same $K$ labeled frames.}
+    \includegraphics[width=0.9\textwidth]{figures/fig_kshot.pdf}
+    \caption{\textbf{Label efficiency on two tactile sensors.} $K$: labeled training contacts per object. (a--c) Sensor-A validation, 150 epochs; the all-pairs (leaky) reference uses extra real labels and 50 epochs at $K=10$. (d--f) Sensor-B test, 50 epochs, renderer-free MeshTac. Matched methods share the registered contacts.}
     \label{fig:kshot}
 \end{figure*}
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \tableformat
 \setlength{\tabcolsep}{3.0pt}
@@ -21,84 +19,90 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotshort
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Sensor-A validation results} ($472$ frames). Methods share the same $\Kreal$ labeled frames per object; self-training and MeshTac additionally use unlabeled training frames. Italic rows use an all-pairs renderer and exceed the label budget; its $K=10$ row uses 50 epochs. Bold denotes the best budget-matched result in each block.}
+\caption{\textbf{Label-budget comparison on sensor A.} Validation: $472$ frames; $K$ labels per object. Self-training and MeshTac also use unlabeled images. Italic all-pairs rows exceed the budget ($K=10$: 50 epochs; others: 150). Matched rows use 150 epochs; bold marks the best at each $K$.}
 \label{tab:kshot}
 \end{table}
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-Table~\ref{tab:kshot} and Fig.~\ref{fig:kshot} compare four uses of the same $K$ labeled contacts: real-only training, synthetic augmentation, teacher-depth self-training and mesh-aligned pseudo-labeling. Self-training uses pose supervision only on the labeled subset.
+We compare real-only training, learned-renderer augmentation, teacher-depth self-training and MeshTac using the same registered contacts at each $K$ (Table~\ref{tab:kshot}, Fig.~\ref{fig:kshot}). Self-training and MeshTac receive the same unlabeled training images; self-training applies pose supervision only to the registered subset.
 
-In the few-label regime, synthetic augmentation and alignment behave differently. At $K=25$, the learned renderer slightly lowers all-pixel MSE but worsens contact MAE and IoU; MeshTac instead reduces depth MSE by $19\%$ and contact MAE by $20\%$. This difference persists across three seeds, and MeshTac with 50 labels surpasses real-only training with 100 ($0.0307$ versus $0.0369$ MSE). Correcting geometry on real images is therefore more effective here than doubling the registered set or adding few-shot rendered images.
+At $K=25$, MeshTac lowers depth MSE by $19\%$ and contact MAE by $20\%$ relative to real-only training. Synthetic augmentation slightly improves all-pixel MSE but worsens contact MAE and IoU: lower MSE need not mean better contact reconstruction when background pixels dominate. Three-seed comparisons at 50 epochs confirm the MeshTac gain. MeshTac at $K=50$ also outperforms real-only training at $K=100$ in depth MSE ($0.0307$ versus $0.0369$), showing the value of aligned contacts beyond the registered set.
 
-Rotation improves for $K\le50$ but not at $K=100$, so the dense gain does not imply a uniform pose gain. The renderer-free variant retains the depth improvement at every budget, identifying alignment as the main source of the within-session gain. Rendering starts to help contact reconstruction at $K\ge50$ and under the session change in Sec.~\ref{sec:general}.
+Removing the renderer preserves the depth improvement at every budget, supporting alignment as the main source of the within-session gain. Synthetic augmentation becomes useful for contact reconstruction at $K\ge50$ and under session changes (Sec.~\ref{sec:general}). Rotation improves for $K\le50$ but not at $K=100$; the reconstruction gain does not extend uniformly to pose.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \tableformat
-\setlength{\tabcolsep}{2.6pt}
+\setlength{\tabcolsep}{1.8pt}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}lrrrrrrr@{}}
 \toprule
-& \multicolumn{3}{c}{Label quality vs.\ GT} & \multicolumn{4}{c}{Student, validation split} \\
+& \multicolumn{3}{c}{Pseudo-labels vs.\ GT} & \multicolumn{4}{c}{Student validation} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-8}
 Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.}{MAE} & \metrichead{Rot.}{(deg)} & \metrichead{Depth}{MSE} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Rot.}{(deg)} \\
 \midrule
 \tabrcablmain
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label ablation} on sensor A ($K=25$, 50 epochs). Student results are averaged over three seeds except for the teacher-pose row. Withheld GT is used only to score label quality. $^{1/2}$ uses mesh targets for the half with the lowest render error and teacher depth for the rest; $\ddagger$ uses no renderer.}
+\caption{\textbf{Pseudo-label quality and student performance.} Sensor A, $K=25$, 50 epochs. Student results are three-seed means except \emph{Teacher depth + pose}. Withheld training GT scores labels only. $^{1/2}$ uses mesh depth for each object's half with lowest render error, teacher depth otherwise, and L1-search pose throughout. $\ddagger$ removes the renderer throughout the pipeline.}
 \label{tab:abl}
 \end{table}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\columnwidth]{figures/fig_labels.pdf}
-    \caption{\textbf{Pseudo-label quality} against withheld training GT. Alignment improves the teacher labels on both sensors; the withheld GT is used only for evaluation.}
+    \includegraphics[width=\columnwidth]{figures/fig_labels.pdf}
+    \caption{\textbf{Teacher and aligned-mesh label quality.} IoU, contact MAE and rotation error on unlabeled training images from both sensors, across label budgets $K$. Withheld GT is used only to evaluate the labels.}
     \label{fig:labels}
 \end{figure}
 
 \subsection{Ablation Study on Alignment Quality}
 \label{sec:ablation}
-Table~\ref{tab:abl} holds the unlabeled images and student training fixed while changing their targets. The alternatives separate teacher depth and pose supervision and compare direct render-and-compare with learned alignment.
+We label the same unlabeled images with teacher predictions, L1 render-and-compare search or learned alignment, then evaluate both label quality and the student trained on those targets (Table~\ref{tab:abl}). Adding teacher pose isolates pose supervision; the renderer-free row additionally removes synthetic data.
 
-Teacher labels localize contact poorly, and adding their pose estimates mainly benefits student rotation. Learned alignment raises label IoU from $0.55$ to $0.71$ and, relative to teacher-depth self-training, raises student IoU from $0.624$ to $0.729$. The matched change in label and student overlap supports the intended mechanism: accurate placement of the mesh contact matters more than simply adding real frames. Direct L1 render-and-compare is weaker; at $K=25$ its score ranks an incorrect candidate above the GT pose on $93\%$ of frames. This is a candidate-ordering statistic, not a pose-failure rate.
+Adding teacher pose mainly improves student rotation. Learned alignment improves label quality on both sensors (Fig.~\ref{fig:labels}) and raises student IoU from $0.624$ to $0.729$ relative to teacher-depth self-training. Correcting mesh placement therefore improves the supervision supplied to the student.
 
-The result is stable across both sensors, tested aligner configurations and two random label selections; a second labeling round adds little. The remaining errors are concentrated: $1.6\%$ exceed $5^\circ$, mostly on one nearly symmetric object, while translation error follows repeated ridges. These cases point to geometric ambiguity and motivate symmetry-aware confidence estimates rather than more alignment rounds.
+L1 search gives smaller gains. At $K=25$, the renderer assigns lower image error to the search-selected pose than to the GT pose on $93\%$ of frames. Thus, image similarity can favor a geometrically incorrect state; this statistic measures candidate ranking, not the search's pose-failure rate.
+
+Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object. Translation errors follow repeated ridges, where different states can yield similar contact geometry.
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Depth predictions} at $K=25$ for three objects per sensor. For each object, the displayed frame has the median contact-MAE improvement. Values are contact MAE in millimeters, and all depth maps share a color scale. The displayed MeshTac models use synthetic data; Fig.~\ref{fig:kshot}d--f instead reports renderer-free MeshTac on sensor B.}
+    \caption{\textbf{Contact-depth reconstruction at $K=25$.} Each sensor shows three objects; each frame has its object's median contact-MAE improvement over real-only training. Numbers are contact MAE (mm), and depth maps share a color scale. Both displayed MeshTac models use synthetic data; the sensor-B curves in Fig.~\ref{fig:kshot}d--f use the renderer-free variant.}
     \label{fig:qual}
 \end{figure*}
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \tableformat
-\setlength{\tabcolsep}{6pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabularx}{\columnwidth}{@{}rXrr@{}}
 \toprule
-$\Kreal$ & Sensor A, session 2 & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+\multicolumn{4}{l}{\textbf{Sensor A: second-session evaluation}} \\
+$\Kreal$ & Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
 \midrule
 \tabcrossshortb
 \midrule\midrule
-$\Kreal$ & Sensor B & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+\multicolumn{4}{l}{\textbf{Sensor B: sensor-specific training}} \\
+$\Kreal$ & Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
 \midrule
 \tabsbshortb
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Results across sessions and sensors.} Top: sensor-A models evaluated without retraining on session 2 ($854$ frames; objects re-placed). $\dagger$ uses all training labels from nine objects and therefore has different object coverage from the $K$-shot rows. Bottom: models trained and tested on sensor B ($1{,}620$ test frames); MeshTac is renderer-free. Sensor-B values are mean $\pm$ standard deviation over three seeds.}
+\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models tested on session 2 without retraining ($854$ frames). $\dagger$ uses all training labels from nine objects, with different object coverage from the $K$-shot rows. Bottom: models trained on sensor B and evaluated on its test set ($1{,}620$ frames); MeshTac is renderer-free. Sensor-B values are three-seed mean $\pm$ standard deviation. Contact MAE is in mm.}
 \label{tab:general}
 \end{table}
 
 \subsection{Generalization Across Sessions and Sensors}
 \label{sec:general}
-\noindent\textbf{Second session.} We evaluate sensor-A models on another day after object re-placement, without retraining (Table~\ref{tab:general}, top). MeshTac reduces contact MAE by $16\%$ at $K=25$ and $28\%$ at $K=100$. Unlike within-session evaluation, the renderer now contributes, while the renderer-free model still improves on self-training. Alignment and simulation thus address different parts of the shift: aligned images improve supervision, whereas synthetic contacts add coverage across sessions.
+\noindent\textbf{Second session.} We test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). MeshTac lowers contact MAE by $16\%$ at $K=25$ and $28\%$ at $K=100$ relative to real-only training. At $K=100$, synthetic augmentation improves on renderer-free MeshTac, which still outperforms self-training. At $K=25$, removing it gives slightly lower MAE ($0.306$ versus $0.310$). The benefit of simulation under this session change thus depends on the label budget.
 
-\noindent\textbf{Second sensor.} We retrain every model on sensor B with unchanged aligner settings (Table~\ref{tab:general}, bottom; Fig.~\ref{fig:qual}). Renderer-free MeshTac reduces contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. The gap exceeds seed variation and persists with the original public labels. At the other budgets the learned renderer lowers contact MAE by at most $10\%$ and self-training not at all, whereas MeshTac lowers it by $15$--$33\%$ (Fig.~\ref{fig:kshot}e). The procedure therefore carries to a different sensor design, although the predictor itself is not transferred zero-shot.
+\noindent\textbf{Second sensor.} We train each method separately on sensor B, keeping the aligner settings unchanged (Table~\ref{tab:general}, bottom). Renderer-free MeshTac lowers contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. Three-seed checks at every budget support the gain, and evaluation with the original public labels gives the same qualitative result. At the other budgets, MeshTac lowers contact MAE by $15$--$33\%$, compared with at most $10\%$ from learned-renderer augmentation and no gain from self-training (Fig.~\ref{fig:kshot}e).
 
-\begin{table}[t]
+Figure~\ref{fig:qual} illustrates differences in ridge continuity and junction placement; quantitative comparisons use all evaluation frames.
+
+\begin{table}[!htb]
 \centering
 \tableformat
 \setlength{\tabcolsep}{3.5pt}
@@ -112,15 +116,15 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \tabposeref
 \bottomrule
 \end{tabular}
-\caption{\textbf{Test-time pose refinement} on sensor A. Rotation error (deg) before (pred.) and after six aligner iterations (+align), without retraining.}
+\caption{\textbf{Rotation error before and after mesh-assisted refinement.} Sensor A, mean error (deg) on session-1 validation and session-2 test images. \emph{pred.}: predictor output; \emph{+align}: six fixed-aligner iterations, without retraining.}
 \label{tab:poseref}
 \end{table}
 
 \subsection{Mesh-Assisted Test-Time Pose Refinement}
 \label{sec:tta}
-Without updating its weights, the aligner refines a predictor's pose against the known mesh (Table~\ref{tab:poseref}). It reaches $0.4$--$1.2^\circ$ mean error within session 1 and improves session-2 and held-out-object initializations, so its correction is not tied to the pseudo-labeling teacher. On session 2, means remain near $5^\circ$ while medians are $1.5$--$2.2^\circ$. These outliers suggest pairing mesh-assisted inference with a reliability estimate.
+We apply six fixed-aligner updates to real-only and MeshTac predictions using the test image and known mesh (Table~\ref{tab:poseref}). At $K\ge25$, both initializations reach $0.4$--$1.2^\circ$ mean rotation error within session 1: the aligner remains useful after student training and with a different predictor. At these budgets, session-2 means near $5^\circ$ exceed medians of $1.5$--$1.8^\circ$, motivating a confidence estimate to detect large residual errors.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \centering
 \tableformat
 \begin{tabularx}{\columnwidth}{Xrrrr}
@@ -130,12 +134,12 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \tabloomain
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Unseen-object results} on sensor A ($1{,}244$ frames from three objects). No real contacts from these objects are used for training, but their meshes are available to the simulation baselines.}
+\caption{\textbf{Renderer baselines on held-out objects.} Sensor A, $1{,}244$ frames from three objects. Matched methods exclude their real contacts from training; simulation can use their meshes, except in the \emph{w/o held-out meshes} control. The italic leaky reference also uses real training pairs from these objects. Bold marks the best matched result.}
 \label{tab:loo}
 \end{table}
 
 \subsection{Renderer Baselines: Unseen Objects and Label Leakage}
 \label{sec:study}
-The unseen-object experiment removes three objects from real training but leaves their meshes available to simulation (Table~\ref{tab:loo}). Simulated contacts reduce rotation error from $64.7^\circ$ to $5$--$7^\circ$; excluding those meshes largely removes the gain. Dense MSE improves by at most $13\%$ among matched baselines. Simulation therefore transfers pose coverage more readily than the appearance needed for dense reconstruction.
+We remove three objects from real training while allowing simulation to use their meshes (Table~\ref{tab:loo}). A control excludes those meshes as well. Simulated contacts lower rotation error from $64.7^\circ$ to $5$--$7^\circ$; removing the held-out meshes largely removes this gain. Dense MSE improves by at most $13\%$ among matched methods. In this setting, simulation provides more effective supervision for unseen-object pose than for dense reconstruction.
 
-The all-pairs (leaky) renderer uses labels withheld from the $K$-shot methods, so its $24$--$26\%$ MSE reduction describes a larger-label regime. Across 14 matched settings, contact-region image L1 correlates with downstream MSE ($\rho=0.95$), making it useful for screening renderers. Because this correlation pools budgets and variants, it cannot replace downstream evaluation or establish causality.
+We then compare renderers trained on the same $K$ registered contacts with the all-pairs reference. The latter lowers MSE by $24$--$26\%$ in the few-label regime, but has access to additional real training labels. It represents a larger supervision budget; validation images remain excluded. Across 14 matched settings, contact-region image L1 correlates with downstream MSE ($\rho=0.95$). This supports its use for screening renderers, although the pooled correlation across budgets and variants does not establish causality or replace downstream evaluation.

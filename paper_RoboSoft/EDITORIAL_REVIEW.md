@@ -1,5 +1,83 @@
 # MeshTac 全文修訂紀錄
 
+## 2026-10-07 Overleaf 六頁稿同步
+
+依作者後續要求，已推送至 Overleaf commit `a233bb8c581c6511907131e5db8824fa63495dfd`。從最新遠端 `89d0ac5` 建立 checkout，確認並保留 Fig. 3 六個 panels 的更新；本次 commit 只包含 `sections/01_intro.tex`、`02_related.tex`、`03_setup.tex`、`04_method.tex`、`05_experiments.tex`、`06_conclusion.tex`。長版、摘要／main.tex、共用圖檔、table data 與 bibliography 均未納入變更。推送前在該 checkout 完成 LaTeX 編譯：6 頁，無 undefined references、overfull boxes 或 oversized floats；推送後查詢遠端，確認 main 指向此 commit。本機 `.overleaf_head` 已更新。
+
+## 2026-10-07 六頁版逐節修訂與圖表校對（本輪）
+
+本輪依作者要求只編輯 `sections/*.tex` 並重編 `main.pdf`。長版的 TeX/PDF、共用圖檔、`data/tables.tex`、`refs.bib` 未由本輪編輯。保留目前摘要、論文標題、三項貢獻，以及作者選定的五個實驗標題；Fig. 1 繼續使用 `figures/fig_arch.pdf`。這輪沒有執行 Overleaf pull/push。
+
+### 閱讀的原始論文與使用方式
+
+本輪閱讀 Introduction、Related Work、Method、實驗段落及 captions，不只閱讀摘要。參考的是問題如何收斂、比較條件如何交代，以及結果如何支持解釋，沒有搬用原文句子，也沒有把引用量當作寫法優劣的依據。
+
+| 原始論文 | 閱讀重點與本稿採用方式 |
+|---|---|
+| [DeepIM](https://arxiv.org/html/1804.00175v4) | 引言先說初始估計的不足；方法逐步定義觀測、render、更新與監督。本稿依此先定義 contact state，再交代 aligner 訓練、迭代標籤生成及 student。 |
+| [Self6D](https://arxiv.org/html/2004.06468v3) | 明確區分訓練時可用的 RGB-D 與推論輸入，實驗交代監督類型。本稿同樣區分 mesh-assisted labeling、一般 student inference 與額外 test-time refinement。 |
+| [Sparsh](https://arxiv.org/html/2410.24090v1) | 各任務交代評估條件後討論比較；Discussion 將觀察、解釋與限制分開。本稿實驗先說怎麼比較，結論再提出 geometry/pose ambiguity 與指標選擇的 insight。 |
+| [SITR](https://arxiv.org/html/2502.19638v2) | 架構 caption 交代資料如何流動；資料與訓練設定和結果分開。圖表明示 dataset、metrics、units。本稿將方法機制與 sensor-specific 實作設定分開，補 object-conditioned pose head。 |
+| [TACTO](https://arxiv.org/html/2012.08456v2) | 模擬架構、實驗條件與使用範圍分開敘述；不把模擬圖像的外觀直接等同 downstream 效益。本稿對 simulation 的解釋限定在實測 budget 與任務。 |
+| [Taxim](https://arxiv.org/html/2109.04027v2) | 方法分清 optical response 與 marker motion，實驗 caption 交代比較對象與量測。本稿避免將 calibration-based simulator 與 learned image translation 混為一談。 |
+| [GelSlim 4.0](https://arxiv.org/html/2409.19770v1) | 核對 public geometric labels 的來源與意義；本稿保留 mesh-derived geometry 和 membrane deformation 的區分。 |
+| [Church et al.](https://proceedings.mlr.press/v164/church22a.html) | 核對 transfer 方向是 real tactile image → simulated depth；Related Work 明確交代。 |
+| [Xu et al.](https://proceedings.mlr.press/v205/xu23b.html) | 核對 differentiable simulation 的輸出是 tactile force field；避免籠統寫成 RGB renderer。 |
+| [TactGen](https://ojs.aaai.org/index.php/AAAI/article/view/41424) | 核對以 visual RGB-D 產生 tactile images、模型在 simulation 中訓練；避免誤寫為需要 real tactile pairs 的 depth-to-RGB renderer。 |
+
+六頁稿的 Related Work 集中在直接相關的 tactile simulation/transfer、representation 與 geometry-based refinement。刪去原本同一句中的四個泛用 vision transfer 引用，保留 tactile transfer 工作；僅短版的引用集合改變，共用 bibliography 沒有修改。
+
+### 逐節改動
+
+- **Introduction**：需求 → mesh registration 成本 → synthetic data 的 real-supervision budget → teacher errors 如何使 mesh labels 錯位 → MeshTac。刪去重複的方法介紹，保留三項貢獻，避免為了強調重要性增加泛泛的形容詞。
+- **Related Work**：依三個問題組織，而不是連續列論文名字。具體區分各種 simulation/transfer 的輸入輸出，以及 MeshTac 與 representation learning、DeepIM、Self6D 的關係。
+- **Method**：先定義四維 alignment state \((\theta,x,y,z)\) 與三維 planar pose；再說 perturbation supervision、六次更新、student 訓練及推論。補上實際使用的 depth/normal MSE、cosine rotation、L1 translation 及組內 learned weighting。
+- **Experimental Setup**：分成 sensors/targets、split/budget、architecture/training、aligner、renderers/computation、metrics/checkpoint。補上 224×224 輸入與 pose head 的 object embedding；保留 real/synthetic aligner batch、50/150 epoch 差異及額外 validation-label 成本。
+- **Experiments**：每節先說比較方法與控制條件，再挑關鍵結果，最後解釋意義。保留負面或不一致結果，例如高 budget 的 rotation 不一定改善，以及跨 session 的 renderer 效益取決於 budget。
+- **Discussion and Conclusion**：保留 contact-state accuracy 的主要論點，新增「real image 已有 sensor appearance，因此 alignment 可補 geometry」、「repeated ridges 導致 geometry 準但 pose 不唯一」、「all-pixel MSE 受 background 主導」三個讀者可帶走的理解。提供 renderer-free 起點與使用 simulation 的條件，接回 limitations 和 future work。
+
+### 內容上的更正／補充（不只是 rephrase）
+
+| 原本的敘述 | 本輪修訂 |
+|---|---|
+| Unseen-object 表 caption 說 evaluation objects 的所有 real contacts 都未用於 training。 | 明示 matched methods 排除這些 real contacts，但 italic leaky renderer 會用這些 objects 的 real training pairs；validation 仍未拿去訓練。 |
+| Test-time refinement 無條件寫 within-session mean 為 0.4–1.2°。 | 限定 **K ≥ 25**；K=10 的數字並不在此範圍。 |
+| Session-2 medians 寫為 1.5–2.2°，但同段已限定 K ≥ 25。 | 依 `pose_refine_results.json` 對應六個 rows，修正為 **1.5–1.8°**；2.2° 不屬於這個 budget 範圍。 |
+| 跨 session 籠統說 renderer 提供改善。 | K=100 有益；K=25 移除 renderer 的 contact MAE 略低（0.306 vs. 0.310）。結論改成收益依 budget 而異。 |
+| Predictor architecture 沒說 object identity 實際如何進入模型。 | 依 `SingleEncoderModel` 與 YAML 補上 learned object embedding **conditions the pose head**，沒有宣稱 DPT 同樣接受此 embedding。 |
+| Method 沒說 student 使用哪些 loss。 | 依 training YAML 與 `vistacfusion/losses/` 補齊實際 objective；沒有修改訓練。 |
+| L1-search 半數 gate 的 caption 只說 mesh targets。 | 明示每個 object 的低 render-error 半數用 mesh depth、其他用 teacher depth，但所有 unlabeled frames 都用 L1-search pose。實際 `real_pseudo_k25_rcp/pseudo_manifest.json` 為 `keep_frac=0.5, pose_all=True`。 |
+| Fig. 3 與 qualitative caption 對 sensor-B 的指引容易混淆。 | 按目前六-panel 圖核對 (a–c) sensor A、(d–f) sensor B，並區分 B 曲線的 renderer-free 模型與 qualitative examples 的含-renderer 模型。 |
+
+原始 table macros、數值、training split、run/checkpoint 與實驗程式未由本輪修改；新文字中的百分比來自現有結果。
+
+### 圖表呈現
+
+- Fig. 1 保留作者指定 PDF；caption 說明 teacher/aligner/student、共享架構、optional refinement 與圖中省略的 synthetic branch。
+- Fig. 2 明示欄位、K、sensor、median-frame selection 規則與 depth 單位。
+- Fig. 3 的短版顯示寬度由 0.86 增至 0.90 text width；caption 補 panel/split、label budget、epochs 和 leaky 例外。
+- Fig. 4 由 0.90 增至整個 column width，提高字與曲線的可讀性；caption 明示 withheld GT 僅評估 label quality。
+- Fig. 5 保留原顯示寬度；交代 median-gain selection、MAE 單位、共用 color scale，以及模型 variant。
+- Table II 縮小 column padding，使表格縮放後字級更大；區分 pseudo-label quality 與 student validation。
+- Table III 用兩個明確 group headings 區分第二 session 與 sensor-specific sensor-B training，再列 Method/metrics；three-seed 統計只套用 sensor-B 部分。
+- Table IV/V 的 captions 補足 refinement iterations、metric aggregation，以及 held-out meshes 和 leaky reference 的資料例外。
+- 短版 table floats 允許在欄內、欄首或欄尾排放，使表格接近相應文字。本文字級、頁面邊界及 caption 字級沒有調小。
+
+### 驗證與並行更新紀錄
+
+- `latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex` 成功；`main.pdf` **6 頁，含 23 項 references**。
+- 無 undefined references、overfull boxes、oversized floats；文字框均在頁面內；逐頁檢視六頁 PDF，表格與 captions 無重疊或截斷。
+- `caption` package 保留原有的 ieeeconf class-recognition warning；沒有因此改 conference class 或 typography。
+- `main.tex` 與本輪開始時相同，摘要、title、匿名 metadata、字級、margins 均保留。
+- 初始 hash 比對偵測到 16:49–16:50 的另一次更新：`sections_long/05_experiments.tex`、`main_long.pdf` 及若干共用 figure PDF 有變動。本輪未寫入這些檔案，也未撤回更新；重新從目前圖檔與生成 script 核對 captions。以該更新後狀態再次核對 22 個 protected files，後續沒有變更。
+- 原稿與初始 hashes：`/tmp/meshtac-short-full-prose-before/`。編譯 log：`/tmp/meshtac-short-full-prose-build.log`。
+
+### 仍待作者確認
+
+Physical renderer 的手動 contact tuning 使用哪些影像、屬於哪個 split，仍沒有已確認的來源。本輪保留手動調參說明，沒有替它宣稱嚴格的 K-label isolation。這是資料來源問題，文字修飾無法代替確認。
+
+
+
 ## 2026-10-07 摘要結構與流暢度
 
 依作者要求直接閱讀相關論文的摘要，重新組織短版及長版 abstract。參考的是各篇如何銜接問題、機制及證據，沒有移植原文句子。

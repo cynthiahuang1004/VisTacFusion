@@ -1,6 +1,8 @@
 # RoboSoft 2027 paper — data provenance
 
-**最新文句修訂（2026-10-06）**：參考 TACTO、Taxim、DeepIM、Sparsh 的段落組織，兩版摘要改為無數字的定性敘述，四項貢獻整合為三項，並明確限定 known-object setting、mesh-derived geometry 與 manipulation scope。數值比較保留在實驗；圖表不變，短版 6 頁、長版 15 頁。詳見 `EDITORIAL_REVIEW.md` 最上方紀錄。
+**最新六頁版修訂（2026-10-07）**：參考 DeepIM、Self6D、Sparsh、SITR、TACTO、Taxim 等原始論文的全文，逐節修訂 introduction、related work、method、setup、experiments、discussion/conclusion 及圖表 captions。保留目前摘要中的數字、三項貢獻、五個實驗標題和指定的 Fig. 1；本輪只編輯短版，PDF 維持 **6 頁**。參考文獻、實質內容更正、並行檔案更新與驗證詳見 [`EDITORIAL_REVIEW.md`](EDITORIAL_REVIEW.md) 最上方紀錄。已依作者後續要求推送六個短版章節檔至 Overleaf：`a233bb8`。
+
+**歷史文句修訂（2026-10-06；摘要偏好已由 10-07 紀錄更新）**：參考 TACTO、Taxim、DeepIM、Sparsh 的段落組織，當時兩版摘要改為無數字的定性敘述，四項貢獻整合為三項，並明確限定 known-object setting、mesh-derived geometry 與 manipulation scope。數值比較保留在實驗；圖表不變，短版 6 頁、長版 15 頁。詳見 `EDITORIAL_REVIEW.md` 對應日期紀錄。
 
 **2026-10-06 作者回饋修訂**：Fig. 1 使用作者最新指定的 `fig_arch.pdf`；Fig. 4 全實線。恢復摘要重點、label-accounting 獨立貢獻、有限定語氣的 pose 論點，以及長版 practical recipe/reporting；保留事實修正。短版 6 頁、長版 15 頁。
 
