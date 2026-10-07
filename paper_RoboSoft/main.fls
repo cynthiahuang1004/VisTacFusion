@@ -2,7 +2,7 @@ PWD /media/hdd2/ihsuan/VisTacFusion/paper_RoboSoft
 INPUT /home/shared/.TinyTeX/texmf.cnf
 INPUT /home/shared/.TinyTeX/texmf-dist/web2c/texmf.cnf
 INPUT /home/shared/.TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /media/hdd2/ihsuan/VisTacFusion/paper_RoboSoft/main.tex
+INPUT main.tex
 OUTPUT main.log
 INPUT ./ieeeconf.cls
 INPUT ieeeconf.cls

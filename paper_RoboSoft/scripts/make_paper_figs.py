@@ -91,14 +91,11 @@ def fig_kshot(out):
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("Labels per object, $K$"); ax.set_title(lab, loc="left")
         ax.text(0.97, 0.95, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
-    ax = axes[3]                                              # second sensor (mesh-registered labels); only real-only and MeshTac at every K
-    for name, suf in (("Real only", "realonly_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
+    ax = axes[3]                                              # second sensor (mesh-registered labels), 50 epochs, every K
+    for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
         c, m, ls = STY[name]
         ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"]["c_mae"] for k in Ks], color=c, marker=m, ls=ls, lw=1.0,
                 ms=5.5 if m == "*" else 3.4, mec="white", mew=0.5)
-    for name, run in (("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m")):   # K=25 only
-        c, m, _ = STY[name]
-        ax.plot([25], [SB[f"pilot_S_k25_{run}/sensorB_mesh"]["c_mae"]], color=c, marker=m, ls="none", ms=3.6, mec="white", mew=0.5)
     ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
     ax.set_xlabel("Labels per object, $K$"); ax.set_title("(d) Contact MAE [mm] $\\downarrow$", loc="left")
     ax.text(0.97, 0.95, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")

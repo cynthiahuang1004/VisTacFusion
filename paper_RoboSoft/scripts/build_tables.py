@@ -353,9 +353,10 @@ def pm(run, key, nd):
     return f"{m[key]:.{nd}f}\\,\\scalebox{{0.8}}{{$\\pm${sd[key]:.{d}f}}}"
 sbl = []
 for K in (10, 25, 50, 100):
-    blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {})]
+    blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}),
+           ("  & + learned renderer", sbm(f"S_k{K}_gan40m"), {}), ("  & + self-training", sbm(f"S_k{K}_semipm_m"), {})]
     if K == 25:
-        blk += [("  & + learned renderer", sbm("S_k25_gan40m"), {}), ("  & + self-training", sbm("S_k25_semipm_m"), {}), ("  & + MeshTac (ours)", sbm("S_k25_mapl_m"), {})]
+        blk.append(("  & + MeshTac (ours)", sbm("S_k25_mapl_m"), {}))
     blk.append(("  & " + ("\\quad no renderer" if K == 25 else "+ MeshTac (ours), no renderer"), sbm(f"S_k{K}_maplnr_m"), {}))
     sbl.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",)))
 T["sbmapl"] = "\n\\midrule\n".join(sbl)

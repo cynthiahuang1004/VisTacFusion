@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main_long"] 1791349509.76838 "main_long.aux" "main_long.bbl" "main_long" 1791349511.27572 0
+["bibtex main_long"] 1791385930.50728 "main_long.aux" "main_long.bbl" "main_long" 1791385931.4801 0
   "./refs.bib" 1791343680.48563 15861 b042e7c72b8eebcfc4bd6f991a36c4c5 ""
   "/home/shared/.TinyTeX/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main_long.aux" 1791349510.84805 22858 503999405f096884be8de335ba200d8f "pdflatex"
+  "main_long.aux" 1791385931.3843 22860 3ef7189db2bdf778a233df2d3972a966 "pdflatex"
   (generated)
   "main_long.bbl"
   "main_long.blg"
   (rewritten before read)
-["pdflatex"] 1791349509.78629 "main_long.tex" "main_long.pdf" "main_long" 1791349511.27597 0
+["pdflatex"] 1791385930.51999 "main_long.tex" "main_long.pdf" "main_long" 1791385931.48032 0
   "/home/shared/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm" 1136768653 4524 6bce29db5bc272ba5f332261583fee9c ""
@@ -194,24 +194,24 @@
   "/home/shared/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1786316193 336846 32c752561682a5c82d1eb57c40cf8597 ""
   "/home/shared/.TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1786246794 2250951 6eca1863878440fcc4e16403c05543fe ""
   "/home/shared/.TinyTeX/texmf.cnf" 1786246766 637 edd806fb06a89761a6034e1968af9017 ""
-  "data/tables.tex" 1791344255.17149 29588 86e4d5e516fa10b2d511dbebabc31ab3 ""
-  "figures/fig_align.pdf" 1791343680.49363 393933 8045cc75d0968960dd9f8a0a9493c37a ""
+  "data/tables.tex" 1791385827.99996 29956 0611b7bb73ab9f82b06d00f5be7fe905 ""
+  "figures/fig_align.pdf" 1791385877.90412 393933 950b2c4fec1474fc8384f6ae0a990aab ""
   "figures/fig_arch.pdf" 1791343680.49363 315933 c35604d52d98457a059ab4b8cd7aca5e ""
-  "figures/fig_fidelity.pdf" 1791343680.49763 73715 b084fc2c74eb9608e84e016db907ff80 ""
-  "figures/fig_kshot.pdf" 1791344516.68833 66592 669b03b020d29f2298dca968df6af8dc ""
-  "figures/fig_labels.pdf" 1791343680.49763 53943 56fcd2c2d8a713a5d80db70a0f374286 ""
-  "figures/fig_qual.pdf" 1791343680.49763 537081 8f7ec314887e2576067d302c03b5a65b ""
-  "figures/fig_renders.png" 1791343680.49763 587451 a81d07c8ca9f6ece84e637a9e5646b21 ""
+  "figures/fig_fidelity.pdf" 1791385888.00016 73715 e1ac45e1b59f279621ffa17e11bd517d ""
+  "figures/fig_kshot.pdf" 1791385872.16811 66920 ab8207ef3c5d8e042dc462a8fc8565c1 ""
+  "figures/fig_labels.pdf" 1791385878.35613 53943 2f95170570f67dbc4ef9a41ecfe4c50b ""
+  "figures/fig_qual.pdf" 1791385887.18415 537081 8bbbde4b913d238cd5711af667508415 ""
+  "figures/fig_renders.png" 1791385873.25611 587451 a81d07c8ca9f6ece84e637a9e5646b21 ""
   "ieeeconf.cls" 1791343680.48963 197574 c8a8a2004c9762153e255667fc17d954 ""
-  "main_long.aux" 1791349510.84805 22858 503999405f096884be8de335ba200d8f "pdflatex"
-  "main_long.bbl" 1791349509.77605 7230 e0ec3f8a422840b290f25e9b3a124573 "bibtex main_long"
-  "main_long.out" 1791349510.84805 4679 11e4ae19f5ab76b0baa92d0e23214f7e "pdflatex"
+  "main_long.aux" 1791385931.3843 22860 3ef7189db2bdf778a233df2d3972a966 "pdflatex"
+  "main_long.bbl" 1791385930.51229 7230 e0ec3f8a422840b290f25e9b3a124573 "bibtex main_long"
+  "main_long.out" 1791385931.3883 4679 11e4ae19f5ab76b0baa92d0e23214f7e "pdflatex"
   "main_long.tex" 1791349370.83961 3753 1bae83ed44fc2190c91734ddcaba1b91 ""
   "sections_long/01_intro.tex" 1791349444.53984 3542 74d643dc8becb67cf5023686baefa3a8 ""
   "sections_long/02_related.tex" 1791349430.0598 2042 a82a43274654dc8261bbf2cc97a160ba ""
   "sections_long/03_setup.tex" 1791349503.61203 13508 39bf6f68a732b6935c3fa4ed4b8cc222 ""
   "sections_long/04_mapl.tex" 1791349503.49203 3983 9a177a4fff5547555c191f3c44e3276b ""
-  "sections_long/05_experiments.tex" 1791347289.40506 43494 7f069259ae8a51d8ca290afd59f1ccbf ""
+  "sections_long/05_experiments.tex" 1791385928.06028 44279 71b0b4853510c9938e913899f4e4d070 ""
   "sections_long/06_conclusion.tex" 1791345704.00417 5552 47ad1f5d9219378631c745d902c1b8f8 ""
   (generated)
   "main_long.aux"
