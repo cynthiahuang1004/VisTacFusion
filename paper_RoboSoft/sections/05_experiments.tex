@@ -4,7 +4,7 @@
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency on two tactile sensors.} $K$: labeled training contacts per object. (a--c) Sensor-A validation, 150 epochs; the all-pairs reference uses extra real labels and 50 epochs at $K=10$. (d--f) Sensor-B test, 50 epochs. Matched methods share the registered contacts; MeshTac uses no synthetic data.}
+    \caption{\textbf{Label efficiency on two tactile sensors.} Contact MAE (mm), rotation error (deg) and translation error (mm) against the number $K$ of labeled training contacts per object. (a--c) Sensor-A validation, 150 epochs; the all-pairs reference uses extra real labels and 50 epochs at $K=10$. (d--f) Sensor-B test, 50 epochs. Matched methods share the registered contacts; MeshTac uses no synthetic data; pose metrics at the final epoch.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -113,7 +113,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 \label{sec:general}
 \noindent\textbf{Second session.} We test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Adding synthetic frames changes nothing at $K=25$ ($0.310$ versus $0.306$) but lowers MAE further to $0.252$ at $K=100$ ($-28\%$ in total), where the renderer has enough real pairs; the benefit of simulation under this session change thus depends on the label budget. Translation error is $4$--$5\,$mm for every method on this session, dominated by the re-placement, and no method improves it consistently.
 
-\noindent\textbf{Second sensor.} We train each method separately on sensor B, keeping the aligner settings unchanged (Table~\ref{tab:general}, bottom). MeshTac lowers contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. Three-seed checks at every budget support the gain, and evaluation with the original public labels gives the same qualitative result. At the other budgets, MeshTac lowers contact MAE by $15$--$33\%$, compared with at most $10\%$ from learned-renderer augmentation and no gain from self-training (Fig.~\ref{fig:kshot}e).
+\noindent\textbf{Second sensor.} We train each method separately on sensor B, keeping the aligner settings unchanged (Table~\ref{tab:general}, bottom). MeshTac lowers contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. Three-seed checks at every budget support the gain, and evaluation with the original public labels gives the same qualitative result. At the other budgets, MeshTac lowers contact MAE by $15$--$33\%$, compared with at most $10\%$ from learned-renderer augmentation and no gain from self-training (Fig.~\ref{fig:kshot}d).
 
 Figure~\ref{fig:qual} illustrates differences in ridge continuity and junction placement; quantitative comparisons use all evaluation frames.
 

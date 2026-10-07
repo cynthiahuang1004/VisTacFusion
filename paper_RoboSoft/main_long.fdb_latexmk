@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main_long"] 1791397943.27619 "main_long.aux" "main_long.bbl" "main_long" 1791399193.76003 0
+["bibtex main_long"] 1791399583.55524 "main_long.aux" "main_long.bbl" "main_long" 1791399584.53463 0
   "./refs.bib" 1791388228.84368 16116 e3fdbf50f0f19508e2c9481351c07860 ""
   "/home/shared/.TinyTeX/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main_long.aux" 1791399193.67098 24206 ecb9e8aeb46538c958b2b5c4502cba17 "pdflatex"
+  "main_long.aux" 1791399584.43624 24374 81a3f8db4edd3ec3f8c11e5c57265e49 "pdflatex"
   (generated)
   "main_long.bbl"
   "main_long.blg"
   (rewritten before read)
-["pdflatex"] 1791399192.82187 "main_long.tex" "main_long.pdf" "main_long" 1791399193.76021 0
+["pdflatex"] 1791399583.56793 "main_long.tex" "main_long.pdf" "main_long" 1791399584.53481 0
   "/home/shared/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm" 1136768653 4524 6bce29db5bc272ba5f332261583fee9c ""
@@ -195,24 +195,24 @@
   "/home/shared/.TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1786246794 2250951 6eca1863878440fcc4e16403c05543fe ""
   "/home/shared/.TinyTeX/texmf.cnf" 1786246766 637 edd806fb06a89761a6034e1968af9017 ""
   "data/tables.tex" 1791399089.21464 33874 48befdb93e156414f5a98534f7a9174d ""
-  "figures/fig_align.pdf" 1791399095.39466 332690 c2222b340f2d5b4b0bda5bd2809f9bd1 ""
+  "figures/fig_align.pdf" 1791399493.75995 332690 bea5bb0c6b540d87b0342d66829d4e06 ""
   "figures/fig_arch.pdf" 1791343680.49363 315933 c35604d52d98457a059ab4b8cd7aca5e ""
-  "figures/fig_conv.pdf" 1791399104.09069 36668 84cf4eec979e467c4b91deb1a61a5718 ""
-  "figures/fig_fidelity.pdf" 1791399105.1547 73055 f4a2ad0fb6e3531554e1cbe530271ca3 ""
-  "figures/fig_kshot.pdf" 1791399091.80665 69573 1ea524ba253d5ed97f6043768b3b318d ""
-  "figures/fig_labels.pdf" 1791399095.83867 53965 9acbbea27d8e4dcc200dc756cd9b2e44 ""
-  "figures/fig_qual.pdf" 1791399103.81869 603929 774f0740dcebf5b57a350945cea7827d ""
-  "figures/fig_renders.png" 1791399092.64666 587451 a81d07c8ca9f6ece84e637a9e5646b21 ""
+  "figures/fig_conv.pdf" 1791399501.53998 36668 b598ba3cd99d0524ec9916995e5d5875 ""
+  "figures/fig_fidelity.pdf" 1791399502.16798 73055 a4246e356538a82ef20a051cbf59326e ""
+  "figures/fig_kshot.pdf" 1791399490.19594 69689 ef4cbc30d4d249bf3cd36d9814eba06e ""
+  "figures/fig_labels.pdf" 1791399494.14395 53965 82acae24874ed80da6528f18203a0721 ""
+  "figures/fig_qual.pdf" 1791399501.29998 603929 d5a716f383cdd152db53c5dc8bf011c5 ""
+  "figures/fig_renders.png" 1791399491.03594 587451 a81d07c8ca9f6ece84e637a9e5646b21 ""
   "ieeeconf.cls" 1791343680.48963 197574 c8a8a2004c9762153e255667fc17d954 ""
-  "main_long.aux" 1791399193.67098 24206 ecb9e8aeb46538c958b2b5c4502cba17 "pdflatex"
-  "main_long.bbl" 1791397943.28294 7423 f70042679c6367bd877e354214ecc85d "bibtex main_long"
-  "main_long.out" 1791399193.67498 4679 daab125be21ca6ea99b6a0e5737d5baf "pdflatex"
+  "main_long.aux" 1791399584.43624 24374 81a3f8db4edd3ec3f8c11e5c57265e49 "pdflatex"
+  "main_long.bbl" 1791399583.56024 7423 f70042679c6367bd877e354214ecc85d "bibtex main_long"
+  "main_long.out" 1791399584.43624 4679 daab125be21ca6ea99b6a0e5737d5baf "pdflatex"
   "main_long.tex" 1791397285.82881 3974 29093a6f2dac83906bf3fc7e612f9d75 ""
   "sections_long/01_intro.tex" 1791396289.4496 3653 07215374c3a541f9b14aba57832142e8 ""
   "sections_long/02_related.tex" 1791388228.84368 2065 10ccf30b458fcbd1d19857fbb32e3655 ""
   "sections_long/03_setup.tex" 1791396289.4496 13764 0af7c98dfe4d30669603731b6470177c ""
   "sections_long/04_mapl.tex" 1791396365.58985 3967 6ea70ffbf0e2df79312419cb8cbf5912 ""
-  "sections_long/05_experiments.tex" 1791397940.91893 45950 681ba8844ee075e69da366bb12cde257 ""
+  "sections_long/05_experiments.tex" 1791399581.14823 46034 6e26f0b83194c2885cb4c41ad238686a ""
   "sections_long/06_conclusion.tex" 1791396289.4496 5539 3969cfa6bbcd47283c60b76a2785b570 ""
   (generated)
   "main_long.aux"

@@ -60,6 +60,15 @@ def best(run, key="depth_mse", select="depth_mse", split="val"):
     return g(b, split)[key]
 
 
+HALF_MM = 41.0   # pose normalization of both sensors: translations are fractions of half the 82 mm object frame
+
+
+def last(run, key, split="val"):
+    """metric at the final epoch (no checkpoint selection); used for the pose metrics, as in the tables."""
+    h = json.load(open(f"{OUT_RUNS}/{prefix_of(run)}{run}/history.json"))
+    return next(iter(h[-1][split].values()))[key]
+
+
 def masked(run, split="val", key="c_mae"):
     return MASKED[f"{prefix_of(run)}{run}/{split}"][key]
 
@@ -78,7 +87,7 @@ def fig_kshot(out):
              "+ GAN-full (leaky)": "All-pairs renderer", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     from matplotlib.ticker import MaxNLocator
     fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.3))         # one row: narrow, tall panels so that nearby lines separate
-    panels = [("depth_mse", "val", "Depth MSE"), ("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation")]
+    panels = [("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation"), ("pose_trans", "trans", "Translation")]
     letters = "abcdef"
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[:3], panels)):          # sensor A
         for name, runs in series.items():
@@ -87,16 +96,16 @@ def fig_kshot(out):
             for K, r in zip(Ks, runs):
                 if r is None or f"{prefix_of(r)}{r}/val" not in MASKED:
                     continue
-                y = masked(r) if src == "masked" else best(r, "pose_rot_deg", select="pose_rot_deg") if src == "rot" else best(r)
+                y = masked(r) if src == "masked" else last(r, "pose_rot_deg") if src == "rot" else last(r, "pose_trans") * HALF_MM if src == "trans" else best(r)
                 xs.append(K); ys.append(y)
             ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=names.get(name, name))
         ax.set_title(f"({letters[i]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
         ax.text(0.96, 0.96, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
-    sbkey = {"depth_mse": "full_mse", "c_mae": "c_mae", "pose_rot_deg": "rot_deg"}
+    sbkey = {"c_mae": ("c_mae", 1.0), "pose_rot_deg": ("rot_deg", 1.0), "pose_trans": ("trans_l1", HALF_MM)}
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[3:], panels)):          # sensor B (mesh-registered labels), 50 epochs
         for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
             c, m, ls = STY[name]
-            ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"][sbkey[key]] for k in Ks], color=c, marker=m, ls=ls, lw=LW,
+            ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"][sbkey[key][0]] * sbkey[key][1] for k in Ks], color=c, marker=m, ls=ls, lw=LW,
                     ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5)
         ax.set_title(f"({letters[i + 3]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
         ax.text(0.96, 0.96, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
@@ -416,7 +425,7 @@ def fig_qual(out):
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out); fig_conv(out); fig_renders_small(out)
+    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out); fig_conv(out)
     try:
         fig_fidelity(out)
     except Exception as e:  # noqa: BLE001
