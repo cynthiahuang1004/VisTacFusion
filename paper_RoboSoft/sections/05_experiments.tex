@@ -72,7 +72,7 @@ Adding teacher pose mainly improves student rotation. Learned alignment lowers t
 
 L1 search gains less: at $K=25$ the renderer scores the search-selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a geometrically incorrect state.
 
-From the teacher's pose, mean error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}); six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object. Translation errors follow repeated ridges, where different states can yield similar contact geometry.
+From the teacher's pose, mean rotation error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object. Translation errors follow repeated ridges, where different states can yield similar contact geometry.
 
 \begin{figure*}[t]
     \centering
@@ -85,12 +85,12 @@ From the teacher's pose, mean error falls to $2.1^\circ$ after one update and $1
 \centering
 \tableformat\scriptsize
 \setlength{\tabcolsep}{2.6pt}
-\begin{tabularx}{\columnwidth}{@{}Xrrrr@{}}
+\begin{tabularx}{\columnwidth}{@{}Xrrrrrr@{}}
 \toprule
-\multicolumn{5}{@{}l}{\textbf{Sensor A: session-2 test ($854$ frames), no retraining}} \\
-& \multicolumn{2}{c}{$K=25$} & \multicolumn{2}{c}{$K=100$} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-Method & MAE$\downarrow$ & IoU$\uparrow$ & MAE$\downarrow$ & IoU$\uparrow$ \\
+\multicolumn{7}{@{}l}{\textbf{Sensor A: session-2 test ($854$ frames), no retraining}} \\
+& \multicolumn{3}{c}{$K=25$} & \multicolumn{3}{c}{$K=100$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ \\
 \midrule
 \tabcrossT
 \bottomrule
@@ -105,13 +105,13 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & MAE$\downarrow$ & IoU$\uparrow$ \\
 \tabsbT
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models evaluated on another day's contacts after object re-placement; a nine-object model trained on all session-1 labels reaches $0.315$ MAE and $0.675$ IoU. \emph{+ synthetic frames}: MeshTac with the $K$-pair renderer. Bottom: models trained and tested on sensor B, mean $\pm$ standard deviation over three seeds. Contact MAE in mm; bold marks the better value.}
+\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models evaluated on another day's contacts after object re-placement; a nine-object model trained on all session-1 labels reaches $0.315$ MAE and $0.675$ IoU. \emph{+ synthetic frames}: MeshTac with the $K$-pair renderer. Bottom: models trained and tested on sensor B, mean $\pm$ standard deviation over three seeds. Contact MAE and translation error in mm; bold marks the best value.}
 \label{tab:general}
 \end{table}
 
 \subsection{Generalization Across Sessions and Sensors}
 \label{sec:general}
-\noindent\textbf{Second session.} We test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Adding synthetic frames changes nothing at $K=25$ ($0.310$ versus $0.306$) but lowers MAE further to $0.252$ at $K=100$ ($-28\%$ in total), where the renderer has enough real pairs; the benefit of simulation under this session change thus depends on the label budget.
+\noindent\textbf{Second session.} We test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Adding synthetic frames changes nothing at $K=25$ ($0.310$ versus $0.306$) but lowers MAE further to $0.252$ at $K=100$ ($-28\%$ in total), where the renderer has enough real pairs; the benefit of simulation under this session change thus depends on the label budget. Translation error is $4$--$5\,$mm for every method on this session, dominated by the re-placement, and no method improves it consistently.
 
 \noindent\textbf{Second sensor.} We train each method separately on sensor B, keeping the aligner settings unchanged (Table~\ref{tab:general}, bottom). MeshTac lowers contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. Three-seed checks at every budget support the gain, and evaluation with the original public labels gives the same qualitative result. At the other budgets, MeshTac lowers contact MAE by $15$--$33\%$, compared with at most $10\%$ from learned-renderer augmentation and no gain from self-training (Fig.~\ref{fig:kshot}e).
 
@@ -131,7 +131,7 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \tabposeref
 \bottomrule
 \end{tabular}
-\caption{\textbf{Rotation error before and after mesh-assisted refinement.} Sensor A, mean error (deg) on session-1 validation and session-2 test images. \emph{pred.}: predictor output; \emph{+align}: six fixed-aligner iterations, without retraining.}
+\caption{\textbf{Pose error before and after mesh-assisted refinement.} Sensor A, mean rotation (deg) and translation (mm) error on session-1 validation and session-2 test images. \emph{pred.}: predictor output; \emph{+align}: six fixed-aligner iterations, without retraining.}
 \label{tab:poseref}
 \end{table}
 

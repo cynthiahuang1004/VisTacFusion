@@ -120,7 +120,7 @@ loo = [
     ("+ refiner on domain rand.\\ (0 labels, no calib.)", row("A_refdrloo", "TEST"), {}),
     ("+ GAN-full (all pairs)", row("A_ganfull", "TEST"), {"leaky": True}),
 ]
-cols6 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans", 3)]
+cols6 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)]
 T["loo"] = table(loo, cols6, bold_max=("iou",))
 # ---------------- Table 2: K-shot ----------------
 ks = []
@@ -151,7 +151,7 @@ for K in (0, 10, 25, 50, 100):
         ks.append((lab, r, fl)); first = False
     ks.append(("", None, {"sep": r"\midrule"}))
 ks = ks[:-1]
-cols5 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)]
+cols5 = [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)]
 # bold per K block
 blocks, cur = [], []
 for r in ks:
@@ -205,7 +205,7 @@ T["rcabl"] = "\n".join(x for x in (
 def cs(run, pre="pilot150_"):
     # corrected session-2 labels only (scripts/fix_session2_view.py; tag cross_session_fv)
     r = CROSS.get(f"{pre}{run}/cross_session_fv") or CROSS.get(f"pilot_{run}/cross_session_fv")
-    return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib")) if r else None
+    return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib"), trans_mm=(r["trans_l1"] * HALF_MM if "trans_l1" in r else None)) if r else None
 cross = [
     ("Real only (9 objects, session 1)", cs("A_realonly"), {}),
     ("+ Blender", cs("A_blender"), {}),
@@ -275,13 +275,21 @@ T["rcablmain"] = "\n".join(x for x in (
 # ---------------- test-time pose refinement with the aligner ----------------
 _pr = f"{P}/pose_refine_results.json"
 PR = json.load(open(_pr)) if osp.exists(_pr) else {}
-pr = []
+pr = [r"\multicolumn{9}{@{}l}{\emph{Rotation error (deg)}} \\"]
 for K in (10, 25, 50, 100):
     cells = []
     for split in ("val", "session2"):
         for run in (f"B_k{K}_realonly", f"B_k{K}_rf"):
             e = PR.get(f"pilot150_{run}_realonly/{split}") or PR.get(f"pilot150_{run}/{split}")
             cells += [f(e["rot"], 1), f(e["rot_al"], 1)] if e else ["--", "--"]
+    pr.append(f"{K} & " + " & ".join(cells) + r" \\")
+pr.append(r"\midrule"); pr.append(r"\multicolumn{9}{@{}l}{\emph{Translation error (mm)}} \\")
+for K in (10, 25, 50, 100):
+    cells = []
+    for split in ("val", "session2"):
+        for run in (f"B_k{K}_realonly", f"B_k{K}_rf"):
+            e = PR.get(f"pilot150_{run}_realonly/{split}") or PR.get(f"pilot150_{run}/{split}")
+            cells += [f(e["trans"] * HALF_MM, 2), f(e["trans_al"] * HALF_MM, 2)] if e else ["--", "--"]
     pr.append(f"{K} & " + " & ".join(cells) + r" \\")
 T["poseref"] = "\n".join(pr)
 # ---------------- Table 4: sensor B (GelSlim 4.0) ----------------
@@ -415,7 +423,8 @@ for label, run in (("Real only", "realonly"), ("Self-training", "semipm_pseudo")
         r = cs(f"B_k{K}_{run}")
         best_mae = min(cs(f"B_k{K}_{x}")["c_mae"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
         best_iou = max(cs(f"B_k{K}_{x}")["iou"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
-        cells += [_c(r["c_mae"], 3, r["c_mae"] == best_mae), _c(r["iou"], 3, r["iou"] == best_iou)]
+        best_tr = min(cs(f"B_k{K}_{x}")["trans_mm"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
+        cells += [_c(r["c_mae"], 3, r["c_mae"] == best_mae), _c(r["iou"], 3, r["iou"] == best_iou), _c(r["trans_mm"], 2, r["trans_mm"] == best_tr)]
     _ct.append(f"{label} & " + " & ".join(cells) + r" \\")
 T["crossT"] = "\n".join(_ct)
 _sb = []

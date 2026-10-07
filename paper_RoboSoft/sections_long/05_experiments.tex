@@ -16,9 +16,9 @@ Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 
 \begin{table*}[t]
 \centering
 \tableformat
-\begin{tabularx}{\textwidth}{lXrrrrr}
+\begin{tabularx}{\textwidth}{lXrrrrrr}
 \toprule
-$\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
+$\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Trans.}{(mm)} \\
 \midrule
 \tabkshotfew
 \bottomrule
@@ -30,9 +30,9 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \begin{table*}[t]
 \centering
 \tableformat
-\begin{tabularx}{\textwidth}{lXrrrrr}
+\begin{tabularx}{\textwidth}{lXrrrrrr}
 \toprule
-$\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
+$\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Trans.}{(mm)} \\
 \midrule
 \tabkshotmore
 \bottomrule
@@ -287,7 +287,7 @@ Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For 
 \tableformat
 \begin{tabularx}{\columnwidth}{Xrrrrrr}
 \toprule
-Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut Contact\\\strut IoU\,$\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Trans.}{$L_1$} \\
+Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut Contact\\\strut IoU\,$\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Trans.}{(mm)} \\
 \midrule
 \tabloo
 \bottomrule
