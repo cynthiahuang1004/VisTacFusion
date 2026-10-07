@@ -24,6 +24,7 @@ MASKED = json.load(open("ablation/pilot_robosoft/masked_results.json"))
 SIM = "/media/hdd2/ihsuan/gs_blender/renders_v3"
 REAL = "/media/hdd2/ihsuan/gs_blender/real_filtered"
 
+LW, MS, MS_STAR = 0.9, 2.6, 4.4   # shared line width / marker size of every line plot
 # series -> (color, marker, linestyle); gray baseline + categorical slots 1-3
 STY = {
     "Real only": ("#52514e", "o", "-"),
@@ -88,15 +89,15 @@ def fig_kshot(out):
                     continue
                 y = masked(r) if src == "masked" else best(r, "pose_rot_deg", select="pose_rot_deg") if src == "rot" else best(r)
                 xs.append(K); ys.append(y)
-            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.0, ms=5.0 if m == "*" else 3.0, mec="white", mew=0.5, label=names.get(name, name))
+            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=names.get(name, name))
         ax.set_title(f"({letters[i]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
         ax.text(0.96, 0.96, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
     sbkey = {"depth_mse": "full_mse", "c_mae": "c_mae", "pose_rot_deg": "rot_deg"}
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[3:], panels)):          # sensor B (mesh-registered labels), 50 epochs
         for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
             c, m, ls = STY[name]
-            ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"][sbkey[key]] for k in Ks], color=c, marker=m, ls=ls, lw=1.0,
-                    ms=5.0 if m == "*" else 3.0, mec="white", mew=0.5)
+            ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"][sbkey[key]] for k in Ks], color=c, marker=m, ls=ls, lw=LW,
+                    ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5)
         ax.set_title(f"({letters[i + 3]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
         ax.text(0.96, 0.96, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
     for ax in axes:
@@ -223,7 +224,7 @@ def fig_sensorb(out):
                 r = SB.get(f"pilot_S_k{K}_{suf}/sensorB_test")
                 if r:
                     xs.append(K); ys.append(r[key])
-            ax.plot(xs, ys, color=c, marker=m, lw=1.6, ms=4.5, mec="white", mew=0.6, label=name)
+            ax.plot(xs, ys, color=c, marker=m, lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks])
         ax.set_xlabel("Sensor-B real samples / object, $K$"); ax.set_title(lab, loc="left")
     h, l = axes[0].get_legend_handles_labels()
@@ -245,7 +246,7 @@ def fig_cross(out):
                 e = CROSS.get(f"{prefix_of(r)}{r}/cross_session_curated") or CROSS.get(f"pilot_{r}/cross_session_curated")
                 if e:
                     xs.append(K); ys.append(e[key])
-            ax.plot(xs, ys, color=c, marker=m, lw=1.6, ms=4.5, mec="white", mew=0.6, label=name)
+            ax.plot(xs, ys, color=c, marker=m, lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=name)
         ax.set_xscale("symlog", linthresh=10); ax.set_xticks([0, 25, 50, 100, 400]); ax.set_xticklabels(["0", "25", "50", "100", "all"])
         ax.set_xlabel("Session-1 real samples per object"); ax.set_title(lab, loc="left")
     axes[0].legend(frameon=False, fontsize=6.5)
@@ -317,7 +318,7 @@ def fig_labels(out):
     fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.7))
     for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Pose error [deg] $\\downarrow$")]):
         for name, D, off, c, m, ms in series:
-            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=1.4, ms=ms, mec="white", mew=0.6, label=name)
+            ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
         ax.set_xlabel("$K$"); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
     axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
@@ -335,13 +336,13 @@ def fig_conv(out):
     d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); N = d["iters"]
     fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.45))
     ax = axes[0]; t = d["teacher"]["rot"]
-    ax.plot(range(N + 1), t["mean"], color="#8a4fd3", marker="*", ms=5.5, mec="white", mew=0.5, lw=1.2, label="mean")
-    ax.plot(range(N + 1), t["median"], color="#52514e", marker="o", ms=3.2, mec="white", mew=0.5, lw=1.2, label="median")
+    ax.plot(range(N + 1), t["mean"], color="#8a4fd3", marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label="mean")
+    ax.plot(range(N + 1), t["median"], color="#52514e", marker="o", ms=MS, mec="white", mew=0.5, lw=LW, label="median")
     ax.axvline(6, color="#b5b3ad", lw=0.8, ls=":"); ax.set_xticks([0, 2, 4, 6, 8, 10]); ax.set_ylim(0, None)
     ax.set_xlabel("Aligner iterations"); ax.set_title("(a) From teacher pose [deg]", loc="left", fontsize=6.6, pad=3); ax.legend(frameon=False, fontsize=6)
     ax = axes[1]; R = sorted(int(r) for r in d["basin"])
-    ax.plot(R, [d["basin"][str(r)]["rot"]["mean"][6] for r in R], color="#8a4fd3", marker="*", ms=5.5, mec="white", mew=0.5, lw=1.2, label="mean")
-    ax.plot(R, [d["basin"][str(r)]["rot"]["median"][6] for r in R], color="#52514e", marker="o", ms=3.2, mec="white", mew=0.5, lw=1.2, label="median")
+    ax.plot(R, [d["basin"][str(r)]["rot"]["mean"][6] for r in R], color="#8a4fd3", marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label="mean")
+    ax.plot(R, [d["basin"][str(r)]["rot"]["median"][6] for r in R], color="#52514e", marker="o", ms=MS, mec="white", mew=0.5, lw=LW, label="median")
     ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_ylim(0, None); ax.set_xticks([0, 8, 15, 20, 25, 30])
     ax.set_xlabel("Initial rotation error [deg]"); ax.set_title("(b) After 6 iterations [deg]", loc="left", fontsize=6.6, pad=3)
     fig.tight_layout(w_pad=0.8)

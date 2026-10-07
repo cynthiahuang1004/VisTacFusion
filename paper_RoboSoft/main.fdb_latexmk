@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1791397941.60587 "main.aux" "main.bbl" "main" 1791397942.24664 0
+["bibtex main"] 1791397941.60587 "main.aux" "main.bbl" "main" 1791398524.31133 0
   "./refs.bib" 1791388228.84368 16116 e3fdbf50f0f19508e2c9481351c07860 ""
   "/home/shared/.TinyTeX/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1791397942.16294 13588 9491199e7c4be0dc432822c197af4534 "pdflatex"
+  "main.aux" 1791398524.21682 13588 9491199e7c4be0dc432822c197af4534 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1791397941.61905 "main.tex" "main.pdf" "main" 1791397942.24681 0
+["pdflatex"] 1791398523.66652 "main.tex" "main.pdf" "main" 1791398524.31149 0
   "/home/shared/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm" 1136768653 4524 6bce29db5bc272ba5f332261583fee9c ""
@@ -193,16 +193,16 @@
   "/home/shared/.TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1786246794 2250951 6eca1863878440fcc4e16403c05543fe ""
   "/home/shared/.TinyTeX/texmf.cnf" 1786246766 637 edd806fb06a89761a6034e1968af9017 ""
   "data/tables.tex" 1791397904.03881 33676 3064c00440bf6886b4d4c208a3b3cb63 ""
-  "figures/fig_align.pdf" 1791397750.47432 332690 79359aac4e8635b2cb909c978df0d7d9 ""
+  "figures/fig_align.pdf" 1791398497.62473 332690 a123ac5b2d2b87d8fbb5fb92845fe79d ""
   "figures/fig_arch.pdf" 1791343680.49363 315933 c35604d52d98457a059ab4b8cd7aca5e ""
-  "figures/fig_conv.pdf" 1791397757.72634 36682 da40d2599bbf163e7bc4c4a5b346a381 ""
-  "figures/fig_kshot.pdf" 1791397746.7423 69383 ca9e9f5ef912604683c4723ef7ca385c ""
-  "figures/fig_labels.pdf" 1791397750.85832 53952 a822d804aaba05719e108e20fafdbf75 ""
-  "figures/fig_qual.pdf" 1791397757.45834 603929 614284b9fba1d1f5f00403fc02634c4b ""
+  "figures/fig_conv.pdf" 1791398506.90876 36668 74005f7f7a2d557b88e168effba298db ""
+  "figures/fig_kshot.pdf" 1791398494.06872 69573 885136250f59b0eecfb30d4257a7b315 ""
+  "figures/fig_labels.pdf" 1791398498.01673 53965 721ce716571e4133709121d696ae988e ""
+  "figures/fig_qual.pdf" 1791398506.66876 603929 6d3c0439dafc22a5a82081d7e2d4199b ""
   "ieeeconf.cls" 1791343680.48963 197574 c8a8a2004c9762153e255667fc17d954 ""
-  "main.aux" 1791397942.16294 13588 9491199e7c4be0dc432822c197af4534 "pdflatex"
+  "main.aux" 1791398524.21682 13588 9491199e7c4be0dc432822c197af4534 "pdflatex"
   "main.bbl" 1791397941.61493 6320 ef983a541dc2f3c1b7505943ee1c38ee "bibtex main"
-  "main.out" 1791397942.16294 2203 ec4681860a321d0ecbc3188df282f151 "pdflatex"
+  "main.out" 1791398524.21682 2203 ec4681860a321d0ecbc3188df282f151 "pdflatex"
   "main.tex" 1791397285.82881 3589 68a05512d0bfdfd6e99c46d93b39bb22 ""
   "sections/01_intro.tex" 1791396517.90234 2898 cff0bcb4a8cd108a931e8211d47b9515 ""
   "sections/02_related.tex" 1791396517.90234 1627 c2ace8b66235d9ab6e724240bf28c614 ""
