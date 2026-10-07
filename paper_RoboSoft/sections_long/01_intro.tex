@@ -18,6 +18,6 @@ MeshTac learns this alignment as a residual correction (Fig.~\ref{fig:mapl}). Gi
 We compare real-only training, synthetic augmentation, self-training and MeshTac under matched real-label budgets. Our contributions are:
 \begin{itemize}
     \item \textbf{Mesh-aligned pseudo-labeling.} The method learns contact-state corrections from a small registered set and converts unlabeled real images into depth, normal and pose supervision.
-    \item \textbf{Label accounting for tactile simulation.} The renderer and predictor receive the same real training-label budget, separating synthetic-data gains from access to additional paired contacts.
+    \item \textbf{Matched-budget evaluation of tactile simulation.} The renderer and the predictor receive the same real training labels, separating synthetic-data gains from access to additional paired contacts.
     \item \textbf{Evaluation across conditions.} Experiments on two sensors, a second capture session and held-out objects identify the complementary roles of alignment and simulation, and evaluate the aligner for pose refinement without retraining.
 \end{itemize}

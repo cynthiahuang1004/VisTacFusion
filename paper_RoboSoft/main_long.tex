@@ -23,8 +23,8 @@
 \setcounter{topnumber}{4}\setcounter{bottomnumber}{2}\setcounter{totalnumber}{6}\setcounter{dbltopnumber}{3}
 \input{data/tables}
 
-\title{\LARGE\bf MeshTac: Mesh-Aligned Pseudo-Labels for Label-Efficient\\
-Tactile Depth, Normal and Pose Estimation\\{\large Extended Version}}
+\title{\LARGE\bf MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient\\
+Tactile Geometry and Pose Estimation\\{\large Extended Version}}
 
 % Anonymous by default for RoboSoft double-anonymous review.
 % Compile with \def\MeshTacAuthorVersion{1}\input{main.tex} for an author copy.
@@ -36,7 +36,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \else
 \author{Anonymous submission}
 \fi
-\hypersetup{pdfauthor={},pdftitle={MeshTac},pdfsubject={},pdfkeywords={}}
+\hypersetup{pdfauthor={},pdftitle={MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient Tactile Geometry and Pose Estimation},pdfsubject={},pdfkeywords={}}
 
 \begin{document}
 \maketitle
@@ -44,7 +44,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \pagestyle{empty}\raggedbottom
 
 \begin{abstract}
-For known objects, a tactile system may have an object mesh but only a few real contacts registered to it. Simulation can supply additional image--label pairs, although a learned renderer may itself consume substantial real supervision. We introduce MeshTac, which uses a small registered set to align known meshes with unlabeled tactile images. A teacher initializes the contact state, and a residual aligner trained with perturbed labeled states corrects it. Projecting the aligned mesh provides depth, normal and pose targets for a student trained on real images. Every trainable component shares the same real training-label budget, and standard student inference requires no mesh rendering. On ridge-pattern objects, with models trained separately for two sensors, MeshTac improves contact reconstruction over real-only training, synthetic augmentation and teacher-based self-training. The improvement persists without learned rendering, showing that aligned geometry itself provides useful supervision; synthetic data adds robustness when the capture session changes. A separate label-accounting study shows that real pairs used to fit a renderer can substantially alter the apparent benefit of simulation. The aligner can also refine pose at inference when the mesh is available.
+Vision-based tactile sensors need dense geometric labels from the target sensor, yet registering real contacts to an object mesh is slow even when the mesh is known. Two common remedies fall short with few labels. Simulation renders image--label pairs from the mesh, but with few real pairs a learned renderer does not improve contact reconstruction, and a renderer fitted on more real pairs than the predictor overstates the value of simulation. Self-training reuses the predictor's own depth and inherits its localization errors. We observe that what unlabeled images lack is not appearance but the contact pose that places the known mesh in them. MeshTac learns this registration from the labeled set: a teacher proposes the pose, a residual aligner trained on perturbed labeled poses corrects it, and the aligned mesh yields depth, normal and pose labels for a student that predicts without the mesh. All trainable components share one real-label budget. With 25 labels per object, MeshTac lowers contact depth error by $20\%$ on an in-house sensor and $36\%$ on public GelSlim~4.0 data, matching real-only training with twice the labels, and the gain persists without any renderer; synthetic data helps when the capture session changes. A renderer fitted on all training pairs reports a $24$--$26\%$ depth-MSE reduction that falls to $0$--$3\%$ at matched budgets. The aligner also refines predicted poses at test time.
 \end{abstract}
 
 \input{sections_long/01_intro}
