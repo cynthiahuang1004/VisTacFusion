@@ -212,6 +212,32 @@ def fig_renders(out):
     fig.savefig(osp.join(out, "fig_renders.png"), dpi=220); plt.close(fig)
 
 
+def fig_renders_small(out):
+    """Column-width version for the 6-page paper: one simulated contact as GT depth | physical renderer | learned renderer (K=25) |
+    all-pairs renderer, next to a real frame of the same object; two objects."""
+    picks = [("pattern_31_rod", "session_003", 37), ("pattern_04_3_lines_angle_1", "session_002", 61)]
+    cols = [("GT depth", None), ("Physical", "samples"), ("Learned, $K$=25", "samples_g_k25"), ("All pairs", "samples_g"), ("Real frame", None)]
+    fig, axes = plt.subplots(len(picks), len(cols), figsize=(3.45, 0.74 * len(picks) + 0.2))
+    for i, (obj, sess, idx) in enumerate(picks):
+        u = f"{SIM}/{obj}/{sess}/sensor_0000"
+        d = np.load(f"{u}/raw_data/{idx:04d}_gt.npy")
+        rf = sorted(glob.glob(f"{REAL}/{obj}/session_000/sensor_0000/samples/*.png"))[idx % 200]
+        for j, (name, sub) in enumerate(cols):
+            if sub is None and j == 0:
+                im = plt.cm.viridis(np.clip(d / max(d.max(), 1e-6), 0, 1))[..., :3]
+            elif sub is None:
+                im = np.asarray(Image.open(rf).convert("RGB"))
+            else:
+                im = np.asarray(Image.open(f"{u}/{sub}/{idx:04d}.png").convert("RGB"))
+            ax = axes[i, j]; ax.imshow(im); ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
+            for sp in ax.spines.values():
+                sp.set_visible(False)
+            if i == 0:
+                ax.set_title(name, fontsize=6.5, pad=2)
+    fig.subplots_adjust(left=0.004, right=0.996, top=0.86, bottom=0.01, wspace=0.03, hspace=0.04)
+    fig.savefig(osp.join(out, "fig_renders_small.pdf"), dpi=300); plt.close(fig)
+
+
 def fig_sensorb(out):
     Ks = [10, 25, 50, 100]
     series = {"Real only (sensor B)": ("realonly", "#52514e", "o"), "+ Blender (sensor-A calibration)": ("blender", "#2a78d6", "s"),
@@ -390,7 +416,7 @@ def fig_qual(out):
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out); fig_conv(out)
+    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out); fig_conv(out); fig_renders_small(out)
     try:
         fig_fidelity(out)
     except Exception as e:  # noqa: BLE001

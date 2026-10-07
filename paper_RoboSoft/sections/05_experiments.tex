@@ -41,12 +41,12 @@ Adding synthetic frames from the $K$-pair renderer to MeshTac does not improve w
 \toprule
 & \multicolumn{3}{c}{Pseudo-labels vs.\ GT} & \multicolumn{4}{c}{Student validation} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-8}
-Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.}{MAE} & \metrichead{Rot.}{(deg)} & \metrichead{Depth}{MSE} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Rot.}{(deg)} \\
+Label of each unlabeled image & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.}{MAE} & \metrichead{Rot.}{(deg)} & \metrichead{Depth}{MSE} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Rot.}{(deg)} \\
 \midrule
 \tabrcablmain
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label quality and student performance.} Sensor A, $K=25$, 50 epochs. Student results are three-seed means except \emph{Teacher depth + pose}. Withheld training GT scores labels only. $^{1/2}$ uses mesh depth for each object's half with lowest render error, teacher depth otherwise, and L1-search pose throughout. $\ddagger$ adds synthetic frames from the $K$-pair renderer to aligner and student training.}
+\caption{\textbf{Where the gain comes from.} Same unlabeled sensor-A images ($K=25$) and same student; only their labels change. Left: label accuracy against withheld training GT (evaluation only); right: the student trained on them (50 epochs; three-seed means except \emph{depth + pose}). $^{1/2}$: mesh depth on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: synthetic frames from the $K$-pair renderer in aligner and student training.}
 \label{tab:abl}
 \end{table}
 
@@ -66,17 +66,17 @@ Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 
 \subsection{Ablation Study on Alignment Quality}
 \label{sec:ablation}
-We label the same unlabeled images with teacher predictions, L1 render-and-compare search or learned alignment, then evaluate both label quality and the student trained on those targets (Table~\ref{tab:abl}). Adding teacher pose isolates pose supervision; the indented row adds synthetic frames throughout the pipeline.
+Table~\ref{tab:abl} asks where the gain comes from: the unlabeled images and the student are fixed, and only their labels change, from the teacher's own predictions to the mesh projected at a fitted pose. Each row reports the labels' accuracy and the student they produce. Adding teacher pose isolates pose supervision; the last row adds synthetic frames throughout the pipeline.
 
 Adding teacher pose mainly improves student rotation. Learned alignment lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$ and raises label IoU from $0.56$ to $0.72$ (Fig.~\ref{fig:labels}, both sensors); student IoU rises from $0.624$ to $0.722$ relative to teacher-depth self-training. Correcting mesh placement therefore improves the supervision supplied to the student.
 
 L1 search gains less: at $K=25$ the renderer scores the search-selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a geometrically incorrect state.
 
-From the teacher's pose, mean rotation error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object. Translation errors follow repeated ridges, where different states can yield similar contact geometry.
+From the teacher's pose, mean rotation error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object.
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.74\textwidth]{figures/fig_qual.pdf}
+    \includegraphics[width=0.68\textwidth]{figures/fig_qual.pdf}
     \caption{\textbf{Contact-depth reconstruction at $K=25$.} Each sensor shows three objects; each frame is the one with its object's median MeshTac contact MAE, chosen without reference to the baseline. Numbers are contact MAE (mm), and depth maps share a color scale.}
     \label{fig:qual}
 \end{figure*}

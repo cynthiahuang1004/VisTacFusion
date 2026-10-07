@@ -266,11 +266,13 @@ T["loomain"] = table([
 ], [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 _r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"]); _rt = labq("real_pseudo_k25_ro_al", ["teacher (all)"])
 T["rcablmain"] = "\n".join(x for x in (
-    abl("Teacher depth (self-training)", "B_k25_semipm_pseudo", _t, None, 3),
-    abl("Teacher depth + teacher pose", "B_k25_tp", _t, _t[2] if _t else None),
-    abl("Mesh at L1-search pose$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
-    abl("Mesh at aligned pose (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
-    abl("\\quad + synthetic frames$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
+    r"\multicolumn{8}{@{}l}{\emph{Teacher predictions as labels (self-training)}} \\",
+    abl("\\quad depth", "B_k25_semipm_pseudo", _t, None, 3),
+    abl("\\quad depth + pose", "B_k25_tp", _t, _t[2] if _t else None),
+    r"\multicolumn{8}{@{}l}{\emph{Mesh projected at a fitted pose}} \\",
+    abl("\\quad pose by L1 render-and-compare$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
+    abl("\\quad pose by learned aligner (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
+    abl("\\quad\\quad + synthetic frames$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
 ) if x)
 # ---------------- test-time pose refinement with the aligner ----------------
 _pr = f"{P}/pose_refine_results.json"
