@@ -75,11 +75,11 @@ def fig_kshot(out):
     }
     names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "All-pairs renderer", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
-    fig, axes = plt.subplots(2, 3, figsize=(7.1, 3.5))
-    panels = [("depth_mse", "val", "Depth MSE [mm$^2$] $\\downarrow$"), ("c_mae", "masked", "Contact MAE [mm] $\\downarrow$"),
-              ("pose_rot_deg", "rot", "Rotation [deg] $\\downarrow$")]
+    from matplotlib.ticker import MaxNLocator
+    fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.3))         # one row: narrow, tall panels so that nearby lines separate
+    panels = [("depth_mse", "val", "Depth MSE"), ("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation")]
     letters = "abcdef"
-    for i, (ax, (key, src, lab)) in enumerate(zip(axes[0], panels)):            # row 1: sensor A
+    for i, (ax, (key, src, lab)) in enumerate(zip(axes[:3], panels)):          # sensor A
         for name, runs in series.items():
             c, m, ls = STY[name]
             xs, ys = [], []
@@ -88,24 +88,24 @@ def fig_kshot(out):
                     continue
                 y = masked(r) if src == "masked" else best(r, "pose_rot_deg", select="pose_rot_deg") if src == "rot" else best(r)
                 xs.append(K); ys.append(y)
-            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.0, ms=5.5 if m == "*" else 3.4, mec="white", mew=0.5, label=names.get(name, name))
-        ax.set_title(f"({letters[i]}) {lab}", loc="left")
-        ax.text(0.97, 0.95, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
+            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=1.0, ms=5.0 if m == "*" else 3.0, mec="white", mew=0.5, label=names.get(name, name))
+        ax.set_title(f"({letters[i]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
+        ax.text(0.96, 0.96, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
     sbkey = {"depth_mse": "full_mse", "c_mae": "c_mae", "pose_rot_deg": "rot_deg"}
-    for i, (ax, (key, src, lab)) in enumerate(zip(axes[1], panels)):            # row 2: sensor B (mesh-registered labels), 50 epochs
+    for i, (ax, (key, src, lab)) in enumerate(zip(axes[3:], panels)):          # sensor B (mesh-registered labels), 50 epochs
         for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
             c, m, ls = STY[name]
             ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/sensorB_mesh"][sbkey[key]] for k in Ks], color=c, marker=m, ls=ls, lw=1.0,
-                    ms=5.5 if m == "*" else 3.4, mec="white", mew=0.5)
-        ax.set_title(f"({letters[i + 3]}) {lab}", loc="left")
-        ax.text(0.97, 0.95, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=7, color="#6b6a66")
-    for ax in axes.ravel():
-        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
-    for ax in axes[1]:
-        ax.set_xlabel("Labels per object, $K$")
-    h, l = axes[0, 0].get_legend_handles_labels()
-    fig.legend(h, l, frameon=False, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.01), columnspacing=1.0, handletextpad=0.4)
-    fig.tight_layout(w_pad=0.9, h_pad=0.8, rect=(0, 0.055, 1, 1))
+                    ms=5.0 if m == "*" else 3.0, mec="white", mew=0.5)
+        ax.set_title(f"({letters[i + 3]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
+        ax.text(0.96, 0.96, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
+    for ax in axes:
+        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks], fontsize=6.5); ax.minorticks_off()
+        ax.yaxis.set_major_locator(MaxNLocator(5)); ax.tick_params(axis="y", labelsize=6.5, pad=1.5); ax.tick_params(axis="x", pad=1.5)
+        ax.set_xlabel("Labels per object, $K$", fontsize=6.8, labelpad=1.5)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, frameon=False, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.015), columnspacing=1.0, handletextpad=0.4, fontsize=6.8)
+    fig.tight_layout(w_pad=0.45, rect=(0, 0.075, 1, 1))
     fig.savefig(osp.join(out, "fig_kshot.pdf")); plt.close(fig)
 
 
