@@ -401,13 +401,13 @@ def sb_pm_rows(K):
     for label, run, m, other in ((f"{K} & Real only", f"S_k{K}_realonly_m", mr, mm), ("  & MeshTac", f"S_k{K}_maplnr_m", mm, mr)):
         cells = []
         for key, nd, better in (("c_mae", 3, min), ("iou", 3, max)):
-            c = pm(run, key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.68}")   # compact: ±.006
+            c = pm(run, key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.78}")   # compact: ±.006
             if m and other and better(m[key], other[key]) == m[key]:
                 c = f"\\textbf{{{c}}}"
             cells.append(c)
         rows.append(f"{label} & " + " & ".join(cells) + r" \\")
     return "\n".join(rows)
-T["sbshortb"] = "\n".join(sb_pm_rows(K) for K in (10, 25, 50, 100))
+T["sbshortb"] = "\n\\midrule\n".join(sb_pm_rows(K) for K in (10, 25, 50, 100))
 # Split the full result table at budget boundaries for readable two-column floats.
 blocks = T["kshot"].split("\n\\midrule\n")
 T["kshotfew"] = "\n\\midrule\n".join(blocks[:3])

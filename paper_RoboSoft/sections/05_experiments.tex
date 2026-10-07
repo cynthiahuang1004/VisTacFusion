@@ -55,7 +55,7 @@ Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.93\columnwidth]{figures/fig_labels.pdf}
+    \includegraphics[width=0.9\columnwidth]{figures/fig_labels.pdf}
     \caption{\textbf{Pseudo-label quality.} Teacher predictions and aligned mesh labels, evaluated against withheld training GT on each sensor. The withheld GT is not used for learning.}
     \label{fig:labels}
 \end{figure}
@@ -68,7 +68,7 @@ Alignment reduces the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ and r
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.74\textwidth]{figures/fig_qual.pdf}
+    \includegraphics[width=0.68\textwidth]{figures/fig_qual.pdf}
     \caption{\textbf{Depth predictions.} $K=25$, held-out frames of three selected objects per sensor. Each example has the median contact-MAE improvement for its object. Numbers are contact MAE (mm); depth maps share a color scale. Both displayed MeshTac models use synthetic data; the sensor-B curves in Fig.~\ref{fig:kshot}d use the renderer-free variant.}
     \label{fig:qual}
 \end{figure*}
@@ -76,34 +76,27 @@ Alignment reduces the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ and r
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Second-session and second-sensor results.} Left: sensor A, $854$ frames; $\dagger$ uses all training labels from nine objects, so object coverage differs from the $K$-shot rows. Right: separately trained sensor-B models, $1{,}620$ test frames, MeshTac without a renderer; mean $\pm$ standard deviation over three seeds.}
+\caption{\textbf{Second-session and second-sensor results.} Top: sensor A, session 2 ($854$ frames, objects re-placed); $\dagger$ uses all training labels from nine objects, so object coverage differs from the $K$-shot rows. Bottom: separately trained sensor-B models ($1{,}620$ test frames), MeshTac without a renderer; mean $\pm$ standard deviation over three seeds.}
 \label{tab:general}
-\setlength{\tabcolsep}{1.5pt}
-\begin{minipage}[t]{0.425\columnwidth}\centering
-\begin{tabular}[t]{@{}rlrr@{}}
+\setlength{\tabcolsep}{6pt}
+\begin{tabularx}{\columnwidth}{@{}rXrr@{}}
 \toprule
-$\Kreal$ & \multicolumn{1}{c}{Session 2} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+$\Kreal$ & Sensor A, session 2 & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
 \midrule
 \tabcrossshortb
-\bottomrule
-\end{tabular}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.56\columnwidth}\centering
-\begin{tabular}[t]{@{}rlrr@{}}
-\toprule
-$\Kreal$ & \multicolumn{1}{c}{Sensor B} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+\midrule\midrule
+$\Kreal$ & Sensor B & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
 \midrule
 \tabsbshortb
 \bottomrule
-\end{tabular}
-\end{minipage}
+\end{tabularx}
 \end{table}
 
 \subsection{A Second Session and a Second Sensor}
 \label{sec:general}
-\noindent\textbf{Second session.} MeshTac reduces contact MAE by $16\%$ and $28\%$ relative to real-only training at $K=25$ and $100$ (Table~\ref{tab:general}, left). At $K=100$, removing the renderer increases MAE from $0.252$ to $0.288\,$mm and lowers IoU from $0.743$ to $0.707$. The renderer-free model still improves on self-training in MAE ($0.300\,$mm), but matches its IoU. Synthetic data therefore helps under the session change.
+\noindent\textbf{Second session.} MeshTac reduces contact MAE by $16\%$ and $28\%$ relative to real-only training at $K=25$ and $100$ (Table~\ref{tab:general}, top). At $K=100$, removing the renderer increases MAE from $0.252$ to $0.288\,$mm and lowers IoU from $0.743$ to $0.707$. The renderer-free model still improves on self-training in MAE ($0.300\,$mm), but matches its IoU. Synthetic data therefore helps under the session change.
 
-\noindent\textbf{Second sensor.} We repeat training on sensor B with the same aligner settings (Table~\ref{tab:general}, right). The renderer-free variant reduces contact MAE by $33\%$ and $36\%$ at $K=10$ and $25$; at $K=25$ it matches real-only training with 50 labels ($0.082$ versus $0.084\,$mm over three seeds). Gains persist at larger budgets, and the table's standard deviations over three seeds are an order of magnitude below the gaps. With a renderer, contact MAE at $K=25$ is $0.078\pm0.0003\,$mm. Learned-renderer augmentation reaches $0.111\,$mm and self-training $0.135\,$mm. Against the original public labels, MeshTac also reduces MAE ($0.137$ to $0.098\,$mm). Fig.~\ref{fig:qual} shows examples from both sensors.
+\noindent\textbf{Second sensor.} We repeat training on sensor B with the same aligner settings (Table~\ref{tab:general}, bottom; Fig.~\ref{fig:qual}). The renderer-free variant reduces contact MAE by $33\%$ and $36\%$ at $K=10$ and $25$; at $K=25$ it matches real-only training with 50 labels ($0.082$ versus $0.084\,$mm over three seeds). Gains persist at larger budgets, and the table's standard deviations over three seeds are an order of magnitude below the gaps. Learned-renderer augmentation reaches $0.111\,$mm and self-training $0.135\,$mm. Against the original public labels, MeshTac also reduces MAE ($0.137$ to $0.098\,$mm).
 
 \begin{table}[t]
 \centering
@@ -125,7 +118,7 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 
 \subsection{Test-Time Alignment}
 \label{sec:tta}
-With its weights fixed, the aligner also improves poses at inference (Table~\ref{tab:poseref}). Within session 1, mean rotation error is $0.4$--$1.2^\circ$ at $K\ge25$. On session 2, MeshTac predictions improve from $8.8$--$10.6^\circ$ to $4.8$--$5.2^\circ$. Medians of $1.5$--$2.2^\circ$ indicate a skewed error distribution with some large residuals. An aligner trained on nine objects also reduces error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$ on three held-out objects whose meshes remain available.
+With its weights fixed, the aligner also improves poses at inference (Table~\ref{tab:poseref}). Within session 1, mean rotation error is $0.4$--$1.2^\circ$ at $K\ge25$. On session 2, MeshTac predictions improve from $8.8$--$10.6^\circ$ to $4.8$--$5.2^\circ$. Medians are $1.5$--$2.2^\circ$. An aligner trained on nine objects also reduces error from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$ on three held-out objects whose meshes remain available.
 
 \begin{table}[t]
 \centering
