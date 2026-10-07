@@ -10,7 +10,7 @@ exactly 6 pages including references.
 
 ## Abstract and terminology (2026-10-07, author decision)
 
-The abstract now states the problem through the two baselines (simulation: no few-label gain and renderer supervision outside the budget; self-training: inherits teacher localization error), names the actual gap (contact pose of the known mesh, not appearance), and gives two numbers (contact depth error -20% on sensor A and -36% on GelSlim 4.0 at K=25; leaky 24-26% vs matched 0-3%). Keep these numbers; this supersedes the 2026-10-06 note below.
+The abstract now leads with the registration needed to obtain mesh-derived contact labels, introduces MeshTac in the second sentence, and groups its mechanism, experimental evidence, and implications in that order. It specifies sensor-specific models and ridge-pattern objects, adds the cross-session finding, and ends with the implications for alignment and renderer supervision. The quantitative findings remain: contact depth error -20% on sensor A and -36% on GelSlim 4.0 at K=25; all-pairs renderer 24-26% versus matched 0-3%. Keep these numbers; this supersedes the 2026-10-06 note below. The abstract structure was revised after directly reading seven related abstracts; see the latest entry in EDITORIAL_REVIEW.md. Both abstracts contain approximately 207 words; the compiled short and extended versions remain 6 and 15 pages.
 The coined term "label accounting" is retired everywhere; use "matched-budget protocol / matched budgets / renderer supervision counted in the label budget". Do not reintroduce it.
 
 ## Latest prose revision (2026-10-06)

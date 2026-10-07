@@ -9,7 +9,7 @@ Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency.} (a--c) Sensor-A validation results; (d) sensor-B test results with renderer-free MeshTac. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ leaky reference (50); sensor B uses 50.}
+    \caption{\textbf{Label efficiency.} (a--c) Sensor-A validation results; (d--f) sensor-B test results with renderer-free MeshTac. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ leaky reference (50); sensor B uses 50.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -188,7 +188,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \noindent\textbf{Second sensor.}
 \label{sec:sensorb}
-\noindent\textbf{MeshTac.} On \sensorB{} ($1{,}620$ test frames) we retrain MeshTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d). The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels.
+\noindent\textbf{MeshTac.} On \sensorB{} ($1{,}620$ test frames) we retrain MeshTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels.
 
 The few-shot teacher is already more accurate on this sensor (label IoU $0.78$, $0.85$, $0.90$, $0.93$ on the unlabeled frames at $\Kreal=10$, $25$, $50$, $100$; $0.55$ at $\Kreal=25$ on sensor A), yet the aligner improves on it at every budget (IoU $0.85$, $0.91$, $0.94$, $0.95$; pose error $2.3^\circ$, $1.4^\circ$, $0.9^\circ$, $0.8^\circ$ against $6.6$--$11.4^\circ$).
 
@@ -196,7 +196,7 @@ At $\Kreal=25$ the student trained with synthetic data lowers depth MSE from $0.
 
 Without synthetic data, MeshTac lowers contact MAE from $0.180$, $0.127$, $0.083$, $0.066$ to $0.121$, $0.081$, $0.061$, $0.056\,$mm at $\Kreal=10$--$100$ ($-15$ to $-36\%$) and depth MSE by $33$--$58\%$. At $K=25$ and $50$, its contact MAE is no higher than real-only training with twice as many labels. Rotation error improves at $10$ and $25$ labels ($14.0^\circ\!\to\!9.5^\circ$, $13.4^\circ\!\to\!9.2^\circ$) but not beyond ($9^\circ$ either way). Scored against the original public labels, MeshTac keeps its advantage (contact MAE $0.137\!\to\!0.098\,$mm at $\Kreal=25$).
 
-The baselines follow the sensor-A pattern (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d). The learned renderer trained on the $\Kreal$ pairs lowers contact MAE by $4\%$, $13\%$, $10\%$ and $5\%$ at $\Kreal=10$, $25$, $50$ and $100$ ($0.173$, $0.111$, $0.075$, $0.063\,$mm) and raises IoU by up to $0.03$ for $\Kreal\le50$, while teacher-depth self-training does not improve on real-only training at any budget ($0.202$, $0.135$, $0.084$, $0.070\,$mm). Renderer-free MeshTac lowers contact MAE by $33\%$, $36\%$, $26\%$ and $15\%$ at the same budgets; its advantage over the learned renderer is largest at $\Kreal\le25$ ($0.121$ vs.\ $0.173$ and $0.081$ vs.\ $0.111\,$mm) and remains at $\Kreal=100$ ($0.056$ vs.\ $0.063$). Neither baseline improves rotation at $\Kreal\ge50$.
+The baselines follow the sensor-A pattern (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The learned renderer trained on the $\Kreal$ pairs lowers contact MAE by $4\%$, $13\%$, $10\%$ and $5\%$ at $\Kreal=10$, $25$, $50$ and $100$ ($0.173$, $0.111$, $0.075$, $0.063\,$mm) and raises IoU by up to $0.03$ for $\Kreal\le50$, while teacher-depth self-training does not improve on real-only training at any budget ($0.202$, $0.135$, $0.084$, $0.070\,$mm). Renderer-free MeshTac lowers contact MAE by $33\%$, $36\%$, $26\%$ and $15\%$ at the same budgets; its advantage over the learned renderer is largest at $\Kreal\le25$ ($0.121$ vs.\ $0.173$ and $0.081$ vs.\ $0.111\,$mm) and remains at $\Kreal=100$ ($0.056$ vs.\ $0.063$). Neither baseline improves rotation at $\Kreal\ge50$.
 
 \begin{table}[!tbp]
 \centering
@@ -267,7 +267,7 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of three selected objects per sensor. Each example has the median contact-MAE improvement for its object. Numbers are contact MAE (mm); depth maps share a color scale. Both displayed MeshTac models use synthetic data; the sensor-B curves in Fig.~\ref{fig:kshot}d use the renderer-free variant.}
+    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of three selected objects per sensor. Each example has the median contact-MAE improvement for its object. Numbers are contact MAE (mm); depth maps share a color scale. Both displayed MeshTac models use synthetic data; the sensor-B curves in Fig.~\ref{fig:kshot}d--f use the renderer-free variant.}
     \label{fig:qual}
 \end{figure*}
 

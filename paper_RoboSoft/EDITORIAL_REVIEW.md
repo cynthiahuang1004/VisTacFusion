@@ -1,5 +1,21 @@
 # MeshTac 全文修訂紀錄
 
+## 2026-10-07 摘要結構與流暢度
+
+依作者要求直接閱讀相關論文的摘要，重新組織短版及長版 abstract。參考的是各篇如何銜接問題、機制及證據，沒有移植原文句子。
+
+| 論文 | 摘要結構的觀察 |
+|---|---|
+| [DeepIM](https://arxiv.org/abs/1804.00175) | 問題與現有估計限制之後，依序交代初始估計、迭代匹配和驗證範圍。 |
+| [Self6D](https://arxiv.org/abs/2004.06468) | 從標註成本接到方法，訓練階段的介紹直接服務於如何利用未標註資料。 |
+| [Sparsh](https://arxiv.org/abs/2410.24090) | 將標註與感測器差異接到學習方式，再用 benchmark 和結果支持主張。 |
+| [SITR](https://arxiv.org/abs/2502.19638) | 圍繞感測器間的 transferability 組織限制、方法和驗證；不展開所有訓練細節。 |
+| [TACTO](https://arxiv.org/abs/2012.08456) | 從模擬需求及缺口接到系統能力與實際驗證。 |
+| [Taxim](https://arxiv.org/abs/2109.04027) | 交代模擬問題後介紹模型及校正成本，較詳細地描述光學與 marker 機制。 |
+| [SimGAN](https://arxiv.org/abs/1612.07828) | 從 synthetic--real 差異接到方法目標，再說明設計如何支持該目標及 downstream 驗證。 |
+
+本稿採用 registration 問題 → MeshTac 機制 → matched-budget 比較與結果 → alignment 與 renderer supervision 的意義。MeshTac 提前至第二句；test-time refinement 接在方法介紹後，摘要最後以實驗 insight 收束。保留既有兩組量化結果，新增跨 session 的定性發現，明確限定 ridge-pattern objects 及分別訓練的 sensor-specific models。圖表及實驗數字未修改。兩版摘要約 207 字；編譯後短版維持 6 頁、長版 15 頁，無 overfull 或未解析引用。
+
 ## 2026-10-06 三項貢獻與風險陳述（目前版本）
 
 - 將原本四項貢獻整合為三項較完整的主張：**MeshTac 方法**、**matched-budget label accounting**、以及涵蓋兩個 sensors、第二個 session、held-out objects、消融與 test-time refinement 的**系統性實證**。原第 4 點 test-time refinement 併入實證，不再獨立包裝為同等層級的方法貢獻。

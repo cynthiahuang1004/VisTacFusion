@@ -5,8 +5,8 @@ The experiments examine label efficiency, isolate the role of alignment, test di
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Performance across label budgets.} (a--c) Sensor-A validation results after 150 epochs; the $K=10$ all-pairs (leaky) reference uses 50 epochs. (d) Sensor-B test results after 50 epochs, with renderer-free MeshTac. All other methods share the same $K$ labeled training frames.}
+    \includegraphics[width=0.86\textwidth]{figures/fig_kshot.pdf}
+    \caption{\textbf{Performance across label budgets.} (a--c) Sensor-A validation results after 150 epochs ($K=10$ leaky reference: 50). (d--f) Sensor-B test results after 50 epochs; MeshTac uses no renderer. All methods share the same $K$ labeled frames.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -69,7 +69,7 @@ The result is stable across both sensors, tested aligner configurations and two 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Depth predictions} at $K=25$ for three objects per sensor. For each object, the displayed frame has the median contact-MAE improvement. Values are contact MAE in millimeters, and all depth maps share a color scale. The displayed MeshTac models use synthetic data; Fig.~\ref{fig:kshot}d instead reports renderer-free MeshTac on sensor B.}
+    \caption{\textbf{Depth predictions} at $K=25$ for three objects per sensor. For each object, the displayed frame has the median contact-MAE improvement. Values are contact MAE in millimeters, and all depth maps share a color scale. The displayed MeshTac models use synthetic data; Fig.~\ref{fig:kshot}d--f instead reports renderer-free MeshTac on sensor B.}
     \label{fig:qual}
 \end{figure*}
 
@@ -96,7 +96,7 @@ $\Kreal$ & Sensor B & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\st
 \label{sec:general}
 \noindent\textbf{Second session.} We evaluate sensor-A models on another day after object re-placement, without retraining (Table~\ref{tab:general}, top). MeshTac reduces contact MAE by $16\%$ at $K=25$ and $28\%$ at $K=100$. Unlike within-session evaluation, the renderer now contributes, while the renderer-free model still improves on self-training. Alignment and simulation thus address different parts of the shift: aligned images improve supervision, whereas synthetic contacts add coverage across sessions.
 
-\noindent\textbf{Second sensor.} We retrain every model on sensor B with sensor-specific weights but unchanged aligner settings (Table~\ref{tab:general}, bottom; Fig.~\ref{fig:qual}). Renderer-free MeshTac reduces contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. The gap exceeds seed variation and persists with the original public labels. At the other budgets the learned renderer lowers contact MAE by at most $10\%$ and self-training not at all, whereas MeshTac lowers it by $15$--$33\%$ (Fig.~\ref{fig:kshot}d). The procedure therefore carries to a different sensor design, although the predictor itself is not transferred zero-shot.
+\noindent\textbf{Second sensor.} We retrain every model on sensor B with unchanged aligner settings (Table~\ref{tab:general}, bottom; Fig.~\ref{fig:qual}). Renderer-free MeshTac reduces contact MAE by $36\%$ at $K=25$ and matches real-only training with twice as many labels. The gap exceeds seed variation and persists with the original public labels. At the other budgets the learned renderer lowers contact MAE by at most $10\%$ and self-training not at all, whereas MeshTac lowers it by $15$--$33\%$ (Fig.~\ref{fig:kshot}e). The procedure therefore carries to a different sensor design, although the predictor itself is not transferred zero-shot.
 
 \begin{table}[t]
 \centering
