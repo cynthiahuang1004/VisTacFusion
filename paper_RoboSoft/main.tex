@@ -41,13 +41,13 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \pagestyle{empty}\raggedbottom
 
 \begin{abstract}
-Known-object tactile perception often has access to object meshes but few real contacts registered to them. Simulating additional images avoids this registration step, yet a learned renderer may itself require substantial real supervision. We present MeshTac, a method that uses a small set of labeled contacts to align known meshes with unlabeled tactile images. A teacher predicts an initial contact state, and a residual aligner trained on perturbations of the labeled contacts refines it. The aligned mesh then supplies depth, normal and pose targets for a student trained on real images. All components share the same real training labels, and the trained student requires no mesh input. Experiments on ridge-pattern objects, with models trained separately for each sensor, show improved contact reconstruction over real-only training, synthetic-data augmentation and teacher-based self-training. These gains persist without a learned renderer, indicating that mesh-pose accuracy is a key bottleneck in recovering supervision from unlabeled contacts. A complementary label-accounting study shows that renderer supervision can substantially change the apparent benefit of simulation. Synthetic data remains useful across capture sessions, and the same aligner can optionally refine poses at inference when the mesh is available. Together, the results establish mesh alignment as a practical route to label-efficient tactile perception for known objects.
+For known objects, a tactile system may have an object mesh but only a few real contacts registered to it. Simulation can supply additional image--label pairs, although a learned renderer may itself consume substantial real supervision. We introduce MeshTac, which uses a small registered set to align known meshes with unlabeled tactile images. A teacher initializes the contact state, and a residual aligner trained with perturbed labeled states corrects it. Projecting the aligned mesh provides depth, normal and pose targets for a student trained on real images. Every trainable component shares the same real training-label budget, and standard student inference requires no mesh rendering. On ridge-pattern objects, with models trained separately for two sensors, MeshTac improves contact reconstruction over real-only training, synthetic augmentation and teacher-based self-training. The improvement persists without learned rendering, showing that aligned geometry itself provides useful supervision; synthetic data adds robustness when the capture session changes. A separate label-accounting study shows that real pairs used to fit a renderer can substantially alter the apparent benefit of simulation. The aligner can also refine pose at inference when the mesh is available.
 \end{abstract}
 
 \input{sections/01_intro}
 \input{sections/02_related}
-\input{sections/03_setup}
 \input{sections/04_method}
+\input{sections/03_setup}
 \input{sections/05_experiments}
 \input{sections/06_conclusion}
 

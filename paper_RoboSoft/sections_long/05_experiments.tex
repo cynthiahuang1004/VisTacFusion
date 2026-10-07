@@ -98,7 +98,7 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
     \label{fig:labels}
 \end{figure}
 
-\subsection{Why Alignment: Ablation}
+\subsection{Ablation Study on Alignment Quality}
 \label{sec:ablation}\label{sec:unlabeled}
 We use the same unlabeled images to compare teacher predictions, render-and-compare search and learned alignment (Table~\ref{tab:rcabl}). Evaluating both label quality and student performance connects the supervision changes to their downstream effect.
 
@@ -158,8 +158,9 @@ Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{
 
 \noindent\textbf{Where alignment fails.} Against the withheld GT of the $3{,}897$ unlabeled frames ($\Kreal=25$), the aligned pose has a mean rotation error of $1.07^\circ$ and a median of $0.47^\circ$; $3.6\%$ of the frames exceed $2^\circ$, $1.6\%$ exceed $5^\circ$ and $1.2\%$ exceed $10^\circ$ (teacher: $65\%$, $35\%$, $16\%$). The failures concentrate on the five-line object pattern\_06 ($16.5\%$ of its frames above $5^\circ$; every other object below $4\%$), whose near-symmetric ridge layout admits a second plausible alignment, and the worst $5\%$ of frames carry $53\%$ of the summed rotation error (mean $0.53^\circ$ without them). Translation error (mean $0.98\,$mm, median $0.52$) is dominated by shifts along the ridge direction: $73\%$ of the rod frames and $20$--$40\%$ of the frames of the line patterns exceed $1\,$mm, against $2$--$6\%$ for the objects with crossing ridges (pattern\_32, 33, 35, 36). Such shifts leave the depth label unchanged, which is why the label IoU is high despite them. At $\Kreal=100$ the mean rotation error is $0.68^\circ$ and $1.3\%$ of the frames exceed $5^\circ$.
 
-\subsection{A Second Session}
+\subsection{Generalization Across Sessions and Sensors}
 \label{sec:cross}
+\noindent\textbf{Second session.}
 The second session tests changes in appearance and object placement without retraining (Table~\ref{tab:cross}). MeshTac reduces contact MAE relative to the budget-matched real-only models by $16\%$ at $\Kreal=25$ and $28\%$ at $\Kreal=100$, with MAE/IoU of $0.310/0.660$ and $0.252/0.743$, respectively. The nine-object real-only baseline ($0.315$, $0.675$) has different object coverage and serves as context rather than a matched label-efficiency comparison.
 
 Synthetic data contributes more here than within the training session. At $K=100$, removing the renderer raises MeshTac's contact MAE from $0.252$ to $0.288$ and lowers IoU from $0.743$ to $0.707$. The renderer-free model still improves on self-training in MAE ($0.300$) and matches its IoU. Together with the within-session ablation, this comparison supports synthetic data as a useful source of robustness under the evaluated session change.
@@ -169,34 +170,6 @@ Synthetic data contributes more here than within the training session. At $K=100
 The domain-randomized renderer matches the calibrated one on dense error ($0.294$, IoU $0.691$) and is slightly behind on pose ($12.3^\circ$), consistent with the pose trend on unseen objects. About $2/3$ of the remaining rotation error is a per-object constant (Rot.$^{\ast}$ $4.7$--$6.5^\circ$ for every model), consistent with an offset introduced by object re-placement.
 
 In the $\Kreal$-shot regime the dense gain grows with $\Kreal$: at $\Kreal=25$ only the learned renderer lowers contact MAE ($0.368\!\to\!0.342$), at $\Kreal=100$ both renderers do ($0.351\!\to\!0.295$--$0.299$) and the learned one also raises IoU ($0.657\!\to\!0.713$) and lowers rotation error ($17.5^\circ\!\to\!13.7^\circ$), whereas simulation-only training does not transfer dense geometry across sessions (IoU $0.56$, normal $51^\circ$): these results distinguish the benefit of synthetic pose coverage from the difficulty of transferring dense predictions across appearances.
-
-\begin{table}[!tbp]
-\centering
-\tableformat
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{@{}rrrrrrrrr@{}}
-\toprule
-& \multicolumn{4}{c}{Validation (session 1)} & \multicolumn{4}{c}{Session 2} \\
-\cmidrule(lr){2-5}\cmidrule(lr){6-9}
-& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} \\
-$\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
-\midrule
-\tabposeref
-\bottomrule
-\end{tabular}
-\caption{\textbf{Test-time alignment.} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
-\label{tab:poseref}
-\end{table}
-
-\subsection{Test-Time Alignment}
-\label{sec:tta}
-We reuse the fixed $\Kreal$-shot aligner to refine test-frame poses against their known meshes (Table~\ref{tab:poseref}). On the validation split rotation error falls from $3.2$--$9.6^\circ$ to $0.4$--$2.8^\circ$ for real-only models and from $3.7$--$4.0^\circ$ to $0.8$--$1.5^\circ$ for MeshTac models; from $\Kreal=25$ on the refined error is about $1^\circ$ whichever model proposes the pose, and translation error falls by $25$--$50\%$.
-
-On the second session rotation error falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $9$--$11^\circ$ to about $5^\circ$ (MeshTac) with a median of $1.5$--$2.2^\circ$: the gap between mean and median indicates some large residual errors.
-
-The aligned mesh also provides a depth estimate: on the validation split it is as accurate as the MeshTac student's output (IoU $0.81$ vs.\ $0.79$, contact MAE $0.158$ vs.\ $0.168\,$mm at $\Kreal=100$) and lifts a real-only model to the MeshTac level (IoU $0.656\!\to\!0.710$ at $\Kreal=25$), showing that the student can approximate the reconstruction accuracy of mesh-assisted inference.
-
-We also test refinement on held-out objects: trained on the nine seen objects of the leave-object-out protocol and applied to the three held-out ones, whose real contacts were excluded from training, it lowers the rotation error of the simulation-trained models of Table~\ref{tab:loo} from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
 
 \begin{table}[!tbp]
 \centering
@@ -213,7 +186,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \label{tab:sbmapl}
 \end{table}
 
-\subsection{A Second Sensor}
+\noindent\textbf{Second sensor.}
 \label{sec:sensorb}
 \noindent\textbf{MeshTac.} On \sensorB{} ($1{,}620$ test frames) we retrain MeshTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d). The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels.
 
@@ -261,6 +234,34 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 
 \noindent\textbf{Self-training (original labels).} With the original labels and the GAN-25 model as labeler, teacher-label self-training lowers depth MSE from $0.0152$ (real only) to $0.0098$ and contact MAE from $0.140$ to $0.100\,$mm at $\Kreal=25$ without synthetic data, i.e.\ it approaches the labeler's depth MSE ($0.0107$) and matches its contact MAE ($0.100$); with the mesh-registered labels and a real-only teacher it does not improve on real data at all (Table~\ref{tab:sbmapl}). In both protocols the student inherits the localization of its labeler, which is what alignment corrects.
 
+\begin{table}[!tbp]
+\centering
+\tableformat
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}rrrrrrrrr@{}}
+\toprule
+& \multicolumn{4}{c}{Validation (session 1)} & \multicolumn{4}{c}{Session 2} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} \\
+$\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
+\midrule
+\tabposeref
+\bottomrule
+\end{tabular}
+\caption{\textbf{Test-time alignment.} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
+\label{tab:poseref}
+\end{table}
+
+\subsection{Mesh-Assisted Test-Time Pose Refinement}
+\label{sec:tta}
+We reuse the fixed $\Kreal$-shot aligner to refine test-frame poses against their known meshes (Table~\ref{tab:poseref}). On the validation split rotation error falls from $3.2$--$9.6^\circ$ to $0.4$--$2.8^\circ$ for real-only models and from $3.7$--$4.0^\circ$ to $0.8$--$1.5^\circ$ for MeshTac models; from $\Kreal=25$ on the refined error is about $1^\circ$ whichever model proposes the pose, and translation error falls by $25$--$50\%$.
+
+On the second session rotation error falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $9$--$11^\circ$ to about $5^\circ$ (MeshTac) with a median of $1.5$--$2.2^\circ$: the gap between mean and median indicates some large residual errors.
+
+The aligned mesh also provides a depth estimate: on the validation split it is as accurate as the MeshTac student's output (IoU $0.81$ vs.\ $0.79$, contact MAE $0.158$ vs.\ $0.168\,$mm at $\Kreal=100$) and lifts a real-only model to the MeshTac level (IoU $0.656\!\to\!0.710$ at $\Kreal=25$), showing that the student can approximate the reconstruction accuracy of mesh-assisted inference.
+
+We also test refinement on held-out objects: trained on the nine seen objects of the leave-object-out protocol and applied to the three held-out ones, whose real contacts were excluded from training, it lowers the rotation error of the simulation-trained models of Table~\ref{tab:loo} from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
+
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_qual.pdf}
@@ -286,7 +287,7 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \label{tab:loo}
 \end{table}
 
-\subsection{Baseline Study: Unseen Objects}
+\subsection{Renderer Baselines for Unseen Objects}
 \label{sec:loo}
 Three objects are removed from all real training while their meshes remain available to simulation (Table~\ref{tab:loo}).
 
@@ -298,7 +299,7 @@ Three objects are removed from all real training while their meshes remain avail
 
 \noindent\textbf{Object classification.} We add a 12-class classification head (LayerNorm + MLP on the class and mean patch tokens) and train with cross-entropy. With real data of the nine objects, the model classifies them at $94\%$ validation accuracy, but the three held-out objects score $0\%$---even when simulation provides their contact patterns through either the calibrated or learned renderer. Synthetic geometry supports pose transfer in this setting, but the same data does not establish transfer for object classification. Appearance mismatch remains a possible explanation for the difference.
 
-\subsection{Baseline Study: Real-Data Budget of a Renderer}
+\subsection{Renderer Baselines Across Label Budgets}
 \label{sec:budget}
 Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} vary the real budget of the renderers. Three regimes appear.
 
@@ -308,7 +309,7 @@ Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} vary th
 
 \noindent\textbf{Moderate budget ($\Kreal\ge50$).} The learned renderer now helps: at $\Kreal=50$ depth MSE $0.0482\!\to\!0.0434$ ($-10\%$), contact MAE $0.283\!\to\!0.260$, IoU $0.69\!\to\!0.72$; at $\Kreal=100$ depth MSE $0.0369\!\to\!0.0311$ ($-16\%$; $0.0366\!\to\!0.0299$ over seeds, $-18\%$), contact MAE $0.235\!\to\!0.210$, IoU $0.74\!\to\!0.77$, and normal error improves in step. The physical renderer gives $-1$ to $-5\%$ MSE. The learned renderer thus needs $\approx\!50$ labeled contacts per object before its synthetic data improves contact reconstruction over training on the same real frames alone, and at every $\Kreal\ge50$ simulation \emph{worsens} rotation by $0.2$--$1.3^\circ$.
 
-\subsection{Label Accounting, Renderer Fidelity and Negative Results}
+\subsection{Label Leakage, Renderer Fidelity and Negative Results}
 \label{sec:fidelity}\label{sec:study}
 \noindent\textbf{Renderer supervision.} Across Tables~\ref{tab:loo} and \ref{tab:kshot} the leaky renderer reports depth MSE reductions of $24$--$26\%$ at the reported $K$-shot budgets and $30\%$ on unseen objects; the strict numbers are $0$--$3\%$ for $\Kreal\le25$, $10$--$16\%$ at $\Kreal\ge50$ and $5$--$13\%$ on unseen objects. The gap is largest when the downstream model has few or no real contacts of the target object, while GAN-full receives additional labeled contacts. In LOO it also receives contacts from the held-out objects. Validation frames are excluded from GAN-full training; the protocol violation concerns the training-label budget or held-out object access.
 
