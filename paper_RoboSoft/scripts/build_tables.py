@@ -392,8 +392,8 @@ T["crossshort"] = table([
 ], [("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 T["crossshortb"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("", None, {"sep": r"\midrule"}),
-    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-train.", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
-    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-train.", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_al2"), {}),
+    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-training", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-training", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
 def sb_pm_rows(K):
     rows = []
