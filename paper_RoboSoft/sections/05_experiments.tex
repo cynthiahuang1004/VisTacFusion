@@ -13,8 +13,6 @@ We examine label efficiency, the contribution of alignment, and performance acro
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Sensor A}, real validation split ($472$ frames). All methods share the same $\Kreal$ labeled frames per object; self-training and MeshTac also use the unlabeled training frames. Italic rows exceed the label budget; the $K=10$ italic row uses 50 epochs. Bold marks the best budget-matched value in each block.}
-\label{tab:kshot}
 \setlength{\tabcolsep}{3.0pt}
 \begin{tabularx}{\columnwidth}{@{}rXrrrr@{}}
 \toprule
@@ -23,6 +21,8 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotshort
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Sensor A}, real validation split ($472$ frames). All methods share the same $\Kreal$ labeled frames per object; self-training and MeshTac also use the unlabeled training frames. Italic rows exceed the label budget; the $K=10$ italic row uses 50 epochs. Bold marks the best budget-matched value in each block.}
+\label{tab:kshot}
 \end{table}
 
 \subsection{Label Efficiency}
@@ -38,8 +38,6 @@ Pose gains are less uniform: MeshTac has the lowest rotation error among the bud
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Pseudo-label ablation.} Sensor A, $K=25$, 50 epochs. Student results average three seeds except the teacher-pose row. Label quality uses withheld GT for evaluation only. $^{1/2}$: mesh targets on the half with lowest render error, teacher depth elsewhere. $\ddagger$: no renderer at any stage.}
-\label{tab:abl}
 \setlength{\tabcolsep}{2.6pt}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}lrrrrrrr@{}}
@@ -51,6 +49,8 @@ Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 \tabrcablmain
 \bottomrule
 \end{tabular}}
+\caption{\textbf{Pseudo-label ablation.} Sensor A, $K=25$, 50 epochs. Student results average three seeds except the teacher-pose row. Label quality uses withheld GT for evaluation only. $^{1/2}$: mesh targets on the half with lowest render error, teacher depth elsewhere. $\ddagger$: no renderer at any stage.}
+\label{tab:abl}
 \end{table}
 
 \begin{figure}[t]
@@ -76,8 +76,6 @@ Alignment reduces the teacher's pose error from $5.3^\circ$ to $1.1^\circ$ and r
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Second-session and second-sensor results.} Top: sensor A, session 2 ($854$ frames, objects re-placed); $\dagger$ uses all training labels from nine objects, so object coverage differs from the $K$-shot rows. Bottom: separately trained sensor-B models ($1{,}620$ test frames), MeshTac without a renderer; mean $\pm$ standard deviation over three seeds.}
-\label{tab:general}
 \setlength{\tabcolsep}{6pt}
 \begin{tabularx}{\columnwidth}{@{}rXrr@{}}
 \toprule
@@ -90,6 +88,8 @@ $\Kreal$ & Sensor B & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\st
 \tabsbshortb
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Second-session and second-sensor results.} Top: sensor A, session 2 ($854$ frames, objects re-placed); $\dagger$ uses all training labels from nine objects, so object coverage differs from the $K$-shot rows. Bottom: separately trained sensor-B models ($1{,}620$ test frames), MeshTac without a renderer; mean $\pm$ standard deviation over three seeds.}
+\label{tab:general}
 \end{table}
 
 \subsection{A Second Session and a Second Sensor}
@@ -101,8 +101,6 @@ $\Kreal$ & Sensor B & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\st
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Test-time alignment} (sensor A). Rotation error (deg) of the predicted pose and after six aligner iterations. No retraining.}
-\label{tab:poseref}
 \setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{@{}rrrrrrrrr@{}}
 \toprule
@@ -114,6 +112,8 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \tabposeref
 \bottomrule
 \end{tabular}
+\caption{\textbf{Test-time alignment} (sensor A). Rotation error (deg) of the predicted pose and after six aligner iterations. No retraining.}
+\label{tab:poseref}
 \end{table}
 
 \subsection{Test-Time Alignment}
@@ -123,8 +123,6 @@ With its weights fixed, the aligner also improves poses at inference (Table~\ref
 \begin{table}[t]
 \centering
 \tableformat
-\caption{\textbf{Unseen objects} (sensor A; three held-out objects, $1{,}244$ frames, no real data; their meshes are available to simulation).}
-\label{tab:loo}
 \begin{tabularx}{\columnwidth}{Xrrrr}
 \toprule
 Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Rot.}{(deg)} \\
@@ -132,6 +130,8 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \tabloomain
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Unseen objects} (sensor A; three held-out objects, $1{,}244$ frames, no real data; their meshes are available to simulation).}
+\label{tab:loo}
 \end{table}
 
 \subsection{Renderer Baselines and Label Accounting}

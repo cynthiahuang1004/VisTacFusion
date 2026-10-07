@@ -16,8 +16,6 @@ Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 
 \begin{table*}[t]
 \centering
 \tableformat
-\caption{\textbf{$\Kreal$-shot with a shared real budget.} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Leaky rows use the renderer trained on all real pairs (the $\Kreal=10$ leaky row is a 50-epoch run).}
-\label{tab:kshot}
 \begin{tabularx}{\textwidth}{lXrrrrr}
 \toprule
 $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
@@ -25,13 +23,13 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotfew
 \bottomrule
 \end{tabularx}
+\caption{\textbf{$\Kreal$-shot with a shared real budget.} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Leaky rows use the renderer trained on all real pairs (the $\Kreal=10$ leaky row is a 50-epoch run).}
+\label{tab:kshot}
 \end{table*}
 
 \begin{table*}[t]
 \centering
 \tableformat
-\caption{\textbf{Larger training-label budgets.} Continuation of Table~\ref{tab:kshot}, $K=50$ and $100$. All data-access and metric conventions are unchanged.}
-\label{tab:kshotmore}
 \begin{tabularx}{\textwidth}{lXrrrrr}
 \toprule
 $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
@@ -39,6 +37,8 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotmore
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Larger training-label budgets.} Continuation of Table~\ref{tab:kshot}, $K=50$ and $100$. All data-access and metric conventions are unchanged.}
+\label{tab:kshotmore}
 \end{table*}
 
 \subsection{Label Efficiency}
@@ -58,8 +58,6 @@ The depth gains persist without a renderer: with a real-only teacher, an aligner
 \begin{table*}[t]
 \centering
 \tableformat
-\caption{\textbf{Seeds.} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``with renderer'': the configuration of Table~\ref{tab:kshot}.}
-\label{tab:seeds}
 \setlength{\tabcolsep}{2.0pt}
 \footnotesize
 \begin{tabularx}{\textwidth}{@{}rXcccc@{}}
@@ -69,6 +67,8 @@ $\Kreal$ & Method & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabseeds
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Seeds.} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``with renderer'': the configuration of Table~\ref{tab:kshot}.}
+\label{tab:seeds}
 \end{table*}
 
 \noindent\textbf{Seeds.} Table~\ref{tab:seeds} reports the comparison over three seeds. The depth-MSE differences between MeshTac and real-only training exceed the variation across these runs.
@@ -76,8 +76,6 @@ $\Kreal$ & Method & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Alignment ablation} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld GT labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: MeshTac (renderer retrained on the aligned pairs).}
-\label{tab:rcabl}
 \setlength{\tabcolsep}{3pt}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llrrrrrrr@{}}
@@ -89,6 +87,8 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 \tabrcabl
 \bottomrule
 \end{tabular}}
+\caption{\textbf{Alignment ablation} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld GT labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: MeshTac (renderer retrained on the aligned pairs).}
+\label{tab:rcabl}
 \end{table}
 
 \begin{figure}[!tbp]
@@ -129,8 +129,6 @@ Aligned pairs improve renderer fidelity further: contact-region error falls by $
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Cross-session.} Sensor-A models evaluated on the curated session-2 set ($854$ frames, 11 objects; poses re-estimated per frame and manually reviewed). Rot.: raw; Rot.$^{\ast}$: after removing a per-object constant offset (the re-placement of the object). Rows without a $\Kreal$ use the session-1 training set of nine objects; object coverage therefore differs from the $K$-shot rows. Pose metrics use the depth checkpoint.}
-\label{tab:cross}
 \begin{tabularx}{\columnwidth}{Xrrrrr}
 \toprule
 Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Rot.$^{\ast}$}{(deg)} \\
@@ -138,13 +136,13 @@ Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow
 \tabcross
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Cross-session.} Sensor-A models evaluated on the curated session-2 set ($854$ frames, 11 objects; poses re-estimated per frame and manually reviewed). Rot.: raw; Rot.$^{\ast}$: after removing a per-object constant offset (the re-placement of the object). Rows without a $\Kreal$ use the session-1 training set of nine objects; object coverage therefore differs from the $K$-shot rows. Pose metrics use the depth checkpoint.}
+\label{tab:cross}
 \end{table}
 
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Robustness to the choice of the $\Kreal$ labeled frames} (sensor A, $\Kreal=25$, 50 epochs, real validation split). Selection 0 is the evenly spaced selection used elsewhere; selections 1 and 2 are random permutations of the training frames with the validation split unchanged. Every component (teacher, aligner, student) is retrained on the new selection.}
-\label{tab:selection}
 \begin{tabularx}{\columnwidth}{Xrrr}
 \toprule
 Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
@@ -152,6 +150,8 @@ Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{
 \tabselection
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Robustness to the choice of the $\Kreal$ labeled frames} (sensor A, $\Kreal=25$, 50 epochs, real validation split). Selection 0 is the evenly spaced selection used elsewhere; selections 1 and 2 are random permutations of the training frames with the validation split unchanged. Every component (teacher, aligner, student) is retrained on the new selection.}
+\label{tab:selection}
 \end{table}
 
 \noindent\textbf{Selection of the labeled frames.} Table~\ref{tab:selection} repeats the renderer-free pipeline with two random selections of the $25$ labeled frames per object. Label quality (IoU $0.72$, $0.71$; pose error $1.8^\circ$, $1.6^\circ$) and student error are within seed variation of the evenly spaced selection, while real-only training degrades slightly on the random selections.
@@ -173,8 +173,6 @@ In the $\Kreal$-shot regime the dense gain grows with $\Kreal$: at $\Kreal=25$ o
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Test-time alignment.} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
-\label{tab:poseref}
 \setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{@{}rrrrrrrrr@{}}
 \toprule
@@ -186,6 +184,8 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \tabposeref
 \bottomrule
 \end{tabular}
+\caption{\textbf{Test-time alignment.} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
+\label{tab:poseref}
 \end{table}
 
 \subsection{Test-Time Alignment}
@@ -201,8 +201,6 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Second sensor (\sensorB{}) with mesh-registered labels}; $1{,}620$ test frames, 50 epochs. ``no renderer'': real-only teacher and no synthetic frame. Self-training uses the teacher's own depth as label.}
-\label{tab:sbmapl}
 \setlength{\tabcolsep}{2.4pt}
 \begin{tabularx}{\columnwidth}{@{}rXrrrrr@{}}
 \toprule
@@ -211,6 +209,8 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabsbmapl
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Second sensor (\sensorB{}) with mesh-registered labels}; $1{,}620$ test frames, 50 epochs. ``no renderer'': real-only teacher and no synthetic frame. Self-training uses the teacher's own depth as label.}
+\label{tab:sbmapl}
 \end{table}
 
 \subsection{A Second Sensor}
@@ -226,8 +226,6 @@ Without synthetic data, MeshTac lowers contact MAE from $0.180$, $0.127$, $0.083
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Sensor B (\sensorB{}).} $1{,}620$ test frames of the same 12 objects. Top: sensor-A models applied zero-shot. Below: models trained on $\Kreal$ sensor-B real frames per object, alone, with the sensor-A physical renderer, with a learned renderer trained on the same $\Kreal$ sensor-B pairs, or with self-training on teacher labels (MeshTac without its alignment step, Sec.~\ref{sec:mapl}; labeler: the GAN-25 model; 50 epochs). Rotation after removing a per-object offset.}
-\label{tab:sensorb}
 \begin{tabularx}{\columnwidth}{lXrrrrr}
 \toprule
 $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} \\
@@ -235,13 +233,13 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabsensorb
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Sensor B (\sensorB{}).} $1{,}620$ test frames of the same 12 objects. Top: sensor-A models applied zero-shot. Below: models trained on $\Kreal$ sensor-B real frames per object, alone, with the sensor-A physical renderer, with a learned renderer trained on the same $\Kreal$ sensor-B pairs, or with self-training on teacher labels (MeshTac without its alignment step, Sec.~\ref{sec:mapl}; labeler: the GAN-25 model; 50 epochs). Rotation after removing a per-object offset.}
+\label{tab:sensorb}
 \end{table}
 
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Sensor B over three seeds} (mesh-registered labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free MeshTac at every budget.}
-\label{tab:sbseeds}
 \setlength{\tabcolsep}{2.0pt}
 \footnotesize
 \begin{tabularx}{\columnwidth}{@{}rXcccc@{}}
@@ -251,6 +249,8 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabsbseeds
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Sensor B over three seeds} (mesh-registered labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free MeshTac at every budget.}
+\label{tab:sbseeds}
 \end{table}
 
 \noindent\textbf{Seeds.} Table~\ref{tab:sbseeds} repeats the real-only and renderer-free comparison with three seeds at every budget; the standard deviations are at least an order of magnitude below the differences between the two.
@@ -275,8 +275,6 @@ Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For 
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Leave-object-out.} Errors on $1{,}244$ real frames of three objects with no real training data. Rows add simulated contacts of all 12 meshes to the real frames of the nine other objects, unless noted. The multi-sensor row is a 50-epoch run. Normal error is inside the contact region. Bold: best leakage-free.}
-\label{tab:loo}
 \begin{tabularx}{\columnwidth}{Xrrrrrr}
 \toprule
 Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut Contact\\\strut IoU\,$\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Trans.}{$L_1$} \\
@@ -284,6 +282,8 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \tabloo
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Leave-object-out.} Errors on $1{,}244$ real frames of three objects with no real training data. Rows add simulated contacts of all 12 meshes to the real frames of the nine other objects, unless noted. The multi-sensor row is a 50-epoch run. Normal error is inside the contact region. Bold: best leakage-free.}
+\label{tab:loo}
 \end{table}
 
 \subsection{Baseline Study: Unseen Objects}
@@ -326,8 +326,6 @@ The unpaired refiner uses a different fidelity comparison: it is scored against 
 \begin{table}[!tbp]
 \centering
 \tableformat
-\caption{\textbf{Appearance-side and training-side variants} at $\Kreal=25$ (real validation split) and leave-object-out (unseen objects). Fidelity is the contact-region L1 of Fig.~\ref{fig:fidelity}; physics-guided variants were stopped at the fidelity stage. Only the background-conditioned renderer improves unseen-object depth.}
-\label{tab:variants}
 \begin{tabularx}{\columnwidth}{Xrrrrr}
 \toprule
 & \multicolumn{2}{c}{$\Kreal=25$} & \multicolumn{3}{c}{Unseen objects} \\
@@ -337,6 +335,8 @@ Variant & \shortstack[c]{\strut Fidelity\\\strut $\downarrow$} & \metrichead{Con
 \tabvariants
 \bottomrule
 \end{tabularx}
+\caption{\textbf{Appearance-side and training-side variants} at $\Kreal=25$ (real validation split) and leave-object-out (unseen objects). Fidelity is the contact-region L1 of Fig.~\ref{fig:fidelity}; physics-guided variants were stopped at the fidelity stage. Only the background-conditioned renderer improves unseen-object depth.}
+\label{tab:variants}
 \end{table}
 
 \noindent\textbf{Which factor limits few-shot fidelity?}
