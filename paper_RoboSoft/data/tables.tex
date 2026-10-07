@@ -97,6 +97,7 @@ Refiner on domain rand.\ (0 labels, no calib.) & 0.0691 & 0.353 & 0.583 & 30.8 &
 teacher & -- & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.5 \\
 teacher & teacher & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 6.0 \\
 \midrule
+mesh & teacher pose & 0.47 & 0.40 & 6.0 & 0.0641 & 0.384 & 0.497 & 5.7 \\
 mesh$^{1/2}$ & L1$^{1/2}$ & 0.63 & 0.30 & 1.4 & 0.0485 & 0.286 & 0.639 & 6.5 \\
 mesh & L1 & 0.64 & 0.30 & 2.5 & 0.0489 & 0.292 & 0.657 & 5.5 \\
 mesh$^{1/2}$ & L1 & 0.63 & 0.30 & 2.5 & 0.0482 & 0.289 & 0.648 & 5.5 \\
@@ -210,6 +211,7 @@ Learned renderer & 0.0631 & 0.331 & 0.618 & 5.6 \\
 \quad depth & 0.56 & 0.32 & -- & 0.0507 & 0.310 & 0.624 & 7.5 \\
 \quad depth + pose & 0.56 & 0.32 & 4.9 & 0.0508 & 0.310 & 0.622 & 6.0 \\
 \multicolumn{8}{@{}l}{\emph{Mesh projected at a fitted pose}} \\
+\quad pose by the teacher (no alignment) & 0.47 & 0.40 & 6.0 & 0.0641 & 0.384 & 0.497 & 5.7 \\
 \quad pose by L1 render-and-compare$^{1/2}$ & 0.63 & 0.30 & 2.5 & 0.0482 & 0.289 & 0.648 & 5.5 \\
 \quad pose by learned aligner (MeshTac) & 0.72 & 0.23 & 1.1 & 0.0433 & 0.247 & 0.722 & 4.0 \\
 \quad\quad + synthetic frames$^{\ddagger}$ & 0.71 & 0.24 & 1.1 & 0.0447 & 0.246 & 0.729 & 4.9 \\

@@ -189,10 +189,12 @@ _t = labq("real_pseudo_k25_rc100", ["teacher (all)"]); _m = labq("real_pseudo_k2
 _h = labq("real_pseudo_k25_rc", ["mesh (kept)", "teacher (rejected)"]); _hk = labq("real_pseudo_k25_rc", ["mesh (kept)"])
 _a = labq("real_pseudo_k25_al", ["mesh (kept)"])
 _r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"])
+_tp0 = labq("real_pseudo_k25_ro_tp0", ["mesh (kept)"])
 T["rcabl"] = "\n".join(x for x in (
     abl("teacher & --", "B_k25_semipm_pseudo", _t, None, 3),
     abl("teacher & teacher", "B_k25_tp", _t, _t[2] if _t else None),
     r"\midrule",
+    abl("mesh & teacher pose", "B_k25_rf0", _tp0, _tp0[2] if _tp0 else None),
     abl("mesh$^{1/2}$ & L1$^{1/2}$", "B_k25_rc50", _h, _hk[2] if _hk else None),
     abl("mesh & L1", "B_k25_rc100", _m, _m[2] if _m else None),
     abl("mesh$^{1/2}$ & L1", "B_k25_rcp", _h, _m[2] if _m else None, 3),
@@ -270,6 +272,7 @@ T["rcablmain"] = "\n".join(x for x in (
     abl("\\quad depth", "B_k25_semipm_pseudo", _t, None, 3),
     abl("\\quad depth + pose", "B_k25_tp", _t, _t[2] if _t else None),
     r"\multicolumn{8}{@{}l}{\emph{Mesh projected at a fitted pose}} \\",
+    abl("\\quad pose by the teacher (no alignment)", "B_k25_rf0", _tp0, _tp0[2] if _tp0 else None, 1),
     abl("\\quad pose by L1 render-and-compare$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
     abl("\\quad pose by learned aligner (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
     abl("\\quad\\quad + synthetic frames$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),

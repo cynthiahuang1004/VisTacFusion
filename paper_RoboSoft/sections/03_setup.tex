@@ -1,4 +1,4 @@
-\section{Experimental Setup}
+ \section{Experimental Setup}
 \label{sec:setup}
 
 \noindent\textbf{Sensors and geometric labels.} Sensor A is a GelSlim-type fingertip with a $17.5\,$mm gel view and six colored LED emitters. A robot presses it against 12 ridge-pattern objects with known meshes. Ground-truth (GT) depth and normals are mesh projections at the recorded pose. They represent registered object geometry, not measured membrane deformation. Sensor B, \sensorB{}~\cite{sipos2024gelslim4}, has a marker array, different illumination and a $12\,$mm view. We use its public dataset of the same 12 objects. Its clipped, smoothed depth labels are re-registered to the meshes by pose fitting ($0.018\,$mm mean residual); all sensor-B methods use these targets.
