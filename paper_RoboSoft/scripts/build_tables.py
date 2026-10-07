@@ -333,6 +333,17 @@ T["variants"] = table(variants, [("fk", 3), ("c_mae", 3), ("fl", 3), ("c_mae_loo
 def sbm(run):
     r = SB.get(f"pilot_{run}/sensorB_mesh")
     return dict(depth_mse=r["full_mse"], c_mae=r["c_mae"], iou=r["iou"], nrm=r["normal_deg"], rot=r["rot_deg"]) if r else None
+def sbm_seeds(run):
+    """mean ± std over seeds 0,1,2 of a sensor-B run (tag sensorB_mesh); returns (dict of means, dict of stds, n)."""
+    vs = [SB.get(f"pilot_{run}{sfx}/sensorB_mesh") for sfx in ("", "_seed1", "_seed2")]; vs = [v for v in vs if v]
+    keys = {"depth_mse": "full_mse", "c_mae": "c_mae", "iou": "iou", "nrm": "normal_deg", "rot": "rot_deg"}
+    if not vs:
+        return None, None, 0
+    return ({k: st.mean(v[kk] for v in vs) for k, kk in keys.items()},
+            {k: (st.pstdev(v[kk] for v in vs) if len(vs) > 1 else 0.0) for k, kk in keys.items()}, len(vs))
+def pm(run, key, nd):
+    m, sd, n = sbm_seeds(run)
+    return "--" if m is None else (f"{m[key]:.{nd}f}" if n < 2 else f"{m[key]:.{nd}f}\\,\\scalebox{{0.8}}{{$\\pm${sd[key]:.{nd}f}}}")
 sbl = []
 for K in (10, 25, 50, 100):
     blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {})]
@@ -341,6 +352,16 @@ for K in (10, 25, 50, 100):
     blk.append(("  & " + ("\\quad no renderer" if K == 25 else "+ MeshTac (ours), no renderer"), sbm(f"S_k{K}_maplnr_m"), {}))
     sbl.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",)))
 T["sbmapl"] = "\n\\midrule\n".join(sbl)
+# seeds version (mean ± std over three seeds) of the real-only vs renderer-free rows, all budgets
+T["sbseeds"] = "\n".join(f"{K} & {lab} & " + " & ".join(pm(run, k, nd) for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\"
+                          for K in (10, 25, 50, 100) for lab, run in (("Real only", f"S_k{K}_realonly_m"), ("MeshTac, no renderer", f"S_k{K}_maplnr_m")))
+# K-frame selection robustness (K=25, 50 ep): seed-0 selection (evenly spaced) vs two random selections (sel1, sel2)
+def mv(run):
+    r = MASKED.get(f"pilot_{run}/val"); return (r["full_mse"], r["c_mae"], r["iou"]) if r else None
+T["selection"] = "\n".join(f"{lab} & " + " & ".join(f"{a:.4f}" if i == 0 else f"{a:.3f}" for i, a in enumerate(mv(run))) + r" \\"
+                            for lab, run in (("Real only, selection 0", "B_k25_realonly"), ("Real only, selection 1", "B_k25_realonly_sel1"), ("Real only, selection 2", "B_k25_realonly_sel2"),
+                                             ("MeshTac (no renderer), selection 0", "B_k25_rf"), ("MeshTac (no renderer), selection 1", "B_k25_rf_sel1"), ("MeshTac (no renderer), selection 2", "B_k25_rf_sel2")) if mv(run))
+
 # ---------------- 6-page paper: both sensors in one table, short cross-session table ----------------
 ks = []
 for K in (10, 25, 50, 100):
@@ -367,7 +388,19 @@ T["crossshortb"] = table([
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-train.", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-train.", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
-T["sbshortb"] = "\n".join(table([(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & MeshTac", sbm(f"S_k{K}_maplnr_m"), {})], [("c_mae", 3), ("iou", 3)], bold_max=("iou",)) for K in (10, 25, 50, 100))
+def sb_pm_rows(K):
+    rows = []
+    mr, _, _ = sbm_seeds(f"S_k{K}_realonly_m"); mm, _, _ = sbm_seeds(f"S_k{K}_maplnr_m")
+    for label, run, m, other in ((f"{K} & Real only", f"S_k{K}_realonly_m", mr, mm), ("  & MeshTac", f"S_k{K}_maplnr_m", mm, mr)):
+        cells = []
+        for key, nd, better in (("c_mae", 3, min), ("iou", 3, max)):
+            c = pm(run, key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.72}")   # compact: ±.006
+            if m and other and better(m[key], other[key]) == m[key]:
+                c = f"\\textbf{{{c}}}"
+            cells.append(c)
+        rows.append(f"{label} & " + " & ".join(cells) + r" \\")
+    return "\n".join(rows)
+T["sbshortb"] = "\n".join(sb_pm_rows(K) for K in (10, 25, 50, 100))
 # Split the full result table at budget boundaries for readable two-column floats.
 blocks = T["kshot"].split("\n\\midrule\n")
 T["kshotfew"] = "\n\\midrule\n".join(blocks[:3])

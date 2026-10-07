@@ -26,4 +26,6 @@ clipping indentation to $[0.3,1.6]\,$mm. The final mesh depth, normals and plana
 
 \noindent\textbf{Training the student.} Student $f_1$ has the teacher's architecture and learns from the $K$ labeled frames and the mesh-aligned frames. The sensor-A configuration also uses synthetic images from a renderer retrained on labeled and aligned real pairs. We evaluate a version with no renderer at any stage to isolate alignment. Pseudo-labels are generated exclusively from the training split.
 
+\noindent\textbf{Cost.} On one RTX 6000 Ada GPU the aligner trains in about $20$ minutes, labeling takes $0.5\,$s per frame, and the student trains in $1.3$ hours (50 epochs) or $2.2$ hours (150).
+
 \noindent\textbf{Optional test-time refinement.} The student predicts from an image without mesh rendering. When the object identity and mesh are available, the same fixed aligner can refine its predicted pose using the test image. We evaluate this additional inference step separately in Sec.~\ref{sec:tta}.

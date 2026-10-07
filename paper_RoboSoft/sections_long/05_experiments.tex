@@ -140,6 +140,24 @@ Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow
 \end{tabularx}
 \end{table}
 
+\begin{table}[!tbp]
+\centering
+\tableformat
+\caption{\textbf{Robustness to the choice of the $\Kreal$ labeled frames} (sensor A, $\Kreal=25$, 50 epochs, real validation split). Selection 0 is the evenly spaced selection used elsewhere; selections 1 and 2 are random permutations of the training frames with the validation split unchanged. Every component (teacher, aligner, student) is retrained on the new selection.}
+\label{tab:selection}
+\begin{tabularx}{\columnwidth}{Xrrr}
+\toprule
+Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+\midrule
+\tabselection
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent\textbf{Selection of the labeled frames.} Table~\ref{tab:selection} repeats the renderer-free pipeline with two random selections of the $25$ labeled frames per object. Label quality (IoU $0.72$, $0.71$; pose error $1.8^\circ$, $1.6^\circ$) and student error are within seed variation of the evenly spaced selection, while real-only training degrades slightly on the random selections.
+
+\noindent\textbf{Where alignment fails.} Against the withheld GT of the $3{,}897$ unlabeled frames ($\Kreal=25$), the aligned pose has a mean rotation error of $1.07^\circ$ and a median of $0.47^\circ$; $3.6\%$ of the frames exceed $2^\circ$, $1.6\%$ exceed $5^\circ$ and $1.2\%$ exceed $10^\circ$ (teacher: $65\%$, $35\%$, $16\%$). The failures concentrate on the five-line object pattern\_06 ($16.5\%$ of its frames above $5^\circ$; every other object below $4\%$), whose near-symmetric ridge layout admits a second plausible alignment, and the worst $5\%$ of frames carry $53\%$ of the summed rotation error (mean $0.53^\circ$ without them). Translation error (mean $0.98\,$mm, median $0.52$) is dominated by shifts along the ridge direction: $73\%$ of the rod frames and $20$--$40\%$ of the frames of the line patterns exceed $1\,$mm, against $2$--$6\%$ for the objects with crossing ridges (pattern\_32, 33, 35, 36). Such shifts leave the depth label unchanged, which is why the label IoU is high despite them. At $\Kreal=100$ the mean rotation error is $0.68^\circ$ and $1.3\%$ of the frames exceed $5^\circ$.
+
 \subsection{A Second Session}
 \label{sec:cross}
 The second session tests changes in appearance and object placement without retraining (Table~\ref{tab:cross}). MeshTac reduces contact MAE relative to the budget-matched real-only models by $16\%$ at $\Kreal=25$ and $28\%$ at $\Kreal=100$, with MAE/IoU of $0.310/0.660$ and $0.252/0.743$, respectively. The nine-object real-only baseline ($0.315$, $0.675$) has different object coverage and serves as context rather than a matched label-efficiency comparison.
@@ -218,6 +236,24 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\begin{table}[!tbp]
+\centering
+\tableformat
+\caption{\textbf{Sensor B over three seeds} (mesh-registered labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free MeshTac at every budget.}
+\label{tab:sbseeds}
+\setlength{\tabcolsep}{2.0pt}
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}rXcccc@{}}
+\toprule
+$\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
+\midrule
+\tabsbseeds
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent\textbf{Seeds.} Table~\ref{tab:sbseeds} repeats the real-only and renderer-free comparison with three seeds at every budget; the standard deviations are at least an order of magnitude below the differences between the two.
 
 \noindent\textbf{Renderer baselines (original labels).} Sensor B has a marker array, a different LED layout and a smaller field of view (Table~\ref{tab:sensorb}). \emph{Zero-shot}, sensor-A models recover contact only partially (IoU $0.28$ for the all-real model, $0.37$ for the simulation-only model: the model with more sensor-A real supervision transfers less well in this comparison) and rotation not at all (residual $\approx11.5^\circ$ for every model, the value a constant predictor attains on the $\pm22.5^\circ$ label range).
 
