@@ -389,11 +389,11 @@ def fig_qual(out):
     object's median MeshTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "B_k25_realonly", "B_k25_rf", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
             ("B", "S_k25_realonly_m", "S_k25_maplnr_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
-    fig = plt.figure(figsize=(3.45, 1.62))
-    outer = fig.add_gridspec(1, 2, left=0.003, right=0.997, top=0.84, bottom=0.235, wspace=0.03)
+    fig = plt.figure(figsize=(3.45, 1.95))                      # cells square -> no gaps between the tiles of a group
+    outer = fig.add_gridspec(1, 2, left=0.003, right=0.997, top=0.875, bottom=0.2, wspace=0.05)
     for g, (name, r0, r1, objs, title) in zip(outer, sets):
         d = np.load(f"outputs/robosoft_qual/qual_{name}.npz")
-        inner = g.subgridspec(3, 4, wspace=0.02, hspace=0.03)
+        inner = g.subgridspec(3, 4, wspace=0.012, hspace=0.02)
         err = d[f"cmae_{r1}"]                                       # select by MeshTac's own error, not by its gain over the baseline
         for r, o in enumerate(objs):
             ids = [i for i, k in enumerate(d["keys"]) if f"/{o}/" in str(k)]
@@ -409,12 +409,13 @@ def fig_qual(out):
                     ax.set_title(["frame", "real only", "MeshTac", "GT"][c], fontsize=5.2, pad=1.5)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
-                    ax.text(0.97, 0.04, f"{e:.2f} mm", transform=ax.transAxes, ha="right", va="bottom", fontsize=5, color="white",
-                            bbox=dict(facecolor="black", alpha=0.55, edgecolor="none", pad=0.7))
+                    import matplotlib.patheffects as pe
+                    ax.text(0.96, 0.05, f"{e:.2f}", transform=ax.transAxes, ha="right", va="bottom", fontsize=4.6, color="white",
+                            path_effects=[pe.withStroke(linewidth=0.9, foreground="black")])
         bb = g.get_position(fig)
-        fig.text((bb.x0 + bb.x1) / 2, 0.99, title, ha="center", va="top", fontsize=6, fontweight="bold")
+        fig.text((bb.x0 + bb.x1) / 2, 0.995, title, ha="center", va="top", fontsize=6, fontweight="bold")
     from matplotlib.cm import ScalarMappable
-    cax = fig.add_axes([0.33, 0.135, 0.34, 0.025])
+    cax = fig.add_axes([0.33, 0.115, 0.34, 0.022])
     cb = fig.colorbar(ScalarMappable(norm=plt.Normalize(0, 1.2), cmap="viridis"), cax=cax,
                       orientation="horizontal", ticks=[0, 0.4, 0.8, 1.2], extend="max")
     cb.ax.tick_params(labelsize=5, pad=1, length=1.5)
