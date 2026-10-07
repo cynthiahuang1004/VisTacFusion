@@ -478,6 +478,11 @@ INPUT ./figures/fig_labels.pdf
 INPUT ./figures/fig_labels.pdf
 INPUT ./figures/fig_labels.pdf
 INPUT ./figures/fig_labels.pdf
+INPUT ./figures/fig_conv.pdf
+INPUT ./figures/fig_conv.pdf
+INPUT ./figures/fig_conv.pdf
+INPUT ./figures/fig_conv.pdf
+INPUT ./figures/fig_conv.pdf
 INPUT /home/shared/.TinyTeX/texmf-dist/fonts/vf/adobe/times/ptmri7t.vf
 INPUT /home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmri8r.tfm
 INPUT /home/shared/.TinyTeX/texmf-dist/fonts/vf/adobe/times/ptmr7t.vf

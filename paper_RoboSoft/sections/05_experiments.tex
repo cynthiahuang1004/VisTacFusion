@@ -57,6 +57,13 @@ Pseudo-label & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
     \label{fig:labels}
 \end{figure}
 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_conv.pdf}
+    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $472$ validation frames). (a) Rotation error against the number of aligner updates from the teacher's pose; the dotted line marks the six updates used. (b) Error after six updates from a GT pose perturbed by the given rotation and a random shift of up to $1.5\,$mm; the band is the $\pm8^\circ$ training range.}
+    \label{fig:conv}
+\end{figure}
+
 \subsection{Ablation Study on Alignment Quality}
 \label{sec:ablation}
 We label the same unlabeled images with teacher predictions, L1 render-and-compare search or learned alignment, then evaluate both label quality and the student trained on those targets (Table~\ref{tab:abl}). Adding teacher pose isolates pose supervision; the indented row adds synthetic frames throughout the pipeline.
@@ -65,7 +72,7 @@ Adding teacher pose mainly improves student rotation. Learned alignment lowers t
 
 L1 search gains less: at $K=25$ the renderer scores the search-selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a geometrically incorrect state.
 
-From the teacher's pose, mean error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object. Translation errors follow repeated ridges, where different states can yield similar contact geometry.
+From the teacher's pose, mean error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}); six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object. Translation errors follow repeated ridges, where different states can yield similar contact geometry.
 
 \begin{figure*}[t]
     \centering
@@ -76,22 +83,29 @@ From the teacher's pose, mean error falls to $2.1^\circ$ after one update and $1
 
 \begin{table}[!htb]
 \centering
-\tableformat
-\setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\columnwidth}{@{}rXrr@{}}
+\tableformat\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabularx}{\columnwidth}{@{}Xrrrr@{}}
 \toprule
-\multicolumn{4}{l}{\textbf{Sensor A: second-session evaluation}} \\
-$\Kreal$ & Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
+\multicolumn{5}{@{}l}{\textbf{Sensor A: session-2 test ($854$ frames), no retraining}} \\
+& \multicolumn{2}{c}{$K=25$} & \multicolumn{2}{c}{$K=100$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Method & MAE$\downarrow$ & IoU$\uparrow$ & MAE$\downarrow$ & IoU$\uparrow$ \\
 \midrule
-\tabcrossshortb
-\midrule\midrule
-\multicolumn{4}{l}{\textbf{Sensor B: sensor-specific training}} \\
-$\Kreal$ & Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} \\
-\midrule
-\tabsbshortb
+\tabcrossT
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models tested on session 2 without retraining ($854$ frames). $\dagger$ uses all training labels from nine objects, with different object coverage from the $K$-shot rows. \emph{+ synthetic frames}: MeshTac with the $K$-pair renderer. Bottom: models trained on sensor B and evaluated on its test set ($1{,}620$ frames). Sensor-B values are three-seed mean $\pm$ standard deviation. Contact MAE is in mm.}
+
+\vspace{3pt}
+\begin{tabularx}{\columnwidth}{@{}Xrrrr@{}}
+\toprule
+\multicolumn{5}{@{}l}{\textbf{Sensor B: test set ($1{,}620$ frames), three seeds}} \\
+& $K=10$ & $K=25$ & $K=50$ & $K=100$ \\
+\midrule
+\tabsbT
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models evaluated on another day's contacts after object re-placement; a nine-object model trained on all session-1 labels reaches $0.315$ MAE and $0.675$ IoU. \emph{+ synthetic frames}: MeshTac with the $K$-pair renderer. Bottom: models trained and tested on sensor B, mean $\pm$ standard deviation over three seeds. Contact MAE in mm; bold marks the better value.}
 \label{tab:general}
 \end{table}
 

@@ -404,6 +404,32 @@ T["crossshortb"] = table([
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-training", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_rf"), {}), ("  & \\quad + synthetic frames", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-training", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_rf"), {}), ("  & \\quad + synthetic frames", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
+# transposed compact Table III: sensor A (session 2) methods x {K=25, K=100}; sensor B metrics x K with three-seed +- std
+def _c(v, nd, bold=False):
+    t = "--" if v is None else f"{v:.{nd}f}"
+    return f"\\textbf{{{t}}}" if bold else t
+_ct = []
+for label, run in (("Real only", "realonly"), ("Self-training", "semipm_pseudo"), ("MeshTac", "rf"), ("\\quad + synthetic frames", "al2")):
+    cells = []
+    for K in (25, 100):
+        r = cs(f"B_k{K}_{run}")
+        best_mae = min(cs(f"B_k{K}_{x}")["c_mae"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
+        best_iou = max(cs(f"B_k{K}_{x}")["iou"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
+        cells += [_c(r["c_mae"], 3, r["c_mae"] == best_mae), _c(r["iou"], 3, r["iou"] == best_iou)]
+    _ct.append(f"{label} & " + " & ".join(cells) + r" \\")
+T["crossT"] = "\n".join(_ct)
+_sb = []
+for key, nd, name, better in (("c_mae", 3, "Contact MAE", min), ("iou", 3, "IoU", max)):
+    for lab, run in (("Real only", "realonly_m"), ("MeshTac", "maplnr_m")):
+        cells = []
+        for K in (10, 25, 50, 100):
+            m, _, _ = sbm_seeds(f"S_k{K}_{run}"); o, _, _ = sbm_seeds(f"S_k{K}_{'maplnr_m' if run == 'realonly_m' else 'realonly_m'}")
+            c = pm(f"S_k{K}_{run}", key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.78}")
+            if m and o and better(m[key], o[key]) == m[key]:
+                c = f"\\textbf{{{c}}}"
+            cells.append(c)
+        _sb.append(f"{name}, {lab.lower() if lab != 'MeshTac' else lab} & " + " & ".join(cells) + r" \\")
+T["sbT"] = "\n".join(_sb)
 def sb_pm_rows(K):
     rows = []
     mr, _, _ = sbm_seeds(f"S_k{K}_realonly_m"); mm, _, _ = sbm_seeds(f"S_k{K}_maplnr_m")

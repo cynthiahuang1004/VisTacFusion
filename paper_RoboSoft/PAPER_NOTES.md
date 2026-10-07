@@ -21,7 +21,7 @@ No long-version or shared figure/table/bibliography files were edited by this ro
 - **Table I** has Normal (deg) and Trans. (mm) columns; translation = normalized L1 x 41 mm (`HALF_MM`).
 - **"leaky" is retired** -> "all-pairs renderer / all-pairs reference" everywhere (tables, figure legends, text).
 - **Fig. 5** frames = the object's median MeshTac contact MAE (not the median improvement).
-- **Aligner convergence** (`scripts/aligner_convergence.py` -> `ablation/pilot_robosoft/aligner_convergence.json`, Fig. in the long version `fig_conv.pdf`): from the teacher pose 5.6 -> 2.1 (1 it.) -> 1.1 deg (3 it.), min 1.05 at 5; six updates recover perturbations up to 15 deg (0.6 deg), 20 deg -> 0.8, 25 -> 1.5, 30 -> 3.2.
+- **Aligner convergence** (`scripts/aligner_convergence.py` -> `ablation/pilot_robosoft/aligner_convergence.json`, `fig_conv.pdf`, shown in both versions): from the teacher pose 5.6 -> 2.1 (1 it.) -> 1.1 deg (3 it.), min 1.05 at 5; six updates recover perturbations up to 15 deg (0.6 deg), 20 deg -> 0.8, 25 -> 1.5, 30 -> 3.2.
 - Contribution 2 is phrased as an empirical finding (renderer study), contribution 3 no longer claims MeshTac on held-out objects. Title: "Contact Geometry" (was "Tactile Geometry").
 - Test-time refinement table uses the rf models (`pose_refine_results.json` keys `pilot150_B_k{K}_rf_realonly/*`).
 
