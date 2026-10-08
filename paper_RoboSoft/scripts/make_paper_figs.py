@@ -86,7 +86,7 @@ def fig_kshot(out):
     names = {"+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     from matplotlib.ticker import MaxNLocator
-    fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.1))         # one row: narrow, tall panels so that nearby lines separate
+    fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.0))         # one row: narrow, tall panels so that nearby lines separate
     panels = [("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation"), ("pose_trans", "trans", "Translation")]
     letters = "abcdef"
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[:3], panels)):          # sensor A
@@ -389,7 +389,7 @@ def fig_qual(out):
     object's median MeshTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "B_k25_realonly", "B_k25_rf", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
             ("B", "S_k25_realonly_m", "S_k25_maplnr_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
-    fig = plt.figure(figsize=(3.45, 1.95))                      # cells square -> no gaps between the tiles of a group
+    fig = plt.figure(figsize=(3.45, 1.85))                      # cells square -> no gaps between the tiles of a group
     outer = fig.add_gridspec(1, 2, left=0.003, right=0.997, top=0.875, bottom=0.2, wspace=0.05)
     for g, (name, r0, r1, objs, title) in zip(outer, sets):
         d = np.load(f"outputs/robosoft_qual/qual_{name}.npz")
