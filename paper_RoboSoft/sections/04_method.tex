@@ -4,7 +4,7 @@
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_align.pdf}
-    \caption{\textbf{Mesh alignment for pseudo-label generation.} Sensor A, $K=25$. Columns show the real image, teacher depth, mesh depth at the initial and refined contact states, and GT. Each row represents a different object; its frame has the median aligned-label IoU within a subsampled candidate set. Depth maps share a color scale in millimeters.}
+    \caption{\textbf{Mesh alignment for pseudo-label generation} (sensor A, $K=25$). For three objects: the real image, the teacher's depth, the mesh depth at the initial and at the refined contact state, and GT.}
     \label{fig:align}
 \end{figure}
 
@@ -18,7 +18,7 @@ MeshTac uses the known mesh and object identity to label unlabeled real contacts
 \end{equation}
 Sampling perturbations produces training examples from the original $K$ registered contacts without additional real labels. We normalize the residual dimensions and optimize smooth-L1 loss. Perturbation ranges and training settings are given in Sec.~\ref{sec:setup}.
 
-\noindent\textbf{Generating pseudo-labels.} Teacher $f_0$ predicts the initial planar pose of an unlabeled image; its maximum predicted depth initializes indentation. We refine the state over six iterations,
+\noindent\textbf{Generating pseudo-labels.} Teacher $f_0$ predicts the initial planar pose of an unlabeled image; its maximum predicted depth initializes indentation. Fig.~\ref{fig:align} shows the resulting labels for three objects (each object's frame of median aligned-label IoU). We refine the state over six iterations,
 \begin{equation}
     q_{t+1}=q_t+\mathcal{A}\big(\mathcal{I},d(\mathcal{M},q_t)\big),
 \end{equation}
