@@ -35,9 +35,10 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \begin{table}[!htb]
 \centering
 \tableformat
-\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}llrrrrrrrr@{}}
+\scriptsize
+\setlength{\tabcolsep}{1.8pt}
+{%
+\begin{tabular}{@{}llrrrr@{\hspace{7pt}}rrrr@{}}
 \toprule
 \multicolumn{2}{@{}l}{Pseudo-label source} & \multicolumn{4}{c}{Pseudo-label quality} & \multicolumn{4}{c}{Student accuracy} \\
 \cmidrule(lr){1-2}\cmidrule(lr){3-6}\cmidrule(lr){7-10}
@@ -46,16 +47,10 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label source ablation} ($K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student validation accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Shaded: MeshTac.}
+\caption{\textbf{Pseudo-label source ablation} ($K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student validation accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Shaded: MeshTac (ours).}
 \label{tab:abl}
 \end{table}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/fig_labels.pdf}
-    \caption{\textbf{Pseudo-label quality on both sensors.} Teacher and aligned-mesh labels evaluated against withheld GT on unlabeled training images. GT is used only for evaluation. Curves show IoU, contact MAE and rotation error versus $K$.}
-    \label{fig:labels}
-\end{figure}
 
 \begin{figure}[t]
     \centering
@@ -68,7 +63,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \label{sec:ablation}
 We compare pseudo-label sources to separate the effects of mesh geometry, pose supervision and alignment (Table~\ref{tab:abl}). Students train for 50 epochs; results average three seeds except rows 2--3. Rows 1, 2 and 4 use a renderer-augmented teacher ($4.9^\circ$ pose error). Rows 3 and 5 share the real-only teacher ($6.0^\circ$), directly testing the effect of alignment.
 
-Rows 3 and 5 isolate alignment: projecting the mesh at the teacher-estimated pose yields label IoU $0.47$, below the teacher's own depth ($0.56$, row 1), and a student worse than real-only training at the same schedule (depth MSE $0.064$ vs.\ $0.055$). Alignment raises label IoU to $0.72$, lowers label rotation error from $6.0^\circ$ to $1.1^\circ$ and translation error from $1.1$ to $0.67\,$mm, and gives the best student across the reported metrics despite the less accurate initial teacher. Teacher pose supervision (row 2) mainly improves student rotation, and L1 search (row 4) improves both label and student IoU but remains below the aligner. Accurate mesh placement, not access to geometry alone, therefore determines the value of mesh-derived labels; the label improvements also hold on sensor B and across budgets (Fig.~\ref{fig:labels}).
+Rows 3 and 5 isolate alignment: projecting the mesh at the teacher-estimated pose yields label IoU $0.47$, below the teacher's own depth ($0.56$, row 1), and a student worse than real-only training at the same schedule (depth MSE $0.064$ vs.\ $0.055$). Alignment raises label IoU to $0.72$, lowers label rotation error from $6.0^\circ$ to $1.1^\circ$ and translation error from $1.1$ to $0.67\,$mm, and gives the best student across the reported metrics despite the less accurate initial teacher. Teacher pose supervision (row 2) mainly improves student rotation, and L1 search (row 4) improves both label and student IoU but remains below the aligner. Accurate mesh placement, not access to geometry alone, therefore determines the value of mesh-derived labels; the label improvements hold at every budget on both sensors: at $K=25$, aligned-mesh labels raise IoU from $0.55$ to $0.72$ on sensor A and from $0.85$ to $0.91$ on sensor B, where rotation error drops from $8.0^\circ$ to $1.4^\circ$.
 
 Image similarity can favor an incorrect geometric state: at $K=25$, the search-selected pose has lower RGB L1 error than the GT pose on $93\%$ of frames. The aligner instead learns state corrections from known perturbations. From teacher initialization, mean rotation error reaches $1.1^\circ$ after three updates (Fig.~\ref{fig:conv}). Six updates also reduce $15^\circ$ rotation perturbations to $0.6^\circ$, with simultaneous translation and indentation offsets, beyond the training rotation range. At $30^\circ$, the remaining error rises to $3.2^\circ$. On unlabeled sensor-A training contacts, $1.6\%$ of aligned poses exceed $5^\circ$ error at $K=25$, mostly on one nearly symmetric object.
 
@@ -93,27 +88,17 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 \tabcrossT
 \bottomrule
 \end{tabularx}
-
-\vspace{3pt}
-\begin{tabularx}{\columnwidth}{@{}Xrrrr@{}}
-\toprule
-\multicolumn{5}{@{}l}{\textbf{Sensor B: test set ($1{,}620$ frames), sensor-specific training}} \\
-& $K=10$ & $K=25$ & $K=50$ & $K=100$ \\
-\midrule
-\tabsbT
-\bottomrule
-\end{tabularx}
-\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models tested on session 2 without retraining. Bottom: sensor-specific training and testing on sensor B. Contact MAE and translation in mm. Bold: best.}
+\caption{\textbf{Second-session results.} Sensor-A models tested on session 2 without retraining. Contact MAE and translation in mm. Bold: best.}
 \label{tab:general}
 \end{table}
 
 \subsection{Robustness Across Sessions and Sensors}
 \label{sec:general}
-We evaluate two forms of robustness separately. First, we test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). Second, we retrain each method on sensor B with unchanged aligner settings (bottom; Fig.~\ref{fig:kshot}d--f); this tests whether the procedure transfers across sensor designs after sensor-specific retraining, not zero-shot model transfer.
+We evaluate two forms of robustness separately. First, we test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}). Second, we retrain each method on sensor B with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f); this tests whether the procedure transfers across sensor designs after sensor-specific retraining, not zero-shot model transfer.
 
 \noindent\textbf{Cross-session robustness.} On session 2, MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.252\,$mm at $K=100$, a $28\%$ reduction from real-only training. Translation error rises to $1.7$--$2.1\,$mm for all methods, about twice the session-1 level, so better contact reconstruction only partly compensates for the placement change.
 
-\noindent\textbf{Cross-sensor applicability.} On sensor B, MeshTac lowers contact MAE by $36\%$ at $K=25$ and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are less consistent at larger budgets (Fig.~\ref{fig:kshot}).
+\noindent\textbf{Cross-sensor applicability.} On sensor B, MeshTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are less consistent at larger budgets (Fig.~\ref{fig:kshot}).
 
 Fig.~\ref{fig:qual} illustrates differences in ridge continuity and junction placement; improvements vary across individual contacts, while the aggregate metrics consistently favor MeshTac. Together, the results indicate that aligned real contacts provide effective supervision within a session, while synthetic augmentation can add robustness to session changes when enough real pairs are available to fit the renderer.
 

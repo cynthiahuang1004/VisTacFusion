@@ -246,3 +246,5 @@ submission.
 - PBR calibration provenance (confirmed by the author 2026-10-08): one no-contact image for the automatic illumination fit, one contact image of one object outside the training set for manual gel/contact tuning; no labels used, nothing counted in K.
 
 - 2026-10-08: short version replaces the pose-refinement table with paired bars (`figures/fig_poseref.pdf`, `make_paper_figs.fig_poseref`, 2x2 single column: rotation/translation x session 1/2; hollow = predictor, filled = +align). The long version keeps the table (`\tabposeref`).
+
+- 2026-10-08 (late): short version drops Fig. 3 (renderer examples, `fig_renders_small.pdf`), Fig. 5 (label quality vs K, `fig_labels.pdf`) and the sensor-B block of Table III (`\tabsbT`); their content is summarized in one sentence each (Sec. B label IoU numbers, Sec. C sensor-B IoU). Files and macros are still generated for the long version. Freed space went to Fig. 2 (0.92 columnwidth), Table II (scriptsize, no resizebox, 7pt group gap, row "Aligner (ours)") and larger Figs. 3/4/6.
