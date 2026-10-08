@@ -217,6 +217,16 @@ Learned renderer & 0.0631 & 0.331 & 0.618 & 5.6 \\
 \quad\quad + learned synth.$^{\ddagger}$ & 0.71 & 0.24 & 1.1 & 0.0447 & 0.246 & 0.729 & 4.9 \\
 }
 
+% ---- rcabl2 ----
+\newcommand{\tabrcablii}{%
+teacher & -- & 0.56 & 0.32 & -- & 0.624 & 0.310 & 7.5 \\
+teacher & teacher & 0.56 & 0.32 & 4.9 & 0.622 & 0.310 & 6.0 \\
+mesh & teacher & 0.47 & 0.40 & 6.0 & 0.497 & 0.384 & 5.7 \\
+mesh & L1 search$^{1/2}$ & 0.63 & 0.30 & 2.5 & 0.648 & 0.289 & 5.5 \\
+\rowcolor{gray!12} mesh & aligner (MeshTac) & \textbf{0.72} & \textbf{0.23} & \textbf{1.1} & 0.722 & 0.247 & \textbf{4.0} \\
+mesh & aligner + learned synth.$^{\ddagger}$ & 0.71 & 0.24 & \textbf{1.1} & \textbf{0.729} & \textbf{0.246} & 4.9 \\
+}
+
 % ---- poseref ----
 \newcommand{\tabposeref}{%
 \multicolumn{9}{@{}l}{\emph{Rotation error (deg)}} \\

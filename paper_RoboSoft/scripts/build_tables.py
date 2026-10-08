@@ -277,6 +277,31 @@ T["rcablmain"] = "\n".join(x for x in (
     abl("\\quad pose by learned aligner (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
     abl("\\quad\\quad + learned synth.$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
 ) if x)
+# Table II of the 6-page paper, restructured: explicit "depth label" / "pose from" columns, symmetric label / student metrics
+def _abl2(depth, pose, run, dep, poseerr, n=1):
+    sd = seeds(run) if n > 1 else None
+    r = row(run, prefix="pilot_")
+    if r is None:
+        return None
+    g = lambda k: (sd[k][0] if sd and sd.get(k) else r.get(k))
+    return dict(depth=depth, pose=pose, l_iou=dep[0] if dep else None, l_mae=dep[1] if dep else None, l_rot=poseerr,
+                s_iou=g("iou"), s_mae=g("c_mae"), s_rot=g("rot"))
+_rows2 = [x for x in (
+    _abl2("teacher", "--", "B_k25_semipm_pseudo", _t, None, 3),
+    _abl2("teacher", "teacher", "B_k25_tp", _t, _t[2] if _t else None),
+    _abl2("mesh", "teacher", "B_k25_rf0", _tp0, _tp0[2] if _tp0 else None),
+    _abl2("mesh", "L1 search$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
+    _abl2("mesh", "aligner (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
+    _abl2("mesh", "aligner + learned synth.$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
+) if x]
+_cols2 = (("l_iou", 2, max), ("l_mae", 2, min), ("l_rot", 1, min), ("s_iou", 3, max), ("s_mae", 3, min), ("s_rot", 1, min))
+_best2 = {k: fn(round(v[k], nd) for v in _rows2 if v[k] is not None) for k, nd, fn in _cols2}   # ties at the printed precision are all bold
+_out2 = []
+for i, v in enumerate(_rows2):
+    cells = [("--" if v[k] is None else (f"\\textbf{{{v[k]:.{nd}f}}}" if round(v[k], nd) == _best2[k] else f"{v[k]:.{nd}f}")) for k, nd, _ in _cols2]
+    pre = "\\rowcolor{gray!12} " if v["pose"].startswith("aligner (MeshTac)") else ""
+    _out2.append(pre + f"{v['depth']} & {v['pose']} & " + " & ".join(cells) + r" \\")
+T["rcabl2"] = "\n".join(_out2)
 # ---------------- test-time pose refinement with the aligner ----------------
 _pr = f"{P}/pose_refine_results.json"
 PR = json.load(open(_pr)) if osp.exists(_pr) else {}
@@ -473,5 +498,5 @@ with open("paper_RoboSoft/data/tables.tex", "w") as fh:
     for k, v in T.items():
         v = re.sub(r"(^|& )\+ (\w)", lambda m: m.group(1) + m.group(2).upper(), v, flags=re.M)   # rows read "Method", not "+ addition"
         v = re.sub(r"(^|& )(\\textit\{)\+ (\w)", lambda m: m.group(1) + m.group(2) + m.group(3).upper(), v, flags=re.M)
-        fh.write(f"% ---- {k} ----\n\\newcommand{{\\tab{k}}}{{%\n{v}\n}}\n\n")
+        fh.write(f"% ---- {k} ----\n\\newcommand{{\\tab{k.replace('2', 'ii')}}}{{%\n{v}\n}}\n\n")
 print(open("paper_RoboSoft/data/tables.tex").read())
