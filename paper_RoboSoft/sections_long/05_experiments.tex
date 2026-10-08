@@ -23,7 +23,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotfew
 \bottomrule
 \end{tabularx}
-\caption{\textbf{$\Kreal$-shot with a shared real budget.} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Learned renderer (full) rows use the renderer trained on all real pairs (the $\Kreal=10$ learned renderer (full) row is a 50-epoch run). \emph{+ synthetic frames}: MeshTac with the $K$-pair renderer added to aligner, teacher and student training.}
+\caption{\textbf{$\Kreal$-shot with a shared real budget.} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Learned renderer (full) rows use the renderer trained on all real pairs (the $\Kreal=10$ learned renderer (full) row is a 50-epoch run). \emph{+ learned synth.}: MeshTac with the $K$-pair renderer added to aligner, teacher and student training.}
 \label{tab:kshot}
 \end{table*}
 
@@ -45,7 +45,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \label{sec:kshot}
 Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} compare, under the same training-label budget, real-only training, co-training with either renderer, self-training on the teacher's own predictions (Sec.~\ref{sec:ablation}) and MeshTac. Each MeshTac run uses the $2{,}997$--$4{,}077$ training frames outside the $\Kreal$ budget without their labels.
 
-\noindent\textbf{Simulation alone.} Neither paired-renderer baseline improves both contact MAE and IoU for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), the physical renderer by at most $5\%$. Both lower rotation error at $\Kreal=10$ ($9.6^\circ\!\to\!5$--$6^\circ$) and raise it at $\Kreal=100$.
+\noindent\textbf{Simulation alone.} Neither paired-renderer baseline improves both contact MAE and IoU for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), PBR by at most $5\%$. Both lower rotation error at $\Kreal=10$ ($9.6^\circ\!\to\!5$--$6^\circ$) and raise it at $\Kreal=100$.
 
 \noindent\textbf{MeshTac.} Mesh-aligned supervision improves dense prediction at every evaluated budget: depth MSE by $19\%$, $22\%$, $40\%$ and $38\%$ and contact MAE by $11\%$, $21\%$, $30\%$ and $29\%$ at $\Kreal=10$, $25$, $50$ and $100$, with IoU $+0.04$ to $+0.07$ and normal error $-3.3^\circ$ to $-5.7^\circ$. Over three seeds (50 epochs) the depth MSE is $0.0433\pm0.0004$ and $0.0222\pm0.0004$ at $\Kreal=25$ and $100$ against $0.0551\pm0.0010$ and $0.0366\pm0.0008$ for real-only training (Table~\ref{tab:seeds}). Without checkpoint selection, at the final epoch, depth MSE is $0.0613$, $0.0457$, $0.0313$ and $0.0239$ against $0.0680$, $0.0575$, $0.0500$ and $0.0396$ ($-10$ to $-40\%$).
 
@@ -53,7 +53,7 @@ The improvement also reduces the number of labels needed to reach a given depth 
 
 Pose improves as well: MeshTac has the lowest budget-matched rotation error at every budget ($4.7^\circ$, $2.8^\circ$, $2.7^\circ$, $2.5^\circ$ against $9.8^\circ$, $5.6^\circ$, $4.3^\circ$, $3.2^\circ$ for real-only training) and lower translation error for $\Kreal\le50$ ($1.13$, $0.91$, $0.73\,$mm vs.\ $1.71$, $1.13$, $0.89$; equal at $\Kreal=100$). Test-time alignment reduces the errors further (Sec.~\ref{sec:tta}).
 
-Adding synthetic frames from the $K$-pair renderer to the pipeline (``+ synthetic frames'': renderer data for aligner, teacher and student) does not improve the within-session results: depth MSE $0.0559$, $0.0450$, $0.0307$, $0.0232$ against $0.0521$, $0.0433$, $0.0291$, $0.0227$ without, rotation $3.7$--$4.0^\circ$ against $2.5$--$4.7^\circ$, and IoU within $\pm0.02$. The renderer provides a benefit across sessions instead (Sec.~\ref{sec:cross}).
+Adding synthetic frames from the $K$-pair renderer to the pipeline (``+ learned synth.'': renderer data for aligner, teacher and student) does not improve the within-session results: depth MSE $0.0559$, $0.0450$, $0.0307$, $0.0232$ against $0.0521$, $0.0433$, $0.0291$, $0.0227$ without, rotation $3.7$--$4.0^\circ$ against $2.5$--$4.7^\circ$, and IoU within $\pm0.02$. The renderer provides a benefit across sessions instead (Sec.~\ref{sec:cross}).
 
 \begin{table*}[t]
 \centering
@@ -67,7 +67,7 @@ $\Kreal$ & Method & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabseeds
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Seeds.} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``+ synthetic frames'': the $K$-pair renderer added to aligner, teacher and student.}
+\caption{\textbf{Seeds.} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``+ learned synth.'': the $K$-pair renderer added to aligner, teacher and student.}
 \label{tab:seeds}
 \end{table*}
 
@@ -189,7 +189,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabsbmapl
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Second sensor (\sensorB{}) with mesh-registered labels}; $1{,}620$ test frames, 50 epochs. ``+ synthetic frames'': learned renderer trained on the $K$ pairs added to aligner, teacher and student. Self-training uses the teacher's own depth as label.}
+\caption{\textbf{Second sensor (\sensorB{}) with mesh-registered labels}; $1{,}620$ test frames, 50 epochs. ``+ learned synth.'': learned renderer trained on the $K$ pairs added to aligner, teacher and student. Self-training uses the teacher's own depth as label.}
 \label{tab:sbmapl}
 \end{table}
 
@@ -215,7 +215,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabsensorb
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Sensor B (\sensorB{}).} $1{,}620$ test frames of the same 12 objects. Top: sensor-A models applied zero-shot. Below: models trained on $\Kreal$ sensor-B real frames per object, alone, with the sensor-A physical renderer, with a learned renderer trained on the same $\Kreal$ sensor-B pairs, or with self-training on teacher labels (MeshTac without its alignment step, Sec.~\ref{sec:mapl}; labeler: the GAN-25 model; 50 epochs). Rotation after removing a per-object offset.}
+\caption{\textbf{Sensor B (\sensorB{}).} $1{,}620$ test frames of the same 12 objects. Top: sensor-A models applied zero-shot. Below: models trained on $\Kreal$ sensor-B real frames per object, alone, with the sensor-A PBR, with a learned renderer trained on the same $\Kreal$ sensor-B pairs, or with self-training on teacher labels (MeshTac without its alignment step, Sec.~\ref{sec:mapl}; labeler: the GAN-25 model; 50 epochs). Rotation after removing a per-object offset.}
 \label{tab:sensorb}
 \end{table}
 
@@ -239,7 +239,7 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 
 \noindent\textbf{Renderer baselines (original labels).} Sensor B has a marker array, a different LED layout and a smaller field of view (Table~\ref{tab:sensorb}). \emph{Zero-shot}, sensor-A models recover contact only partially (IoU $0.28$ for the all-real model, $0.37$ for the simulation-only model: the model with more sensor-A real supervision transfers less well in this comparison) and rotation not at all (residual $\approx11.5^\circ$ for every model, the value a constant predictor attains on the $\pm22.5^\circ$ label range).
 
-\emph{With sensor-B real pairs}, the $\Kreal$-shot picture of Sec.~\ref{sec:kshot} reappears: a learned renderer trained on the sensor's own $\Kreal=25$ pairs lowers contact MAE from $0.139$ to $0.100\,$mm ($-29\%$), normal error from $17.2^\circ$ to $14.6^\circ$ and raises IoU from $0.82$ to $0.85$; at $\Kreal=10$ the gain is $6\%$, at $\Kreal=100$, synthetic data brings little additional dense improvement. The sensor-A physical renderer, calibrated to a different sensor, still helps at $\Kreal=25$ ($0.125$) but less; the domain-randomized renderer matches it ($0.126$) without using any real data from either sensor. At $\Kreal=100$ real data alone is already at $0.058\,$mm and simulation neither helps nor hurts dense error; the domain-randomized renderer ($0.062$) is close. Rotation is not improved by either renderer and is degraded at $\Kreal=100$ ($7.5^\circ\!\to\!9$--$10^\circ$), as on sensor A. The transition is earlier on sensor B ($\Kreal\approx25$ vs.\ $50$), plausibly because its uniform $1\,$mm indentation and larger contact regions make the depth-to-image mapping easier to learn from few pairs.
+\emph{With sensor-B real pairs}, the $\Kreal$-shot picture of Sec.~\ref{sec:kshot} reappears: a learned renderer trained on the sensor's own $\Kreal=25$ pairs lowers contact MAE from $0.139$ to $0.100\,$mm ($-29\%$), normal error from $17.2^\circ$ to $14.6^\circ$ and raises IoU from $0.82$ to $0.85$; at $\Kreal=10$ the gain is $6\%$, at $\Kreal=100$, synthetic data brings little additional dense improvement. The sensor-A PBR, calibrated to a different sensor, still helps at $\Kreal=25$ ($0.125$) but less; the domain-randomized renderer matches it ($0.126$) without using any real data from either sensor. At $\Kreal=100$ real data alone is already at $0.058\,$mm and simulation neither helps nor hurts dense error; the domain-randomized renderer ($0.062$) is close. Rotation is not improved by either renderer and is degraded at $\Kreal=100$ ($7.5^\circ\!\to\!9$--$10^\circ$), as on sensor A. The transition is earlier on sensor B ($\Kreal\approx25$ vs.\ $50$), plausibly because its uniform $1\,$mm indentation and larger contact regions make the depth-to-image mapping easier to learn from few pairs.
 
 \noindent\textbf{Self-training (original labels).} With the original labels and the GAN-25 model as labeler, teacher-label self-training lowers depth MSE from $0.0152$ (real only) to $0.0098$ and contact MAE from $0.140$ to $0.100\,$mm at $\Kreal=25$ without synthetic data, i.e.\ it approaches the labeler's depth MSE ($0.0107$) and matches its contact MAE ($0.100$); with the mesh-registered labels and a real-only teacher it does not improve on real data at any budget (Table~\ref{tab:sbmapl}). In both protocols the student inherits the localization of its labeler, which is what alignment corrects.
 
@@ -300,7 +300,7 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \label{sec:loo}
 Three objects are removed from all real training while their meshes remain available to simulation (Table~\ref{tab:loo}).
 
-\noindent\textbf{Pose.} Without training data for the three objects, the pose head has a large rotation error ($64.7^\circ$). Simulated contacts of the three meshes bring it to $6.8^\circ$ with the physical renderer---with no-contact illumination calibration and manually tuned contact parameters---and to $5.7^\circ$ with the strict learned renderer; the learned renderer (full) gives a smaller further reduction ($4.6^\circ$), and the geometry control (same renderer, meshes removed) stays at $50.6^\circ$. The geometry control supports mesh coverage as a major source of the pose improvement. Replacing the calibrated renderer with domain-randomized sensor parameters (random LED colors and strengths, gel optics randomized per session, geometry pinned) gives $8.9^\circ$, between the calibrated ($6.8^\circ$) and single-rotation ($10.3^\circ$) rows; a consistent rendered appearance may make geometric cues easier to recover.
+\noindent\textbf{Pose.} Without training data for the three objects, the pose head has a large rotation error ($64.7^\circ$). Simulated contacts of the three meshes bring it to $6.8^\circ$ with PBR---with no-contact illumination calibration and manually tuned contact parameters---and to $5.7^\circ$ with the strict learned renderer; the learned renderer (full) gives a smaller further reduction ($4.6^\circ$), and the geometry control (same renderer, meshes removed) stays at $50.6^\circ$. The geometry control supports mesh coverage as a major source of the pose improvement. Replacing the calibrated renderer with domain-randomized sensor parameters (random LED colors and strengths, gel optics randomized per session, geometry pinned) gives $8.9^\circ$, between the calibrated ($6.8^\circ$) and single-rotation ($10.3^\circ$) rows; a consistent rendered appearance may make geometric cues easier to recover.
 
 \noindent\textbf{Rotation coverage.} We vary the simulated rotation coverage to examine its contribution to pose transfer. Restricting simulation to one real rotation per object leaves $10.3^\circ$, two rotations $7.5^\circ$, all twelve $6.8^\circ$ (Blender rows of Table~\ref{tab:loo}); rendering the learned renderer's inputs after rotating the depth map (rotate-then-render) gives the best leakage-free pose, $4.4^\circ$. These results support covering the expected rotation range when generating synthetic contacts.
 
@@ -314,9 +314,9 @@ Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} vary th
 
 \noindent\textbf{Zero-shot.} Simulation alone transfers poorly for dense geometry (contact MAE $0.41\,$mm vs.\ $0.11$ with the full real set); the learned renderer (full) halves this but has seen $4{,}197$ real pairs.
 
-\noindent\textbf{Few-shot ($\Kreal\le25$).} Neither budget-matched paired renderer improves both contact MAE and IoU. At $\Kreal=25$ GAN-25 lowers depth MSE by $3\%$ ($0.0536\pm0.0013$ vs.\ $0.0551\pm0.0010$ over seeds) but not contact MAE or IoU; the physical renderer does the same. With $\Kreal\le25$ the real training loss reaches $10^{-4}$ within ten epochs while validation error is flat from epoch five: the separation between training and validation error is consistent with overfitting, which the evaluated synthetic data does not resolve. Simulation does help pose at $\Kreal=10$ ($9.6^\circ\!\to\!5.2$--$5.9^\circ$), as in Sec.~\ref{sec:loo}.
+\noindent\textbf{Few-shot ($\Kreal\le25$).} Neither budget-matched paired renderer improves both contact MAE and IoU. At $\Kreal=25$ GAN-25 lowers depth MSE by $3\%$ ($0.0536\pm0.0013$ vs.\ $0.0551\pm0.0010$ over seeds) but not contact MAE or IoU; PBR does the same. With $\Kreal\le25$ the real training loss reaches $10^{-4}$ within ten epochs while validation error is flat from epoch five: the separation between training and validation error is consistent with overfitting, which the evaluated synthetic data does not resolve. Simulation does help pose at $\Kreal=10$ ($9.6^\circ\!\to\!5.2$--$5.9^\circ$), as in Sec.~\ref{sec:loo}.
 
-\noindent\textbf{Moderate budget ($\Kreal\ge50$).} The learned renderer now helps: at $\Kreal=50$ depth MSE $0.0482\!\to\!0.0434$ ($-10\%$), contact MAE $0.283\!\to\!0.260$, IoU $0.69\!\to\!0.72$; at $\Kreal=100$ depth MSE $0.0369\!\to\!0.0311$ ($-16\%$; $0.0366\!\to\!0.0299$ over seeds, $-18\%$), contact MAE $0.235\!\to\!0.210$, IoU $0.74\!\to\!0.77$, and normal error improves in step. The physical renderer gives $-1$ to $-5\%$ MSE. The learned renderer thus needs $\approx\!50$ labeled contacts per object before its synthetic data improves contact reconstruction over training on the same real frames alone, and at every $\Kreal\ge50$ simulation \emph{worsens} rotation by $0.2$--$1.3^\circ$.
+\noindent\textbf{Moderate budget ($\Kreal\ge50$).} The learned renderer now helps: at $\Kreal=50$ depth MSE $0.0482\!\to\!0.0434$ ($-10\%$), contact MAE $0.283\!\to\!0.260$, IoU $0.69\!\to\!0.72$; at $\Kreal=100$ depth MSE $0.0369\!\to\!0.0311$ ($-16\%$; $0.0366\!\to\!0.0299$ over seeds, $-18\%$), contact MAE $0.235\!\to\!0.210$, IoU $0.74\!\to\!0.77$, and normal error improves in step. PBR gives $-1$ to $-5\%$ MSE. The learned renderer thus needs $\approx\!50$ labeled contacts per object before its synthetic data improves contact reconstruction over training on the same real frames alone, and at every $\Kreal\ge50$ simulation \emph{worsens} rotation by $0.2$--$1.3^\circ$.
 
 \subsection{Label Leakage, Renderer Fidelity and Negative Results}
 \label{sec:fidelity}\label{sec:study}
@@ -352,7 +352,7 @@ Variant & \shortstack[c]{\strut Fidelity\\\strut $\downarrow$} & \metrichead{Con
 \noindent\textbf{Which factor limits few-shot fidelity?}
 
 Table~\ref{tab:variants} examines physical conditioning, illumination, training choices and appearance randomization as possible sources of the few-shot gap.
-\emph{(i) Missing physical prior.} Pretraining the GAN on $30$k Blender pairs, conditioning it on the Blender image of the same contact, predicting a residual on top of that image, or conditioning on Blender image and background all leave contact-region fidelity unchanged or worse at $\Kreal\in\{10,25\}$ (the physical renderer's random gel-warp of $\pm3$ pixels means the conditioning image is not pixel-aligned with the target, which may limit this family).
+\emph{(i) Missing physical prior.} Pretraining the GAN on $30$k Blender pairs, conditioning it on the Blender image of the same contact, predicting a residual on top of that image, or conditioning on Blender image and background all leave contact-region fidelity unchanged or worse at $\Kreal\in\{10,25\}$ (PBR's random gel-warp of $\pm3$ pixels means the conditioning image is not pixel-aligned with the target, which may limit this family).
 
 \emph{(ii) Session illumination drift.} Session backgrounds differ by $0.05$--$0.10$ L1, more than the best renderer's total error ($0.03$); normalizing frames to a canonical background or predicting difference images improves full-image L1 by $13$--$21\%$ but leaves contact-region L1 and contact MAE unchanged (consistent with some encoder tolerance to background illumination). Conditioning the renderer on the background does help on unseen objects (Sec.~\ref{sec:loo}) where the background frame supplies session-specific illumination information.
 

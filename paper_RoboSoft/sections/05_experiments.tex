@@ -20,7 +20,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotshort
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Label-budget comparison on sensor A.} Validation: $472$ frames; $K$ labels per object. Self-training and MeshTac also use unlabeled images. \emph{+ synthetic} adds the $K$-pair renderer to MeshTac. Dense metrics: best-validation-depth checkpoint; pose: final epoch. Italic rows (learned renderer trained on the full real set) exceed the budget ($K=10$: 50 epochs; others: 150). Bold marks the best matched result at each $K$.}
+\caption{\textbf{Label-budget comparison on sensor A.} Validation: $472$ frames; $K$ labels per object. Self-training and MeshTac also use unlabeled images. \emph{+ learned synth.}: MeshTac plus synthetic frames from learned renderer ($K$). Dense metrics: best-validation-depth checkpoint; pose: final epoch. Italic rows (learned renderer trained on the full real set) exceed the budget ($K=10$: 50 epochs; others: 150). Bold marks the best matched result at each $K$.}
 \label{tab:kshot}
 \end{table}
 
@@ -30,7 +30,7 @@ We compare real-only training, learned-renderer augmentation, teacher-depth self
 
 At $K=25$, MeshTac lowers depth MSE by $22\%$ and contact MAE by $21\%$ relative to real-only training, and normal error falls by $3$--$6^\circ$ across budgets. Learned-renderer augmentation slightly improves all-pixel MSE at $K\le25$ but worsens contact MAE and IoU: lower MSE need not mean better contact reconstruction when background pixels dominate. Three-seed comparisons at 50 epochs confirm the gain ($0.0433\pm0.0004$ versus $0.0551\pm0.0010$ depth MSE at $K=25$), and it does not depend on checkpoint selection: at the final epoch, MeshTac's depth MSE remains $10$--$40\%$ below real-only training. MeshTac at $K=50$ also outperforms real-only training at $K=100$ (depth MSE $0.0291$ versus $0.0369$; contact MAE $0.197$ versus $0.235$).
 
-Adding synthetic frames from the $K$-pair renderer to MeshTac does not improve within-session results (indented rows); it helps under session changes (Sec.~\ref{sec:general}). Pose improves as well: rotation error falls at every budget ($5.6^\circ\!\to\!2.8^\circ$ at $K=25$) and translation error at $K\le50$, whereas renderer augmentation lowers rotation only at $K\le25$.
+Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned synth.}) does not improve within-session results; it helps under session changes (Sec.~\ref{sec:general}). Pose improves as well: rotation error falls at every budget ($5.6^\circ\!\to\!2.8^\circ$ at $K=25$) and translation error at $K\le50$, whereas renderer augmentation lowers rotation only at $K\le25$.
 
 \begin{table}[!htb]
 \centering
@@ -46,7 +46,7 @@ Label of each unlabeled image & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & 
 \tabrcablmain
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Where the gain comes from.} Same unlabeled sensor-A images ($K=25$) and same student; only their labels change. Left: label accuracy against withheld training GT (evaluation only); right: the student trained on them (50 epochs; three-seed means except \emph{depth + pose} and \emph{teacher pose}). $^{1/2}$: mesh depth on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: synthetic frames from the $K$-pair renderer in aligner and student training.}
+\caption{\textbf{Where the gain comes from.} The same student is trained on the same unlabeled sensor-A images ($K=25$); only their labels change. Rows 1--2: the teacher's own predictions (self-training). Rows 3--6: the mesh projected at a pose taken from the teacher without refinement, found by L1 render-and-compare search, or refined by the learned aligner (MeshTac). Left: label accuracy against withheld training GT (evaluation only); right: the resulting student (50 epochs; three-seed means except \emph{depth + pose} and \emph{teacher pose}). $^{1/2}$: mesh depth on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: synthetic frames from learned renderer ($K$) in aligner and student training.}
 \label{tab:abl}
 \end{table}
 
@@ -66,11 +66,9 @@ Label of each unlabeled image & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & 
 
 \subsection{Ablation Study on Alignment Quality}
 \label{sec:ablation}
-Table~\ref{tab:abl} asks where the gain comes from: the unlabeled images and the student are fixed, and only their labels change, from the teacher's own predictions to the mesh projected at a fitted pose. Each row reports the labels' accuracy and the student they produce. Adding teacher pose isolates pose supervision; the last row adds synthetic frames throughout the pipeline.
+Table~\ref{tab:abl} asks where the gain comes from. The unlabeled images and the student are fixed, and only their labels change; each row reports the labels' accuracy and the student they produce. Three comparisons follow.
 
-Adding teacher pose mainly improves student rotation. Projecting the mesh at the teacher's unrefined pose is worse than either: label IoU falls to $0.47$ and the student to $0.384\,$mm contact MAE and IoU $0.497$, below real-only training, so exact geometry at a wrong pose is harmful rather than helpful. Learned alignment lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$ and raises label IoU from $0.56$ to $0.72$ (Fig.~\ref{fig:labels}, both sensors); student IoU rises from $0.624$ to $0.722$ relative to teacher-depth self-training. Correcting mesh placement therefore improves the supervision supplied to the student.
-
-L1 search gains less: at $K=25$ the renderer scores the search-selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a geometrically incorrect state.
+\emph{Does the mesh help by itself?} No. Projected at the teacher's unrefined pose (row 3), the mesh is a worse label than the teacher's own depth (IoU $0.47$ vs.\ $0.56$), and its student falls below real-only training ($0.384\,$mm contact MAE, IoU $0.497$): exact geometry at a wrong pose is harmful. \emph{Does pose supervision help?} Adding the teacher's pose as a label (row 2) improves only student rotation. \emph{How should the pose be found?} L1 render-and-compare search (row 4) raises label IoU to $0.63$ and student IoU to $0.648$; the learned aligner (row 5) lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$, raises label IoU to $0.72$ (Fig.~\ref{fig:labels}, both sensors) and gives the best student (contact MAE $0.247$ vs.\ $0.310$ for self-training, IoU $0.722$). Search is limited because at $K=25$ the renderer scores the selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a wrong state. Adding synthetic frames to the aligned pipeline (row 6) changes little. Correcting mesh placement is therefore what turns the mesh into useful supervision.
 
 From the teacher's pose, mean rotation error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object.
 
@@ -105,7 +103,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 \tabsbT
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models evaluated on another day's contacts after object re-placement; a nine-object model trained on all session-1 labels reaches $0.315$ MAE and $0.675$ IoU. \emph{+ synthetic frames}: MeshTac with the $K$-pair renderer. Bottom: models trained and tested on sensor B, mean $\pm$ standard deviation over three seeds. Contact MAE and translation error in mm; bold marks the best value.}
+\caption{\textbf{Second-session and second-sensor results.} Top: sensor-A models evaluated on another day's contacts after object re-placement; a nine-object model trained on all session-1 labels reaches $0.315$ MAE and $0.675$ IoU. \emph{+ learned synth.}: MeshTac plus learned renderer ($K$) frames. Bottom: models trained and tested on sensor B, mean $\pm$ standard deviation over three seeds. Contact MAE and translation error in mm; bold marks the best value.}
 \label{tab:general}
 \end{table}
 

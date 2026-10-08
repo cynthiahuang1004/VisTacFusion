@@ -37,7 +37,7 @@ def main():
             ren = {t: ((g(x)[0].permute(1, 2, 0).cpu().numpy() + 1) * 127.5).clip(0, 255).astype(np.uint8) for t, g in G.items()}
         depth = (plt.cm.viridis(np.clip(d / 1.2e-3, 0, 1))[..., :3] * 255).astype(np.uint8) if d.max() < 0.01 else (plt.cm.viridis(np.clip(d / 1.2, 0, 1))[..., :3] * 255).astype(np.uint8)
         rows.append([real, depth, phys, ren["k25"], ren["full"]]); print(obj, idx, "contact frac %.3f" % max(cands)[0], "depth max", d.max())
-    names = ["Real frame", "GT depth", "Physical", "Learned ($K$=25)", "Learned (full)"]
+    names = ["Real frame", "GT depth", "PBR", "Learned ($K$=25)", "Learned (full)"]
     fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.74 * len(rows) + 0.2))
     for i, row in enumerate(rows):
         for j, im in enumerate(row):
@@ -45,7 +45,7 @@ def main():
             for sp in ax.spines.values():
                 sp.set_visible(False)
             if i == 0:
-                ax.set_title(names[j], fontsize=6.5, pad=2)
+                ax.set_title(names[j], fontsize=5.6, pad=2)
     fig.subplots_adjust(left=0.004, right=0.996, top=0.86, bottom=0.01, wspace=0.03, hspace=0.04)
     fig.savefig(a.out, dpi=300); print("wrote", a.out)
 

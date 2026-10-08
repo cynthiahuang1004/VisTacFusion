@@ -83,7 +83,7 @@ def fig_kshot(out):
         "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", "B_k50_ganfull", "B_k100_ganfull"],
         "+ MeshTac (ours, strict)": ["B_k10_rf", "B_k25_rf", "B_k50_rf", "B_k100_rf"],
     }
-    names = {"+ Blender (physical)": "Physical renderer", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
+    names = {"+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     from matplotlib.ticker import MaxNLocator
     fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.3))         # one row: narrow, tall panels so that nearby lines separate
@@ -225,7 +225,7 @@ def fig_renders_small(out):
     """Column-width version for the 6-page paper: one simulated contact as GT depth | physical renderer | learned renderer (K=25) |
     all-pairs renderer, next to a real frame of the same object; two objects."""
     picks = [("pattern_31_rod", "session_003", 37), ("pattern_04_3_lines_angle_1", "session_002", 61)]
-    cols = [("GT depth", None), ("Physical", "samples"), ("Learned ($K$=25)", "samples_g_k25"), ("Learned (full)", "samples_g"), ("Real frame", None)]
+    cols = [("GT depth", None), ("PBR", "samples"), ("Learned ($K$=25)", "samples_g_k25"), ("Learned (full)", "samples_g"), ("Real frame", None)]
     fig, axes = plt.subplots(len(picks), len(cols), figsize=(3.45, 0.74 * len(picks) + 0.2))
     for i, (obj, sess, idx) in enumerate(picks):
         u = f"{SIM}/{obj}/{sess}/sensor_0000"
