@@ -308,7 +308,7 @@ def fig_align(out, K=25):
             return (a & b).sum() / max(1, (a | b).sum())
         sc = sorted((iou_of(t), t) for t in cand[::7])
         rows.append(sc[len(sc) // 2][1])                       # the object's median-quality frame
-    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.69 * len(rows) + 0.52))
+    fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.64 * len(rows) + 0.24))   # vertical colorbar on the right
     titles = ["unlabeled\nframe", "teacher\ndepth", "mesh at\nteacher pose", "mesh at\naligned pose", "GT\n"]
     for r, t in enumerate(rows):
         f = fits[t]; o = t.split("/")[-5]
@@ -323,13 +323,13 @@ def fig_align(out, K=25):
                 sp.set_visible(False)
             if r == 0:
                 ax.set_title(titles[c], fontsize=5.5, pad=2, linespacing=1.0)
-    fig.subplots_adjust(left=0.005, right=0.995, top=0.90, bottom=0.125, wspace=0.03, hspace=0.03)
+    fig.subplots_adjust(left=0.005, right=0.925, top=0.885, bottom=0.01, wspace=0.03, hspace=0.03)
     from matplotlib.cm import ScalarMappable
-    cax = fig.add_axes([0.28, 0.085, 0.44, 0.015])
+    cax = fig.add_axes([0.94, 0.06, 0.016, 0.78])
     cb = fig.colorbar(ScalarMappable(norm=plt.Normalize(0, 1.2), cmap="viridis"), cax=cax,
-                      orientation="horizontal", ticks=[0, 0.4, 0.8, 1.2], extend="max")
+                      orientation="vertical", ticks=[0, 0.4, 0.8, 1.2], extend="max")
     cb.ax.tick_params(labelsize=5.5, pad=1, length=2)
-    cb.set_label("Depth [mm]", fontsize=5.5, labelpad=1)
+    cb.set_label("Depth [mm]", fontsize=5.5, labelpad=2)
     fig.savefig(osp.join(out, "fig_align.pdf"), dpi=300); plt.close(fig)
 
 
