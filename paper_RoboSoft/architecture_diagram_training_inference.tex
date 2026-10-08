@@ -41,7 +41,7 @@
 
 % ---- Row 1: teacher -> initial state -> mesh alignment -> pseudo-labels ----
 \node[thumb] (unlab) at (.45,6.4) {\thumbimg{frame.png}};
-\node[note,font=\tiny,anchor=north,yshift=-2pt] at (unlab.south) {Unlabeled\\real image};
+\node[note,font=\tiny,anchor=north,yshift=-2pt] at (unlab.south) {Each unlabeled\\real image};
 \filldraw[fill=bluefill!25,draw=blueedge!70,rounded corners=3pt,line width=.6pt] (1.05,5.22) rectangle (6.62,7.3);
 \node[font=\footnotesize\bfseries,text=blueedge!65!black,anchor=west] at (1.2,5.42) {Teacher $f_0$};
 \node[note,anchor=east] at (6.5,5.42) {trained on $K$ real contacts};
@@ -94,16 +94,16 @@
 
 % ---- Row 2: student (same architecture) trained with true and pseudo labels ----
 \node[thumb] (sf) at (.45,3.85) {\thumbimg{frame.png}};
-\node[note,font=\tiny,anchor=north,yshift=-2pt] at (sf.south) {Labeled +\\unlabeled real};
+\node[note,font=\tiny,anchor=north,yshift=-2pt] at (sf.south) {All real images\\($K$ labeled\\+ unlabeled)};
 \node[block,fill=bluefill!25,draw=blueedge!70,rounded corners=3pt,line width=.6pt,minimum width=2.6cm,inner ysep=5pt] (student) at (3.43,3.85) {{\bfseries\color{blueedge!65!black}Student $f_1$}\\{\scriptsize\color{black!65}same architecture as $f_0$}};
 \draw[arrow] (sf) -- (student);
 \node[purple] (loss) at (8.3,3.85) {\textbf{Training loss}\\{\scriptsize depth, normal, pose}};
 \draw[arrow] (student.east) -- node[note,above,font=\tiny] {predicted depth, normals, pose} (loss.west);
-\node[purple] (true) at (12.7,3.85) {\textbf{Registered labels}\\{\scriptsize $K$ real contacts per object}};
-\draw[supervise] (true.west) -- (loss.east);
+\node[purple] (true) at (13.6,3.85) {\textbf{Registered labels}\\{\scriptsize $K$ real contacts per object}};
+\draw[supervise] (true.west) -- node[note,above,text=purpleedge,font=\tiny] {targets for $K$ labeled frames} (loss.east);
 \draw[supervise] (17.07,5.45) -- (17.07,4.6) -- (8.3,4.6) -- (loss.north);
-\node[note,text=purpleedge,font=\tiny] at (10.4,4.42) {supervision on unlabeled real images};
-\node[note,font=\tiny] at (16.4,3.85) {Dashed encoder border:\\frozen SITR weights.};
+\node[note,text=purpleedge,font=\tiny] at (10.4,4.42) {targets for unlabeled frames};
+\node[note,font=\tiny,anchor=north] at ([yshift=-2pt]true.south) {also trains $f_0$ and $\mathcal{A}$};
 
 % ---- Inference: only the student is required; the right-hand branch is optional ----
 \begin{scope}[shift={(0,.25)}]
