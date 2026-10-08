@@ -34,10 +34,10 @@
 \begin{document}
 \begin{tikzpicture}
 % Phase regions.
-\filldraw[fill=black!1,draw=black!25,rounded corners=4pt,line width=.7pt] (-.15,2.62) rectangle (18.55,8.1);
-\filldraw[fill=bluefill!12,draw=black!25,rounded corners=4pt,line width=.7pt] (-.15,.2) rectangle (18.55,2.38);
+\filldraw[fill=black!1,draw=black!25,rounded corners=4pt,line width=.7pt] (-.15,3.2) rectangle (18.55,8.1);
+\filldraw[fill=bluefill!12,draw=black!25,rounded corners=4pt,line width=.7pt] (-.15,.77) rectangle (18.55,2.95);
 \node[font=\small\bfseries,anchor=west] at (.05,7.9) {(a) TRAINING};
-\node[font=\small\bfseries,anchor=west] at (.05,2.14) {(b) INFERENCE};
+\node[font=\small\bfseries,anchor=west] at (.05,2.71) {(b) INFERENCE};
 
 % ---- Row 1: teacher -> initial state -> mesh alignment -> pseudo-labels ----
 \node[thumb] (unlab) at (.45,6.4) {\thumbimg{frame.png}};
@@ -94,7 +94,7 @@
 
 % ---- Row 2: student (same architecture) trained with true and pseudo labels ----
 \node[thumb] (sf) at (.45,3.85) {\thumbimg{frame.png}};
-\node[note,font=\tiny,anchor=north,yshift=-2pt] at (sf.south) {All real images\\($K$ labeled\\+ unlabeled)};
+\node[note,font=\tiny,anchor=south,yshift=2pt] at (sf.north) {All real images\\($K$ labeled\\+ unlabeled)};
 \node[block,fill=bluefill!25,draw=blueedge!70,rounded corners=3pt,line width=.6pt,minimum width=2.6cm,inner ysep=5pt] (student) at (3.43,3.85) {{\bfseries\color{blueedge!65!black}Student $f_1$}\\{\scriptsize\color{black!65}same architecture as $f_0$}};
 \draw[arrow] (sf) -- (student);
 \node[block,fill=grayfill,draw=black!55] (loss) at (8.3,3.85) {\textbf{Training loss}\\{\scriptsize depth, normal, pose}};
@@ -106,7 +106,7 @@
 \node[note,font=\tiny,anchor=north] at ([yshift=-2pt]true.south) {also trains $f_0$ and $\mathcal{A}$};
 
 % ---- Inference: only the student is required; the right-hand branch is optional ----
-\begin{scope}[shift={(0,.25)}]
+\begin{scope}[shift={(0,.82)}]
 \node[thumb] (if) at (.45,.85) {\thumbimg{frame.png}};
 \node[note,font=\tiny,anchor=north,yshift=-2pt] at (if.south) {Real image};
 \node[net,minimum width=2.35cm] (deployed) at (3.43,.85) {\textbf{Trained student $f_1$}\\{\scriptsize SITR $\to$ DPT / Pose MLP}};
