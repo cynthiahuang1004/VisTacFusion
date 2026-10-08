@@ -46,7 +46,7 @@ Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned 
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label source ablation.} The same student is trained on the same unlabeled sensor-A images ($K=25$); rows differ only in the depth label (teacher prediction or projected mesh) and in where its pose comes from ($\mathcal{A}$: the aligner of Fig.~\ref{fig:mapl}). Left: label accuracy against withheld training GT (evaluation only); right: the resulting student on validation (50 epochs; three-seed means except rows 2--3). Shaded: MeshTac. Rows 1, 2 and 4 use the teacher trained with learned renderer ($K$) frames (pose error $4.9^\circ$), rows 3 and 5 the real-only teacher ($6.0^\circ$). L1 search uses mesh depth on the half of each object's frames with the lowest render error and teacher depth on the rest.}
+\caption{\textbf{Pseudo-label source ablation} (sensor A, $K=25$). The same student is trained on the same unlabeled images; rows differ only in where the depth label and its pose come from ($\mathcal{A}$: the aligner of Fig.~\ref{fig:mapl}). Left: accuracy of the pseudo-labels against withheld GT; right: accuracy of the resulting student on the validation split. Shaded: MeshTac.}
 \label{tab:abl}
 \end{table}
 
@@ -66,9 +66,9 @@ Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned 
 
 \subsection{Ablation Study on Alignment Quality}
 \label{sec:ablation}
-Table~\ref{tab:abl} compares pseudo-label quality and student performance on the same unlabeled images. The labeling strategies test whether the mesh alone helps, whether pose supervision helps, and how to find the pose.
+Table~\ref{tab:abl} compares pseudo-label quality and student performance on the same unlabeled images. The labeling strategies test whether the mesh alone helps, whether pose supervision helps, and how to find the pose. Students train for 50 epochs (three-seed means except rows 2--3). Rows 1, 2 and 4 use a teacher trained with learned renderer ($K$) frames (pose error $4.9^\circ$), rows 3 and 5 the real-only teacher ($6.0^\circ$).
 
-L1 search (row 4) starts from the teacher's pose and fits the mesh to the teacher's predicted depth. The learned renderer ($K$) converts mesh depth at 567 nearby candidate poses into tactile RGB images. The pose with the lowest full-image L1 error against the real tactile image becomes the pose pseudo-label.
+L1 search (row 4) starts from the teacher's pose and fits the mesh to the teacher's predicted depth. The learned renderer ($K$) converts mesh depth at 567 nearby candidate poses into tactile RGB images. The pose with the lowest full-image L1 error against the real tactile image becomes the pose pseudo-label; mesh depth is used on the half of each object's frames with the lowest render error and teacher depth on the rest.
 
 At the teacher's unrefined pose (row 3), the mesh produces worse labels than teacher depth (IoU $0.47$ vs.\ $0.56$), and its student falls below real-only training. Adding teacher pose supervision (row 2) mainly improves student rotation. L1 search improves label and student IoU, but the aligner (row 5) gives more accurate labels and a better student. Alignment lowers label rotation error from $6.0^\circ$ to $1.1^\circ$ and translation error from $1.1$ to $0.67\,$mm, with label improvements on both sensors (Fig.~\ref{fig:labels}). Search is limited because the renderer scores the selected pose better than the GT pose on $93\%$ of frames at $K=25$: image similarity can favor a wrong state. Mesh geometry provides useful supervision once its placement is corrected.
 
