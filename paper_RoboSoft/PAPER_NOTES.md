@@ -58,7 +58,7 @@ Short version: 6 pages; extended: 15 pages.
 
 ## Editorial revision (2026-10-05, America/New_York)
 
-See `EDITORIAL_REVIEW.md` for the full change log and the unresolved physical-renderer calibration provenance question.
+See `EDITORIAL_REVIEW.md` for the full change log (its open items on PBR provenance and the translation/checkpoint protocol were resolved on 2026-10-08; see the policy note above).
 Both documents default to anonymous review; define `MeshTacAuthorVersion` for an author copy.
 K is a **training-label** budget; additional validation labels select checkpoints.
 GAN-full exceeds K in the few-shot protocol, but never trains on validation images. In LOO it sees real frames of evaluation objects.

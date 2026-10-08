@@ -87,7 +87,7 @@ def fig_kshot(out):
     names = {"+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     from matplotlib.ticker import MaxNLocator
-    fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.0))         # one row: narrow, tall panels so that nearby lines separate
+    fig, axes = plt.subplots(1, 6, figsize=(7.1, 1.85))         # one row: narrow, tall panels so that nearby lines separate
     panels = [("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation"), ("pose_trans", "trans", "Translation")]
     letters = "abcdef"
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[:3], panels)):          # sensor A
@@ -394,7 +394,7 @@ def fig_poseref(out):
     meth = [("Real only", "B_k{K}_realonly", "#52514e"), ("MeshTac (ours)", "B_k{K}_rf_realonly", "#8a4fd3")]
     panels = [("rot", "Rotation [deg]", "val", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
               ("trans", "Translation [mm]", "val", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
-    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.55)); axes = axes.ravel()
+    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.3)); axes = axes.ravel()
     w = 0.19; x = np.arange(len(Ks))
     for i, (ax, (key, lab, split, sname)) in enumerate(zip(axes, panels)):
         sc = HALF_MM if key == "trans" else 1.0

@@ -37,7 +37,7 @@ def hist(run, prefix="pilot150_"):
     bd = min(h, key=lambda e: g(e, "val")["depth_mse"])
     br = min(h, key=lambda e: g(e, "val")["pose_rot_deg"])   # pose metrics: checkpoint with lowest validation rotation error (= best_pose.pt), the
                                                               # same checkpoint the session-2, sensor-B and refinement evaluations load
-    r = {"val": {"depth_mse": g(bd, "val")["depth_mse"], "normal_mse": g(bd, "val")["normal_mse"], "depth_mse_last": g(br, "val")["depth_mse"],
+    r = {"val": {"depth_mse": g(bd, "val")["depth_mse"], "normal_mse": g(bd, "val")["normal_mse"], "depth_mse_last": g(h[-1], "val")["depth_mse"],
                  "rot": g(br, "val")["pose_rot_deg"], "trans": g(br, "val")["pose_trans"], "trans_mm": g(br, "val")["pose_trans"] * HALF_MM,
                  "rot_bd": g(bd, "val")["pose_rot_deg"], "epochs": len(h)}}
     if "test" in bd and bd["test"]:

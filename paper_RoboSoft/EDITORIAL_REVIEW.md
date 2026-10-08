@@ -1,5 +1,65 @@
 # MeshTac 全文修訂紀錄
 
+## 2026-10-08 六頁稿：可讀性、論證與比較條件
+
+依作者要求閱讀目前六頁稿，修訂 `main.tex` 的 abstract 及六個短版章節。保留標題、三項貢獻的研究範圍、renderer-free 主設定、作者最新的 Fig. 1 與 0.9 text-width 顯示尺寸，以及所有既有實驗結果。長版、繪圖原始碼、圖檔、共用 `data/tables.tex` 和 `refs.bib` 未修改。本輪未執行 Overleaf pull/push。
+
+### 文獻參考
+
+直接閱讀以下原始論文的相關段落，參考論述組織而非複製用語；沒有把引用次數當作寫作品質排名。
+
+| 原始論文 | 本輪閱讀與採用重點 |
+|---|---|
+| [DeepIM](https://arxiv.org/html/1804.00175v4) | 引言建立 initial estimate → refinement 的必要性；方法分清輸入、更新與 supervision；消融明示比較的設定；本稿突出「修正 state → 改善 label → 改善 student」這條證據鏈。 |
+| [Self6D](https://arxiv.org/html/2004.06468v3) | 區分訓練使用 RGB-D 與推論只用 RGB；本稿分清 labeling、student inference 和 optional refinement，並說明相對於 pose refinement，MeshTac 的主要用途是建立 dense/pose training labels。 |
+| [Sparsh](https://arxiv.org/html/2410.24090v1) | 各任務先交代評估條件，再討論結果；Discussion 分開實驗觀察、可能解釋及未驗證能力。本稿避免把 contact reconstruction 改善等同 pose 或 manipulation 都改善。 |
+| [SITR](https://arxiv.org/html/2502.19638v2) | 架構、sensor-specific 評估、transfer 與 limitations 分開；本稿保持 frozen backbone 固定，明示本研究的 sensor-B 結果是重新訓練，而不是零樣本 transfer。 |
+| [TACTO](https://arxiv.org/html/2012.08456v2) | 實驗先說資料、模型與比較方法，再解釋 sim-to-real 結果；本稿把數字留在關鍵比較，不逐項重述整張表。 |
+| [Taxim](https://arxiv.org/html/2109.04027v2) | 區分 optical response 與 marker motion，並交代量測條件；本稿 Related Work 不再把不同 simulators/transfer methods 都視為同一種 depth-to-RGB renderer。 |
+| [Church et al.](https://proceedings.mlr.press/v164/church22a.html) | 核對 real tactile RGB → simulated depth 的 transfer 方向，避免與本稿的 depth → RGB renderer 混淆。 |
+| [TactGen 摘要重刊](https://ojs.aaai.org/index.php/AAAI/article/view/41424) | 核對其以 visual RGB-D 生成 tactile data、cGAN 在 simulation 中訓練的設定，移除「image translation 都需 target-sensor real labels」的概括。保留共用 bibliography 的原期刊引用。 |
+
+### 寫法與結構
+
+- **Abstract / Introduction**：拆開多重子句，從 real-contact registration 的成本，接到 teacher initialization、residual alignment 和 student supervision。摘要保留現有量化結果，補明 relative-to-real-only 的基準、12 ridge objects 和 sensor-specific models；跨 session 的 synthetic benefit 限定在較大的 label budget。
+- **Related Work**：分成 simulation/transfer、representations、pseudo-labeling/pose refinement 三段。明確說明本稿比較的是 fitted-on-real-pairs 的 renderer，而非聲稱所有 tactile transfer 方法都需真實標註。
+- **Method**：明示 perturbation 時 real RGB 固定、只有 mesh state 改變；區分四維 contact state 和三維 student planar pose。Teacher/student 的相同架構與分開訓練也直接寫出。
+- **Experimental Setup**：將 L1 search 的 coarse mesh fit、567 candidates、learned-renderer RGB L1、half-depth gate 和 all-frame pose supervision 集中說清楚，保留 renderer-free 主設定。
+- **Experiments**：移除連續的「This experiment asks …」模板，改成比較設定 → 關鍵結果 → 意義。保留不同 teacher、50/150 epoch 和 three-seed 的條件；不把全表數字逐一重述。
+- **Discussion and Conclusion**：改為連貫段落，先回到已驗證的能力，再討論 contact-state accuracy、contact metrics 與 simulation coverage；最後接限制、uncertainty/symmetry、dynamic contact/manipulation 與 unknown-mesh future work。不再使用「Why it works / What we learned / Conclusion」提綱式小標，也不重複摘要的改善百分比。
+
+### 實質修正／補充（不只是 rephrase）
+
+| 修改前 | 修改後與依據 |
+|---|---|
+| MeshTac 有「lowest contact MAE, IoU and normal error」。 | IoU 改為 **higher**；MAE 和 normal error 才是越低越好。比較限定在 budget-matched baselines。 |
+| Self-training 降低 depth MSE，「but not the contact metrics」。 | 改為 K ≤ 25 未一致改善 contact MAE/IoU；K = 50、100 確實改善，依 Table I。 |
+| Adding renderer frames「changes nothing within the session」。 | 改為 K = 10 有小幅改善，跨 budgets 沒有一致的額外提升。Table I 的 0.293 → 0.288 MAE、0.660 → 0.682 IoU 不能寫成完全沒幫助。 |
+| 消融表 caption 說 rows「differ only」in labels，且寫「same student」。 | 改為 student architecture/schedule 相同；正文保留 rows 1、2、4 的 renderer-augmented teacher 與 rows 3、5 的 real-only teacher 差異。指出 **rows 3 vs. 5** 才直接控制 teacher、測 alignment。 |
+| Table II 的 L1-search depth source 只列 Mesh。 | Caption 補明低-error 半數用 mesh depth，另一半仍用 teacher depth；Setup 補明所有 frames 使用 search pose。表格數據／macro 未改。 |
+| Setup 概括所有 pose metrics 都是 final epoch。 | 按 `build_tables.hist()`、`eval_cross_session.py`、`eval_pose_refine.py` 分開：sensor-A budget/held-out pose 是 final epoch；sensor-B/session-2 tests 使用 depth checkpoint；refinement 使用 validation rotation 選出的 pose checkpoint。主結果的 final-epoch policy 未改回 best-rotation selection。 |
+| 不同表／sensor 的 translation 都叫 Trans. (mm)，未定義差異。 | `engine/eval.py` 與 `eval_pose_refine.py` 使用兩軸 absolute error 的平均；`eval_cross_session.py` 累加兩軸、除以 frame count。Setup、Fig. 4 和 Table III/IV captions 明示 mean-coordinate 與 summed-L1 的差別；沒有擅自重算或改動 raw results。 |
+| Sensor B 的 learned renderer 改善「at most 10%」。 | 移除此錯誤上限；`sensorB_results.json` 的 K = 25 mesh-label baseline 0.127 → 0.1112，約 12.4%。改為比較 MeshTac、renderer、self-training 在各預算的 contact MAE。 |
+| Original public-label robustness 的範圍未限定。 | 明示是 K = 25 的檢查；不暗示每個 budget 都重做。Renderer-free MAE 0.1366 → 0.1021 支持改善方向。 |
+| Test-time refinement 結果推出「aligner is independent of the predictor」。 | 改為同一 aligner 改善 **兩個受測 predictor**；沒有外推到所有 predictors。Session-2 median range 也限定 K ≥ 25。 |
+| 「only 30° starts leave 3°」忽略中間 perturbation 的殘差。 | 改為 15° → 0.6°、30° → 3.2° 的兩個具體比較，不聲稱只有 30° 才有殘差。依 `aligner_convergence.json`。 |
+| Held-out rotation 初始數字為 64.7°。 | 依目前 Table V 的 final-epoch 值改為 **64.8°**；加入 no-held-out-mesh control 的 **50.5°**，讓 coverage 解釋有直接證據。 |
+| 小節 E 稱 Label Leakage，容易被讀成 validation/test images 進入 training。 | 改為 **Renderer Baselines: Unseen Objects and Label Budgets**；正文明示 full-set reference 只用額外的 real training pairs，不是 validation images。保留此 renderer study 的獨立貢獻。 |
+| 短版最後一句列 renderer fidelity 的 ρ = 0.95，但短版沒有呈現該 study 的範圍與圖。 | 從六頁版刪除此孤立的次要結果，集中在 mesh-exclusion control 和 matched budgets；沒有否定該觀察，長版和相關資料保持原樣。 |
+
+### 仍需資料或新實驗支持的部分
+
+- [已解決 2026-10-08] PBR 校正只用一張 no-contact 影像（自動擬合）與一張 training set 以外、單一物件的 contact 影像（手動調整），無標籤，不計入 K；已寫入兩版 setup。
+- [已解決 2026-10-08] 評估協定已統一：所有表格的 pose 取 validation rotation 最佳 checkpoint，translation 為兩座標平均誤差；session-2 與 sensor-B 以 best_pose.pt 重算（tag *_bp）。
+- Two-sensor evidence 是 sensor-specific training；12 ridge objects 與 quasi-static contacts 的結果不等同 unknown-object、curved contact、shear/slip 或 manipulation validation。正文維持此範圍，Future Work 不寫成已完成能力。
+
+### 驗證
+
+- `latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex` 成功，`main.pdf` **6 頁**；沒有 undefined references、overfull boxes 或 oversized floats。
+- 檢視六頁 PDF，所有文字框均在頁面範圍內，圖、表和 captions 無截斷／重疊。保留既有 ieeeconf/caption class-recognition warning，未更改 conference class、字級或 margins。
+- Hash 比對確認長版、所有圖檔、共用 table data 和 bibliography 未修改。摘要保留 21%、36%、24–26%、0–3% 等核心結果；沒有新增實驗或重建結果圖表。
+- 修改前備份與逐檔 diff：`/tmp/meshtac-readability-before-n0ow7iad/`。編譯 log：`/tmp/meshtac-readability-build.log`。本輪尚未推送 Overleaf。
+
 ## 2026-10-07 Overleaf 六頁稿同步
 
 依作者後續要求，已推送至 Overleaf commit `a233bb8c581c6511907131e5db8824fa63495dfd`。從最新遠端 `89d0ac5` 建立 checkout，確認並保留 Fig. 3 六個 panels 的更新；本次 commit 只包含 `sections/01_intro.tex`、`02_related.tex`、`03_setup.tex`、`04_method.tex`、`05_experiments.tex`、`06_conclusion.tex`。長版、摘要／main.tex、共用圖檔、table data 與 bibliography 均未納入變更。推送前在該 checkout 完成 LaTeX 編譯：6 頁，無 undefined references、overfull boxes 或 oversized floats；推送後查詢遠端，確認 main 指向此 commit。本機 `.overleaf_head` 已更新。
