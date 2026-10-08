@@ -304,7 +304,7 @@ _rows2 = [x for x in (
     _abl2("Teacher", "Teacher", "B_k25_tp", _t, _lpz("rc100", tp=True)),
     _abl2("Mesh", "Teacher", "B_k25_rf0", _tp0, _lpz("ro_tp0")),
     _abl2("Mesh", "L1 search", "B_k25_rcp", _h, _lpz("rcp"), 3),
-    _abl2("Mesh", "Aligner $\\mathcal{A}$ (MeshTac)", "B_k25_rf", _r, _lpz("ro_al"), 3),
+    _abl2("Mesh", "Aligner (MeshTac)", "B_k25_rf", _r, _lpz("ro_al"), 3),
 ) if x]
 _cols2 = (("l_iou", "iou", max), ("l_mae", "mae", min), ("l_rot", "rot", min), ("l_tr", "tr", min), ("s_iou", "iou", max), ("s_mae", "mae", min), ("s_rot", "rot", min), ("s_tr", "tr", min))
 _best2 = {k: fn(_sig2(v[k], kind) for v in _rows2 if v[k] is not None) for k, kind, fn in _cols2}   # best at the printed precision; ties all bold
@@ -433,7 +433,7 @@ ks = []
 for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ learned renderer ($K$)", f"B_k{K}_gank", {}), ("+ self-training", f"B_k{K}_semipm_pseudo", {}),
-                              ("+ MeshTac", f"B_k{K}_rf", {}), ("\\quad + learned synth.", f"B_k{K}_al2", {}), ("+ learned renderer (full)", f"B_k{K}_ganfull", {"leaky": True})):
+                              ("+ MeshTac (ours)", f"B_k{K}_rf", {}), ("\\quad + learned synth.", f"B_k{K}_al2", {}), ("+ learned renderer (full)", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is not None:
             blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
@@ -459,7 +459,7 @@ def _c(v, nd, bold=False):
     t = "--" if v is None else f"{v:.{nd}f}"
     return f"\\textbf{{{t}}}" if bold else t
 _ct = []
-for label, run in (("Real only", "realonly"), ("Self-training", "semipm_pseudo"), ("MeshTac", "rf"), ("\\quad + learned synth.", "al2")):
+for label, run in (("Real only", "realonly"), ("Self-training", "semipm_pseudo"), ("MeshTac (ours)", "rf"), ("\\quad + learned synth.", "al2")):
     cells = []
     for K in (25, 100):
         r = cs(f"B_k{K}_{run}")
@@ -471,15 +471,15 @@ for label, run in (("Real only", "realonly"), ("Self-training", "semipm_pseudo")
 T["crossT"] = "\n".join(_ct)
 _sb = []
 for key, nd, name, better in (("c_mae", 3, "Contact MAE", min), ("iou", 3, "IoU", max)):
-    for lab, run in (("Real only", "realonly_m"), ("MeshTac", "maplnr_m")):
+    for lab, run in (("real only", "realonly_m"), ("MeshTac (ours)", "maplnr_m")):
         cells = []
         for K in (10, 25, 50, 100):
-            m, _, _ = sbm_seeds(f"S_k{K}_{run}"); o, _, _ = sbm_seeds(f"S_k{K}_{'maplnr_m' if run == 'realonly_m' else 'realonly_m'}")
-            c = pm(f"S_k{K}_{run}", key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.78}")
-            if m and o and better(m[key], o[key]) == m[key]:
+            m = sbm(f"S_k{K}_{run}"); o = sbm(f"S_k{K}_{'maplnr_m' if run == 'realonly_m' else 'realonly_m'}")
+            c = f"{m[key]:.{nd}f}"
+            if better(m[key], o[key]) == m[key]:
                 c = f"\\textbf{{{c}}}"
             cells.append(c)
-        _sb.append(f"{name}, {lab.lower() if lab != 'MeshTac' else lab} & " + " & ".join(cells) + r" \\")
+        _sb.append(f"{name}, {lab} & " + " & ".join(cells) + r" \\")
 T["sbT"] = "\n".join(_sb)
 def sb_pm_rows(K):
     rows = []
