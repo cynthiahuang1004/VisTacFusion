@@ -2,7 +2,7 @@
 
 Contact geometry and pose describe where an object touches a fingertip and how it is oriented. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} record these contacts as images of a deforming elastomer. Training a model to recover geometry from the images requires paired labels. A known object mesh can supply these labels, but each real contact must first be registered to the mesh.
 
-These contacts matter for soft fingertips: a compliant pad touches an object over an area, so grasp and in-hand manipulation decisions depend on where the pad touches and at what orientation. Registering each real contact to a mesh is slow, and the registration must be repeated for every new sensor and capture session, which limits the number of labeled contacts a deployment can afford.
+Accurate contact geometry is particularly important for soft fingertips: a compliant pad touches an object over an area, so grasp and in-hand manipulation decisions depend on where the pad touches and at what orientation. Registering each real contact to a mesh is slow, and the registration must be repeated for every new sensor and capture session, which limits the number of labeled contacts a deployment can afford.
 
 \begin{figure*}[t]
     \centering
@@ -13,7 +13,7 @@ These contacts matter for soft fingertips: a compliant pad touches an object ove
 
 Simulation and self-training offer two ways to use a small labeled set. Simulation generates labeled contacts from known geometry~\cite{wang2022tacto,si2022taxim,chen2023tacchi}. A renderer fitted on real image--geometry pairs can adapt their appearance to the target sensor, but those pairs consume part of the label budget. Self-training instead uses a predictor's outputs to label the remaining real images and can propagate its errors~\cite{arazo2020pseudo}.
 
-For known objects, we can use the unlabeled real images directly. Their appearance already matches the sensor; the unknown is the contact state---in-plane rotation, translation and indentation. A teacher trained on the registered set can estimate this state. However, even an exact mesh produces incorrect dense labels if its placement is wrong. Improving the state estimate is therefore necessary before using the mesh as supervision.
+For known objects, unlabeled real images provide a complementary source of supervision. Their appearance already matches the sensor; the unknown is the contact state---in-plane rotation, translation and indentation. A teacher trained on the registered set can estimate this state. However, even an exact mesh produces incorrect dense labels if its placement is wrong. Improving the state estimate is therefore necessary before using the mesh as supervision.
 
 MeshTac learns this correction from the registered contacts (Fig.~\ref{fig:mapl}). We perturb their states and train a residual aligner to recover them from the real image and candidate mesh depth. Applied to the teacher's estimates, the aligner places the mesh before generating depth, normal and pose pseudo-labels. A student learns from these labels and predicts without mesh rendering.
 

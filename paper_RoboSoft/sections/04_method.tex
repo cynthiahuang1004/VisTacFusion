@@ -12,7 +12,7 @@ MeshTac uses a known mesh and object identity to label additional real contacts 
 
 \noindent\textbf{Contact geometry.} We represent a contact by $q=(\theta,x,y,z)$: in-plane rotation, translation and indentation. Let $d(\mathcal{M},q)$ denote the depth projection of mesh $\mathcal{M}$ at this state. The projection gives depth and surface-normal labels; $(\theta,x,y)$ gives the planar-pose label. Alignment updates $q$ while keeping the mesh fixed. Indentation determines the dense labels but is not a student pose output.
 
-\noindent\textbf{Learning the aligner.} For a labeled image $\mathcal{I}$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. The real image stays fixed. An ImageNet-initialized ResNet-18 receives the concatenated tactile RGB and candidate depth as four channels and predicts the correction:
+\noindent\textbf{Learning the aligner.} For a labeled image $\mathcal{I}$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. The tactile image is kept fixed while the candidate mesh state is perturbed. An ImageNet-initialized ResNet-18 receives the concatenated tactile RGB and candidate depth as four channels and predicts the correction:
 \begin{equation}
     \mathcal{A}\big(\mathcal{I},d(\mathcal{M},q^\ast+\delta)\big)\approx-\delta.
 \end{equation}
