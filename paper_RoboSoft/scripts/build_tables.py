@@ -300,18 +300,18 @@ def _abl2(depth, pose, run, dep, lpose, n=1):
                 s_iou=g("iou"), s_mae=g("c_mae"), s_rot=g("rot"), s_tr=g("trans_mm"))
 _lpz = lambda tag, tp=False: ((LP[tag]["tp_rot"], LP[tag]["tp_trans"]) if tp else (LP[tag]["rot"], LP[tag]["trans"])) if tag in LP else None
 _rows2 = [x for x in (
-    _abl2("teacher", "--", "B_k25_semipm_pseudo", _t, None, 3),
-    _abl2("teacher", "teacher", "B_k25_tp", _t, _lpz("rc100", tp=True)),
-    _abl2("mesh", "teacher", "B_k25_rf0", _tp0, _lpz("ro_tp0")),
-    _abl2("mesh", "L1 search", "B_k25_rcp", _h, _lpz("rcp"), 3),
-    _abl2("mesh", "$\\mathcal{A}$ (MeshTac)", "B_k25_rf", _r, _lpz("ro_al"), 3),
+    _abl2("Teacher", "--", "B_k25_semipm_pseudo", _t, None, 3),
+    _abl2("Teacher", "Teacher", "B_k25_tp", _t, _lpz("rc100", tp=True)),
+    _abl2("Mesh", "Teacher", "B_k25_rf0", _tp0, _lpz("ro_tp0")),
+    _abl2("Mesh", "L1 search", "B_k25_rcp", _h, _lpz("rcp"), 3),
+    _abl2("Mesh", "Aligner $\\mathcal{A}$ (MeshTac)", "B_k25_rf", _r, _lpz("ro_al"), 3),
 ) if x]
 _cols2 = (("l_iou", "iou", max), ("l_mae", "mae", min), ("l_rot", "rot", min), ("l_tr", "tr", min), ("s_iou", "iou", max), ("s_mae", "mae", min), ("s_rot", "rot", min), ("s_tr", "tr", min))
 _best2 = {k: fn(_sig2(v[k], kind) for v in _rows2 if v[k] is not None) for k, kind, fn in _cols2}   # best at the printed precision; ties all bold
 _out2 = []
 for v in _rows2:
     cells = [("--" if v[k] is None else (f"\\textbf{{{_sig2(v[k], kind)}}}" if _sig2(v[k], kind) == _best2[k] else _sig2(v[k], kind))) for k, kind, _ in _cols2]
-    pre = "\\rowcolor{gray!12} " if v["pose"].startswith("$\\mathcal{A}$ (MeshTac)") else ""
+    pre = "\\rowcolor{gray!12} " if v["pose"].startswith("Aligner") else ""
     _out2.append(pre + f"{v['depth']} & {v['pose']} & " + " & ".join(cells) + r" \\")
 T["rcabl2"] = "\n".join(_out2)
 # ---------------- test-time pose refinement with the aligner ----------------
