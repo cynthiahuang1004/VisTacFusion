@@ -37,16 +37,16 @@ Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned 
 \tableformat
 \setlength{\tabcolsep}{3pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}llrrrrrr@{}}
+\begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
-\multicolumn{2}{@{}l}{Label of each unlabeled image} & \multicolumn{3}{c}{Label vs.\ withheld GT} & \multicolumn{3}{c}{Student (validation)} \\
-\cmidrule(lr){1-2}\cmidrule(lr){3-5}\cmidrule(lr){6-8}
-Depth & Pose from & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{(deg)} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{(deg)} \\
+\multicolumn{2}{@{}l}{Label of each unlabeled image} & \multicolumn{4}{c}{Label vs.\ withheld GT} & \multicolumn{4}{c}{Student (validation)} \\
+\cmidrule(lr){1-2}\cmidrule(lr){3-6}\cmidrule(lr){7-10}
+\shortstack[l]{\strut Depth\\\strut from} & \shortstack[l]{\strut Pose\\\strut from} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} \\
 \midrule
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Where the gain comes from.} The same student is trained on the same unlabeled sensor-A images ($K=25$); rows differ only in the depth label (teacher prediction or projected mesh) and in where its pose comes from. Left: label accuracy against withheld training GT (evaluation only); right: the resulting student (50 epochs; three-seed means except rows 2--3). Shaded: MeshTac. Rows 1, 2 and 4 use the teacher trained with learned renderer ($K$) frames (pose error $4.9^\circ$), rows 3 and 5 the real-only teacher ($6.0^\circ$). $^{1/2}$: mesh depth on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: learned renderer ($K$) frames in aligner and student training.}
+\caption{\textbf{Where the gain comes from.} The same student is trained on the same unlabeled sensor-A images ($K=25$); rows differ only in the depth label (teacher prediction or projected mesh) and in where its pose comes from ($A$: the aligner of Fig.~\ref{fig:mapl}). Left: label accuracy against withheld training GT (evaluation only); right: the resulting student (50 epochs; three-seed means except rows 2--3). Shaded: MeshTac. Rows 1, 2 and 4 use the teacher trained with learned renderer ($K$) frames (pose error $4.9^\circ$), rows 3 and 5 the real-only teacher ($6.0^\circ$). $^{1/2}$: mesh depth on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: learned renderer ($K$) frames in aligner and student training.}
 \label{tab:abl}
 \end{table}
 
@@ -68,7 +68,7 @@ Depth & Pose from & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{
 \label{sec:ablation}
 Table~\ref{tab:abl} asks where the gain comes from. The unlabeled images and the student are fixed, and only their labels change; each row reports the labels' accuracy and the student they produce. Three comparisons follow.
 
-\emph{Does the mesh help by itself?} No. Projected at the teacher's unrefined pose (row 3), the mesh is a worse label than the teacher's own depth (IoU $0.47$ vs.\ $0.56$), and its student falls below real-only training ($0.384\,$mm contact MAE, IoU $0.497$): exact geometry at a wrong pose is harmful. \emph{Does pose supervision help?} Adding the teacher's pose as a label (row 2) improves only student rotation. \emph{How should the pose be found?} L1 render-and-compare search (row 4) raises label IoU to $0.63$ and student IoU to $0.648$; the learned aligner (row 5) lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$, raises label IoU to $0.72$ (Fig.~\ref{fig:labels}, both sensors) and gives the best student (contact MAE $0.247$ vs.\ $0.310$ for self-training, IoU $0.722$). Search is limited because at $K=25$ the renderer scores the selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a wrong state. Adding synthetic frames to the aligned pipeline (row 6) changes little. Correcting mesh placement is therefore what turns the mesh into useful supervision.
+\emph{Does the mesh help by itself?} No. Projected at the teacher's unrefined pose (row 3), the mesh is a worse label than the teacher's own depth (IoU $0.47$ vs.\ $0.56$), and its student falls below real-only training ($0.38\,$mm contact MAE, IoU $0.50$): exact geometry at a wrong pose is harmful. \emph{Does pose supervision help?} Adding the teacher's pose as a label (row 2) improves only student rotation. \emph{How should the pose be found?} L1 render-and-compare search (row 4) raises label IoU to $0.63$ and student IoU to $0.65$; the aligner $A$ (row 5) lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$ and $1.1$ to $0.67\,$mm, raises label IoU to $0.72$ (Fig.~\ref{fig:labels}, both sensors) and gives the best student (contact MAE $0.25$ vs.\ $0.31$ for self-training, IoU $0.72$, rotation $4.0^\circ$ vs.\ $7.5^\circ$). Search is limited because at $K=25$ the renderer scores the selected pose better than the GT pose on $93\%$ of frames, so image similarity can favor a wrong state. Adding learned-renderer frames to the aligned pipeline (row 6) changes little. Correcting mesh placement is therefore what turns the mesh into useful supervision.
 
 From the teacher's pose, mean rotation error falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; six updates also recover perturbations of $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object.
 

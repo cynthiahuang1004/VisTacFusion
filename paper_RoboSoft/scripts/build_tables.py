@@ -278,28 +278,41 @@ T["rcablmain"] = "\n".join(x for x in (
     abl("\\quad\\quad + learned synth.$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
 ) if x)
 # Table II of the 6-page paper, restructured: explicit "depth label" / "pose from" columns, symmetric label / student metrics
-def _abl2(depth, pose, run, dep, poseerr, n=1):
-    sd = seeds(run) if n > 1 else None
+_lp = f"{P}/label_pose_errors.json"; LP = json.load(open(_lp)) if osp.exists(_lp) else {}
+def _sig2(v, kind):
+    """two significant digits: IoU/MAE 0.xx, angles x.x, translation x.x (>=1) or 0.xx"""
+    if v is None:
+        return "--"
+    if kind in ("iou", "mae"):
+        return f"{v:.2f}"
+    if kind == "rot":
+        return f"{v:.1f}"
+    return f"{v:.1f}" if v >= 1 else f"{v:.2f}"
+def _abl2(depth, pose, run, dep, lpose, n=1):
+    """lpose: (rot, trans) of the label pose, or None"""
+    sd = seeds(run, keys=("depth_mse", "c_mae", "iou", "rot", "trans_mm")) if n > 1 else None
     r = row(run, prefix="pilot_")
     if r is None:
         return None
     g = lambda k: (sd[k][0] if sd and sd.get(k) else r.get(k))
-    return dict(depth=depth, pose=pose, l_iou=dep[0] if dep else None, l_mae=dep[1] if dep else None, l_rot=poseerr,
-                s_iou=g("iou"), s_mae=g("c_mae"), s_rot=g("rot"))
+    return dict(depth=depth, pose=pose, l_iou=dep[0] if dep else None, l_mae=dep[1] if dep else None,
+                l_rot=lpose[0] if lpose else None, l_tr=lpose[1] if lpose else None,
+                s_iou=g("iou"), s_mae=g("c_mae"), s_rot=g("rot"), s_tr=g("trans_mm"))
+_lpz = lambda tag, tp=False: ((LP[tag]["tp_rot"], LP[tag]["tp_trans"]) if tp else (LP[tag]["rot"], LP[tag]["trans"])) if tag in LP else None
 _rows2 = [x for x in (
     _abl2("teacher", "--", "B_k25_semipm_pseudo", _t, None, 3),
-    _abl2("teacher", "teacher", "B_k25_tp", _t, _t[2] if _t else None),
-    _abl2("mesh", "teacher", "B_k25_rf0", _tp0, _tp0[2] if _tp0 else None),
-    _abl2("mesh", "L1 search$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
-    _abl2("mesh", "aligner (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
-    _abl2("mesh", "aligner + learned synth.$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
+    _abl2("teacher", "teacher", "B_k25_tp", _t, _lpz("rc100", tp=True)),
+    _abl2("mesh", "teacher", "B_k25_rf0", _tp0, _lpz("ro_tp0")),
+    _abl2("mesh", "L1 search$^{1/2}$", "B_k25_rcp", _h, _lpz("rcp"), 3),
+    _abl2("mesh", "$A$ (MeshTac)", "B_k25_rf", _r, _lpz("ro_al"), 3),
+    _abl2("mesh", "$A$ + learned synth.$^{\\ddagger}$", "B_k25_al2", _a, _lpz("al"), 3),
 ) if x]
-_cols2 = (("l_iou", 2, max), ("l_mae", 2, min), ("l_rot", 1, min), ("s_iou", 3, max), ("s_mae", 3, min), ("s_rot", 1, min))
-_best2 = {k: fn(round(v[k], nd) for v in _rows2 if v[k] is not None) for k, nd, fn in _cols2}   # ties at the printed precision are all bold
+_cols2 = (("l_iou", "iou", max), ("l_mae", "mae", min), ("l_rot", "rot", min), ("l_tr", "tr", min), ("s_iou", "iou", max), ("s_mae", "mae", min), ("s_rot", "rot", min), ("s_tr", "tr", min))
+_best2 = {k: fn(_sig2(v[k], kind) for v in _rows2 if v[k] is not None) for k, kind, fn in _cols2}   # best at the printed precision; ties all bold
 _out2 = []
-for i, v in enumerate(_rows2):
-    cells = [("--" if v[k] is None else (f"\\textbf{{{v[k]:.{nd}f}}}" if round(v[k], nd) == _best2[k] else f"{v[k]:.{nd}f}")) for k, nd, _ in _cols2]
-    pre = "\\rowcolor{gray!12} " if v["pose"].startswith("aligner (MeshTac)") else ""
+for v in _rows2:
+    cells = [("--" if v[k] is None else (f"\\textbf{{{_sig2(v[k], kind)}}}" if _sig2(v[k], kind) == _best2[k] else _sig2(v[k], kind))) for k, kind, _ in _cols2]
+    pre = "\\rowcolor{gray!12} " if v["pose"].startswith("$A$ (MeshTac)") else ""
     _out2.append(pre + f"{v['depth']} & {v['pose']} & " + " & ".join(cells) + r" \\")
 T["rcabl2"] = "\n".join(_out2)
 # ---------------- test-time pose refinement with the aligner ----------------
