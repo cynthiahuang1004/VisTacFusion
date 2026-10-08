@@ -117,27 +117,16 @@ On sensor B, MeshTac lowers contact MAE by $36\%$ at $K=25$ and matches real-onl
 
 The examples in Fig.~\ref{fig:qual} show improved ridge continuity and junction placement. Together, the results indicate that aligned real contacts provide effective supervision within a session, while synthetic augmentation can add robustness to session changes when enough real pairs are available to fit the renderer.
 
-\begin{table}[!htb]
-\centering
-\tableformat
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{@{}rrrrrrrrr@{}}
-\toprule
-& \multicolumn{4}{c}{Validation (session 1)} & \multicolumn{4}{c}{Session 2} \\
-\cmidrule(lr){2-5}\cmidrule(lr){6-9}
-& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} \\
-$\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
-\midrule
-\tabposeref
-\bottomrule
-\end{tabular}
-\caption{\textbf{Pose error before and after test-time refinement.} \emph{pred.}: before refinement; \emph{+align}: six updates of the fixed aligner with the known mesh. Mean errors over frames; no retraining.}
-\label{tab:poseref}
-\end{table}
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_poseref.pdf}
+    \caption{\textbf{Pose error before and after test-time refinement.} Hollow bars: predictor output; filled bars: after six updates of the fixed aligner with the known mesh. Mean errors over session-1 validation (a, c) and session-2 test frames (b, d); no retraining.}
+    \label{fig:poseref}
+\end{figure}
 
 \subsection{Mesh-Assisted Test-Time Pose Refinement}
 \label{sec:tta}
-When the mesh is available at inference, we reuse the labeling aligner to refine predictions from both real-only and MeshTac models. We apply six updates without retraining on session-1 validation and session-2 test images (Table~\ref{tab:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.2^\circ$ mean rotation error within session 1, with translation error reduced by $20$--$50\%$. On session 2, mean rotation error is approximately $5$--$7^\circ$ and median error $1.5$--$1.8^\circ$. Thus, the same aligner improves both predictors, but some contacts retain large errors under the session change. The mean--median gap motivates confidence estimates for refinement.
+When the mesh is available at inference, we reuse the labeling aligner to refine predictions from both real-only and MeshTac models. We apply six updates without retraining on session-1 validation and session-2 test images (Fig.~\ref{fig:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.2^\circ$ mean rotation error within session 1, with translation error reduced by $20$--$50\%$. On session 2, mean rotation error is approximately $5$--$7^\circ$ and median error $1.5$--$1.8^\circ$. Thus, the same aligner improves both predictors, but some contacts retain large errors under the session change. The mean--median gap motivates confidence estimates for refinement.
 
 \begin{table}[!htb]
 \centering

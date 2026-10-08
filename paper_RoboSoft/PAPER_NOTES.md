@@ -244,3 +244,5 @@ I-Hsuan Huang*, Xiaohao Xu*, Xiangdong Wang, Xiaonan Huang, Nima Fazeli (Univers
 submission.
 
 - PBR calibration provenance (confirmed by the author 2026-10-08): one no-contact image for the automatic illumination fit, one contact image of one object outside the training set for manual gel/contact tuning; no labels used, nothing counted in K.
+
+- 2026-10-08: short version replaces the pose-refinement table with paired bars (`figures/fig_poseref.pdf`, `make_paper_figs.fig_poseref`, 2x2 single column: rotation/translation x session 1/2; hollow = predictor, filled = +align). The long version keeps the table (`\tabposeref`).

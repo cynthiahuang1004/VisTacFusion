@@ -386,6 +386,35 @@ def fig_conv(out):
     fig.savefig(osp.join(out, "fig_conv.pdf")); plt.close(fig)
 
 
+def fig_poseref(out):
+    """Test-time pose refinement (replaces the pose-refinement table): paired bars pred. / +align per K for real-only and MeshTac
+    (renderer-free) predictors, rotation and translation, session-1 validation and session-2 test (data: eval_pose_refine.py)."""
+    PRJ = json.load(open("ablation/pilot_robosoft/pose_refine_results.json"))
+    Ks = [10, 25, 50, 100]
+    meth = [("Real only", "B_k{K}_realonly", "#52514e"), ("MeshTac (ours)", "B_k{K}_rf_realonly", "#8a4fd3")]
+    panels = [("rot", "Rotation [deg]", "val", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
+              ("trans", "Translation [mm]", "val", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
+    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.55)); axes = axes.ravel()
+    w = 0.19; x = np.arange(len(Ks))
+    for i, (ax, (key, lab, split, sname)) in enumerate(zip(axes, panels)):
+        sc = HALF_MM if key == "trans" else 1.0
+        for j, (name, run, c) in enumerate(meth):
+            pre = [PRJ[f"pilot150_{run.format(K=K)}/{split}"][key] * sc for K in Ks]
+            post = [PRJ[f"pilot150_{run.format(K=K)}/{split}"][key + "_al"] * sc for K in Ks]
+            off = (j - 0.5) * 2 * w
+            ax.bar(x + off - w / 2, pre, w, color="white", edgecolor=c, lw=0.8, label=f"{name}, pred." if i == 0 else None)
+            ax.bar(x + off + w / 2, post, w, color=c, edgecolor=c, lw=0.8, label=f"{name}, +align" if i == 0 else None)
+        ax.set_xticks(x); ax.set_xticklabels(Ks)
+        if i >= 2:
+            ax.set_xlabel("Labels per object, $K$")
+        ax.set_title(f"({'abcd'[i]}) {lab}, {sname}", loc="left", fontsize=6.6, pad=3); ax.set_ylim(0, None)
+        ax.grid(axis="y", color="#e6e4df", lw=0.5); ax.set_axisbelow(True)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=2, frameon=False, fontsize=6.5, bbox_to_anchor=(0.5, -0.02), handlelength=1.3, columnspacing=1.0)
+    fig.tight_layout(w_pad=0.5, h_pad=0.6, rect=(0, 0.1, 1, 1))
+    fig.savefig(osp.join(out, "fig_poseref.pdf"), bbox_inches="tight"); plt.close(fig)
+
+
 def fig_qual(out):
     """Held-out frames of both sensors at K=25: frame | real only | MeshTac (renderer-free) | GT.  Per object, the frame with the
     object's median MeshTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
@@ -428,7 +457,7 @@ def fig_qual(out):
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out); fig_conv(out)
+    fig_kshot(out); fig_loo(out); fig_renders(out); fig_sensorb(out); fig_cross(out); fig_align(out); fig_labels(out); fig_qual(out); fig_conv(out); fig_poseref(out)
     try:
         fig_fidelity(out)
     except Exception as e:  # noqa: BLE001
