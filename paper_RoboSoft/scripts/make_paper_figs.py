@@ -394,7 +394,7 @@ def fig_poseref(out):
     meth = [("Real only", "B_k{K}_realonly", "#52514e"), ("MeshTac (ours)", "B_k{K}_rf_realonly", "#8a4fd3")]
     panels = [("rot", "Rotation [deg]", "val", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
               ("trans", "Translation [mm]", "val", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
-    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.4)); axes = axes.ravel()
+    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.25)); axes = axes.ravel()
     w = 0.19; x = np.arange(len(Ks))
     for i, (ax, (key, lab, split, sname)) in enumerate(zip(axes, panels)):
         sc = HALF_MM if key == "trans" else 1.0
