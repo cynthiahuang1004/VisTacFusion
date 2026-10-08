@@ -2,7 +2,7 @@
 
 Contact geometry and pose describe where an object touches a fingertip and how it is oriented. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} record these contacts as images of a deforming elastomer. Training a model to recover geometry from the images requires paired labels. A known object mesh can supply these labels, but each real contact must first be registered to the mesh.
 
-Accurate contact geometry is particularly important for soft fingertips: a compliant pad touches an object over an area, so grasp and in-hand manipulation decisions depend on where the pad touches and at what orientation. Registering individual contacts is labor-intensive, and a new sensor or capture condition requires further registration, which limits the number of labeled contacts a deployment can afford.
+Accurate contact geometry is particularly important for soft fingertips: a compliant pad touches an object over an area, so grasp and in-hand manipulation decisions depend on where the pad touches and at what orientation. Registering individual contacts is labor-intensive, and changes in sensor configuration or capture conditions may require additional registration, limiting the number of labeled contacts available for training.
 
 \begin{figure*}[t]
     \centering
