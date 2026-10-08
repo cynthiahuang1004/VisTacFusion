@@ -11,7 +11,7 @@
 \begin{table}[!htb]
 \centering
 \tableformat
-\scriptsize\renewcommand{\arraystretch}{0.96}
+\scriptsize\renewcommand{\arraystretch}{0.92}
 \setlength{\tabcolsep}{2.4pt}
 \begin{tabularx}{\columnwidth}{@{}rXrrrrrr@{}}
 \toprule
@@ -30,7 +30,7 @@ This experiment asks whether mesh-aligned supervision reduces the number of regi
 
 MeshTac has the lowest contact MAE, IoU and normal error at every budget. At $K=25$ it lowers depth MSE by $22\%$ and contact MAE by $21\%$ relative to real-only training, and with $50$ labels it is better than real-only training with $100$. Rotation error falls at every budget and translation error for $K\le50$. Neither baseline achieves this: the learned renderer ($K$) lowers all-pixel MSE slightly at $K\le25$ but worsens contact MAE and IoU, and helps only from $K\ge50$; self-training lowers depth MSE but not the contact metrics. The gain is stable across seeds ($0.0433\pm0.0004$ versus $0.0551\pm0.0010$ depth MSE at $K=25$) and does not depend on checkpoint selection (final-epoch depth MSE $10$--$40\%$ lower).
 
-Lower all-pixel MSE need not mean better contact reconstruction, because background dominates the image; the renderer baselines improve the former without the latter. Adding renderer frames to MeshTac (\emph{+ learned synth.}) changes nothing within the session: once the mesh is aligned, the real unlabeled images already supply the sensor's appearance. Aligned geometry thus replaces roughly half of the labeling effort, while synthetic appearance does not.
+Lower all-pixel MSE need not mean better contact reconstruction, because background dominates the image; the renderer baselines improve the former without the latter. Adding renderer frames to MeshTac (\emph{+ learned synth.}) changes nothing within the session: once the mesh is aligned, the real unlabeled images already supply the sensor's appearance. Aligned geometry thus replaces roughly half of the labeling effort.
 
 \begin{table}[!htb]
 \centering
@@ -109,7 +109,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 
 \subsection{Generalization Across Sessions and Sensors}
 \label{sec:general}
-This experiment asks whether the gain survives a change of capture session and a change of sensor. Sensor-A models are tested on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top; a nine-object model trained on all session-1 labels reaches $0.315\,$mm and IoU $0.675$ for context). For sensor B, every method is retrained on its data with unchanged aligner settings (Table~\ref{tab:general}, bottom; Fig.~\ref{fig:kshot}d--f).
+This experiment asks whether the gain survives a change of capture session and a change of sensor. Sensor-A models are tested on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). For sensor B, every method is retrained on its data with unchanged aligner settings (Table~\ref{tab:general}, bottom; Fig.~\ref{fig:kshot}d--f).
 
 On the second session, MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Here synthetic frames do matter: they change nothing at $K=25$ but reduce MAE to $0.252\,$mm at $K=100$ ($-28\%$ in total). Translation error is $4$--$5\,$mm for every method, dominated by the re-placement.
 
@@ -159,4 +159,4 @@ This experiment asks when simulation helps and how much of its apparent benefit 
 
 Simulated contacts lower rotation error on the unseen objects from $64.7^\circ$ to $5$--$7^\circ$, and removing their meshes removes most of this gain, whereas dense error improves by at most $13\%$. Simulation therefore supplies geometry coverage for pose rather than contact appearance.
 
-The learned renderer (full) lowers depth MSE by $24$--$26\%$ in the few-label regime against $0$--$3\%$ for the learned renderer ($K$), although it merely sees more real training labels. Across 14 matched renderers, contact-region image L1 correlates with downstream MSE ($\rho=0.95$), so fidelity is a useful screen, but the real labels behind a renderer must be counted before its gain is attributed to simulation.
+The learned renderer (full) lowers depth MSE by $24$--$26\%$ in the few-label regime against $0$--$3\%$ for the learned renderer ($K$), although it merely sees more real training labels. The real labels behind a renderer must therefore be counted before its gain is attributed to simulation; among matched renderers, contact-region image L1 remains a useful screen ($\rho=0.95$ with downstream MSE).

@@ -3,12 +3,12 @@
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\columnwidth]{figures/fig_align.pdf}
+    \includegraphics[width=0.86\columnwidth]{figures/fig_align.pdf}
     \caption{\textbf{Mesh alignment for pseudo-label generation} ($K=25$). For three objects: the real image, the teacher's depth, the mesh depth at the initial and at the refined contact state, and GT.}
     \label{fig:align}
 \end{figure}
 
-MeshTac uses the known mesh and object identity to label unlabeled real contacts. A teacher initializes each contact state, an aligner corrects it, and a student learns from the resulting mesh projections.
+MeshTac uses the known mesh and object identity to label unlabeled real contacts in three stages (Fig.~\ref{fig:mapl}): a teacher $f_0$ trained on the $K$ registered contacts initializes the contact state of each unlabeled image, aligner $\mathcal{A}$ corrects it against the projected mesh depth, and student $f_1$ learns from the resulting mesh projections. At inference $f_1$ needs no mesh, and $\mathcal{A}$ can optionally refine its pose.
 
 \noindent\textbf{Contact geometry.} Let $d(\mathcal{M},q)$ denote the depth projection of mesh $\mathcal{M}$ at state $q=(\theta,x,y,z)$: in-plane rotation $\theta$, translation $(x,y)$ and indentation $z$. This state determines the mesh depth, surface normals and planar-pose label $(\theta,x,y)$. Alignment changes $q$ while keeping the object geometry fixed.
 

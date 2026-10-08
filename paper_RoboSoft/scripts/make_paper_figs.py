@@ -86,7 +86,7 @@ def fig_kshot(out):
     names = {"+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
     from matplotlib.ticker import MaxNLocator
-    fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.3))         # one row: narrow, tall panels so that nearby lines separate
+    fig, axes = plt.subplots(1, 6, figsize=(7.1, 2.1))         # one row: narrow, tall panels so that nearby lines separate
     panels = [("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation"), ("pose_trans", "trans", "Translation")]
     letters = "abcdef"
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[:3], panels)):          # sensor A
@@ -350,7 +350,7 @@ def fig_labels(out):
     A, Bq = _label_quality(); Ks = [10, 25, 50, 100]
     series = [("Teacher, sensor A", A, 0, "#52514e", "o", 4.2), ("Aligned mesh, sensor A", A, 1, "#8a4fd3", "*", 6.8),
               ("Teacher, sensor B", Bq, 0, "#eb6834", "s", 4.0), ("Aligned mesh, sensor B", Bq, 1, "#1baf7a", "D", 3.8)]
-    fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.7))
+    fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.58))
     for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Pose error [deg] $\\downarrow$")]):
         for name, D, off, c, m, ms in series:
             ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=name)
@@ -369,7 +369,7 @@ def fig_conv(out):
     (a) rotation error vs. iteration from the K-shot teacher's predicted pose on the 472 validation frames;
     (b) rotation error after six iterations vs. the magnitude of a rotation perturbation of the GT pose (plus +-1.5 mm shift)."""
     d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); N = d["iters"]
-    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.45))
+    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.36))
     ax = axes[0]; t = d["teacher"]["rot"]
     ax.plot(range(N + 1), t["mean"], color="#8a4fd3", marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label="mean")
     ax.plot(range(N + 1), t["median"], color="#52514e", marker="o", ms=MS, mec="white", mew=0.5, lw=LW, label="median")
