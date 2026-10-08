@@ -1,7 +1,7 @@
 """Build the LaTeX table bodies of the RoboSoft paper from the result files.
 
 Sources (all produced by ablation/pilot_robosoft/*):
-  <OUT>/pilot150_<run>/history.json  depth_mse / normal_mse (best val depth epoch), rot / trans (best val rot epoch),
+  <OUT>/pilot150_<run>/history.json  depth_mse / normal_mse (best val depth epoch), rot / trans (best val rotation epoch = best_pose.pt),
                                      and the same for the held-out TEST objects (A runs)
   masked_results.json                contact MAE, IoU, normal angular error (contact region) on val / TEST
   cross_session_results.json         corrected cross-session set (854 frames; cross_session_fv)
@@ -35,7 +35,8 @@ def hist(run, prefix="pilot150_"):
     h = json.load(open(p))
     g = lambda e, s: next(iter(e[s].values()))
     bd = min(h, key=lambda e: g(e, "val")["depth_mse"])
-    br = h[-1]                                   # pose metrics: final epoch (no validation-based selection); the pose head does not overfit
+    br = min(h, key=lambda e: g(e, "val")["pose_rot_deg"])   # pose metrics: checkpoint with lowest validation rotation error (= best_pose.pt), the
+                                                              # same checkpoint the session-2, sensor-B and refinement evaluations load
     r = {"val": {"depth_mse": g(bd, "val")["depth_mse"], "normal_mse": g(bd, "val")["normal_mse"], "depth_mse_last": g(br, "val")["depth_mse"],
                  "rot": g(br, "val")["pose_rot_deg"], "trans": g(br, "val")["pose_trans"], "trans_mm": g(br, "val")["pose_trans"] * HALF_MM,
                  "rot_bd": g(bd, "val")["pose_rot_deg"], "epochs": len(h)}}
@@ -207,7 +208,14 @@ T["rcabl"] = "\n".join(x for x in (
 def cs(run, pre="pilot150_"):
     # corrected session-2 labels only (scripts/fix_session2_view.py; tag cross_session_fv)
     r = CROSS.get(f"{pre}{run}/cross_session_fv") or CROSS.get(f"pilot_{run}/cross_session_fv")
-    return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=r["rot_deg"], rotc=r.get("rot_deg_calib"), trans_mm=(r["trans_l1"] * HALF_MM if "trans_l1" in r else None)) if r else None
+    if not r:
+        return None
+    # pose at best_pose.pt (tag *_bp); trans_l1 is summed over x,y in eval_cross_session.py -> /2 gives the mean coordinate error used everywhere else
+    q = CROSS.get(f"{pre}{run}/cross_session_fv_bp") or CROSS.get(f"pilot_{run}/cross_session_fv_bp")
+    if not q:
+        print(f"WARNING: no cross_session_fv_bp for {pre}{run}; pose omitted"); q = {}
+    return dict(c_mae=r["c_mae"], iou=r["iou"], nrm=r.get("normal_deg"), rot=q.get("rot_deg"), rotc=q.get("rot_deg_calib"),
+                trans_mm=(q["trans_l1"] * HALF_MM / 2 if "trans_l1" in q else None))
 cross = [
     ("Real only (9 objects, session 1)", cs("A_realonly"), {}),
     ("+ Blender", cs("A_blender"), {}),
@@ -390,7 +398,13 @@ T["variants"] = table(variants, [("fk", 3), ("c_mae", 3), ("fl", 3), ("c_mae_loo
 # ---------------- sensor B with mesh-registered labels: MeshTac ----------------
 def sbm(run):
     r = SB.get(f"pilot_{run}/sensorB_mesh")
-    return dict(depth_mse=r["full_mse"], c_mae=r["c_mae"], iou=r["iou"], nrm=r["normal_deg"], rot=r["rot_deg"]) if r else None
+    if not r:
+        return None
+    q = SB.get(f"pilot_{run}/sensorB_mesh_bp")   # pose at best_pose.pt; trans_l1 summed over x,y -> /2 = mean coordinate error
+    if not q:
+        print(f"WARNING: no sensorB_mesh_bp for pilot_{run}; pose omitted"); q = {}
+    return dict(depth_mse=r["full_mse"], c_mae=r["c_mae"], iou=r["iou"], nrm=r["normal_deg"], rot=q.get("rot_deg"),
+                trans_mm=(q["trans_l1"] * HALF_MM / 2 if "trans_l1" in q else None))
 def sbm_seeds(run):
     """mean ± std over seeds 0,1,2 of a sensor-B run (tag sensorB_mesh); returns (dict of means, dict of stds, n)."""
     vs = [SB.get(f"pilot_{run}{sfx}/sensorB_mesh") for sfx in ("", "_seed1", "_seed2")]; vs = [v for v in vs if v]

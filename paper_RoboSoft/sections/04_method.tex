@@ -4,24 +4,24 @@
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.8\columnwidth]{figures/fig_align.pdf}
-    \caption{\textbf{Mesh alignment for pseudo-label generation} ($K=25$). For three objects: the real image, the teacher's depth, the mesh depth at the initial and at the refined contact state, and GT.}
+    \caption{\textbf{Mesh alignment for pseudo-label generation} ($K=25$, sensor A). Columns: real image, teacher depth, mesh depth before and after alignment, and GT. Each example has the median aligned-label IoU for its object.}
     \label{fig:align}
 \end{figure}
 
-MeshTac uses the known mesh and object identity to label unlabeled real contacts in three stages (Fig.~\ref{fig:mapl}): a teacher $f_0$ trained on the $K$ registered contacts initializes the contact state of each unlabeled image, aligner $\mathcal{A}$ corrects it against the projected mesh depth, and student $f_1$ learns from the resulting mesh projections. At inference $f_1$ needs no mesh, and $\mathcal{A}$ can optionally refine its pose.
+MeshTac uses a known mesh and object identity to label additional real contacts (Fig.~\ref{fig:mapl}). A teacher $f_0$, trained on $K$ registered contacts per object, estimates their contact states. Aligner $\mathcal{A}$ corrects these estimates using the real images and projected mesh depth. The aligned mesh then supplies targets for student $f_1$.
 
-\noindent\textbf{Contact geometry.} Let $d(\mathcal{M},q)$ denote the depth projection of mesh $\mathcal{M}$ at state $q=(\theta,x,y,z)$: in-plane rotation $\theta$, translation $(x,y)$ and indentation $z$. This state determines the mesh depth, surface normals and planar-pose label $(\theta,x,y)$. Alignment changes $q$ while keeping the object geometry fixed.
+\noindent\textbf{Contact geometry.} We represent a contact by $q=(\theta,x,y,z)$: in-plane rotation, translation and indentation. Let $d(\mathcal{M},q)$ denote the depth projection of mesh $\mathcal{M}$ at this state. The projection gives depth and surface-normal labels; $(\theta,x,y)$ gives the planar-pose label. Alignment updates $q$ while keeping the mesh fixed. Indentation determines the dense labels but is not a student pose output.
 
-\noindent\textbf{Learning the aligner.} For a labeled image $\mathcal{I}$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. A ResNet-18 aligner, initialized from ImageNet, receives the concatenated tactile RGB and candidate depth as four input channels and learns to recover the correction:
+\noindent\textbf{Learning the aligner.} For a labeled image $\mathcal{I}$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. The real image stays fixed. An ImageNet-initialized ResNet-18 receives the concatenated tactile RGB and candidate depth as four channels and predicts the correction:
 \begin{equation}
     \mathcal{A}\big(\mathcal{I},d(\mathcal{M},q^\ast+\delta)\big)\approx-\delta.
 \end{equation}
-Sampling perturbations produces training examples from the original $K$ registered contacts without additional real labels. We normalize the residual dimensions and optimize smooth-L1 loss. Perturbation ranges and training settings are given in Sec.~\ref{sec:setup}.
+Sampling perturbations creates training pairs from the same $K$ contacts without additional real labels or synthetic RGB images. We normalize each residual dimension and train with smooth-L1 loss. Sec.~\ref{sec:setup} gives the perturbation ranges and training settings.
 
-\noindent\textbf{Generating pseudo-labels.} Teacher $f_0$ predicts the initial planar pose of an unlabeled image; its maximum predicted depth initializes indentation. Fig.~\ref{fig:align} shows the resulting labels for three objects (each object's frame of median aligned-label IoU). We refine the state over six iterations,
+\noindent\textbf{Generating pseudo-labels.} The teacher's planar-pose prediction and maximum predicted depth initialize the state of an unlabeled image. We refine it over six iterations,
 \begin{equation}
     q_{t+1}=q_t+\mathcal{A}\big(\mathcal{I},d(\mathcal{M},q_t)\big),
 \end{equation}
-clipping indentation to $[0.3,1.6]\,$mm. The final mesh projection supplies depth, normal and planar-pose targets. We retain all pseudo-labeled training frames in the evaluated configuration (Sec.~\ref{sec:ablation}).
+with indentation clipped to $[0.3,1.6]\,$mm. The final state supplies the planar-pose target and determines the projected depth and normals (Fig.~\ref{fig:align}). We retain all pseudo-labeled training frames in the main configuration.
 
-\noindent\textbf{Student training and inference.} Student $f_1$ uses the teacher's architecture and learns from registered and pseudo-labeled training images. Training combines depth and normal MSE, cosine rotation loss and L1 translation loss, with learned weights within the dense and pose groups. Synthetic frames from a renderer are optional and evaluated as a separate variant. At standard inference, the student uses the tactile image and known object identity without mesh rendering. The fixed aligner can additionally refine its predicted pose using the mesh (Sec.~\ref{sec:tta}).
+\noindent\textbf{Student training and inference.} Teacher and student have the same architecture but are trained separately. The student learns from real images with registered or mesh-derived labels. Its objective combines depth and normal MSE, cosine rotation loss and L1 translation loss, with learned weights within the dense and pose groups. The main method uses no synthetic RGB images; renderer augmentation is a separate variant. At inference, the student uses the tactile image and known object identity. If the mesh is available, the fixed aligner can also refine its pose (Sec.~\ref{sec:tta}).

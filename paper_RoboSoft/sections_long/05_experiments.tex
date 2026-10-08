@@ -9,7 +9,7 @@ Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency.} Contact MAE, rotation and translation error (final epoch) against the label budget. (a--c) Sensor-A validation results; (d--f) sensor-B test results. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ learned renderer (full) (50); sensor B uses 50.}
+    \caption{\textbf{Label efficiency.} Contact MAE, rotation and translation error against the label budget. (a--c) Sensor-A validation results; (d--f) sensor-B test results. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ learned renderer (full) (50); sensor B uses 50.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -143,7 +143,7 @@ Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow
 \tabcross
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Cross-session.} Sensor-A models evaluated on the curated session-2 set ($854$ frames, 11 objects; poses re-estimated per frame and manually reviewed). Rot.: raw; Rot.$^{\ast}$: after removing a per-object constant offset (the re-placement of the object). Rows without a $\Kreal$ use the session-1 training set of nine objects; object coverage therefore differs from the $K$-shot rows. Pose metrics use the depth checkpoint.}
+\caption{\textbf{Cross-session.} Sensor-A models evaluated on the curated session-2 set ($854$ frames, 11 objects; poses re-estimated per frame and manually reviewed). Rot.: raw; Rot.$^{\ast}$: after removing a per-object constant offset (the re-placement of the object). Rows without a $\Kreal$ use the session-1 training set of nine objects; object coverage therefore differs from the $K$-shot rows.}
 \label{tab:cross}
 \end{table}
 

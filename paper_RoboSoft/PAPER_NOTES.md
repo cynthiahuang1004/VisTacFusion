@@ -8,7 +8,19 @@ without re-checking.
 Deadline date: RoboSoft 2027, **2026-10-15**. Official homepage says 23:59 PT but CFP says GMT; confirm the time in PaperPlaza. Page limit 6 + up to 2 paid pages; `main.pdf` is
 exactly 6 pages including references.
 
-## Short-version full-text revision (2026-10-07)
+## Short-version readability and argument revision (2026-10-08; latest)
+
+Revised the abstract in `main.tex` and all six short sections, keeping the renderer-free MeshTac main setting, current title, author-updated Fig. 1 (0.9 text width), and all raw results. `main.pdf` remains six pages. See the newest entry in `EDITORIAL_REVIEW.md` for papers read, before/after content corrections, and verification. Long-version sources/PDF, architecture/figure assets, shared `data/tables.tex`, and `refs.bib` are unchanged. This round has not been pushed to Overleaf.
+
+The prose now distinguishes the observed gains from their interpretation: corrected contact state improves labels and student predictions; synthetic augmentation has small within-session gains at K=10 but no consistent additional gain across budgets, and helps session 2 at K=100. Self-training does improve contact metrics at larger budgets. Sensor-B pose gains are less consistent than contact gains. Table-II students share architecture/schedule but use different teachers; rows 3 and 5 share the real-only teacher and directly compare unrefined/refined mesh labels. The L1-search half-depth gate and all-frame pose supervision are explicit. Section E now uses **Label Budgets**, avoiding an implication of validation/test leakage. Do not restore either the renderer-assisted main setting or the retired terminology.
+
+**Checkpoint policy (2026-10-08, unified; supersedes the exceptions note and the final-epoch policy):** every table and figure reports dense metrics at `best_depth.pt` (lowest validation depth MSE) and pose metrics at `best_pose.pt` (lowest validation rotation error). Sensor A: `build_tables.hist()` / `make_paper_figs.pose_ckpt()` take the best-validation-rotation epoch from history.json (no final-epoch checkpoint is saved). Session 2 and sensor B: re-evaluated with `eval_cross_session.py --ckpt best_pose.pt` into tags `cross_session_fv_bp` and `sensorB_mesh_bp` (dense metrics still from `cross_session_fv` / `sensorB_mesh`). `eval_pose_refine.py` already loads `best_pose.pt`. Translation is the mean absolute coordinate error in mm everywhere: `eval_cross_session.py` sums |dx|+|dy|, so `trans_l1 * 41 / 2`; history.json and the refinement script already average the two coordinates. Final-epoch vs selected-epoch rotation differ by <= 0.25 deg on sensor A.
+
+**Translation aggregation (now stated in setup/captions):** sensor-A budget metrics (`engine/eval.py`) and test-time refinement (`eval_pose_refine.py`) average absolute errors over x and y. Sensor-B/session-2 evaluation (`eval_cross_session.py`) sums the two axes and averages over frames. Fig. 4(c)/(f) and Tables III/IV therefore use different aggregation; the text now makes this explicit without changing shared table data or rescaling results. Direct cross-table comparisons would require a unified evaluation protocol.
+
+The abstract keeps the existing quantitative results and explicitly identifies the real-only comparison, two sensor-specific models and 12 ridge-pattern objects. Discussion now includes contact-state accuracy, the distinction between full-image and contact metrics, simulation coverage, pose ambiguity, validation-label cost and future work in connected paragraphs. PBR contact-tuning split/K-budget provenance remains unconfirmed; the author has been asked, and no train-only/K-only guarantee was invented.
+
+## Short-version full-text revision (2026-10-07; historical)
 
 This round edits only `sections/*.tex` and rebuilds `main.pdf` (6 pages). See the newest entry in `EDITORIAL_REVIEW.md` for primary papers read, section-level changes, before/after factual corrections, captions, and verification. The existing abstract, title and five experiment headings remain. Method now specifies the actual student losses; setup explicitly states that the object embedding conditions the pose head. Cross-session renderer benefits are budget-dependent (K=100 improves; at K=25 renderer-free MAE is slightly lower). Test-time refinement's 0.4–1.2° range applies to K >= 25, whose session-2 medians are 1.5–1.8°. The held-out-object caption now explicitly exempts the all-pairs renderer from the exclusion of those objects' real training contacts. For the half-gated L1-search control, depth is gated per object but pose supervision uses all search results (`pose_all=True`).
 
@@ -16,9 +28,10 @@ No long-version or shared figure/table/bibliography files were edited by this ro
 
 ## Reframing (2026-10-07, author decision after an external review)
 
+- **Fig. 1 training/inference version (author-approved and pushed):** the short version now includes `figures/fig_arch_training_inference.pdf`, built from `architecture_diagram_training_inference.tex`. Both teacher and student are expanded as the same frozen SITR-B/18 encoder, DPT decoder and Pose MLP; object embedding connects only to pose. Training shows registered and mesh-aligned labels supervising the student; inference separates student-only prediction from optional mesh-assisted refinement, including real-image and mesh inputs. The short caption describes panels (a) and (b). Pushed to Overleaf and verified at `180a0f0`, on remote base `05717b2`; local and remote short manuscripts compile to six pages with no unresolved references or overfull boxes. The original `figures/fig_arch.pdf` and long-version sources remain unchanged. `main_fig1_preview.pdf` is a preview copy of the updated short manuscript.
 - **L1-search explanation (author-requested clarification):** the short-version ablation now explicitly states teacher-pose initialization, fitting the mesh to teacher depth, 567 nearby candidate poses, learned-renderer RGB generation, and selecting the pose with minimum full-image RGB L1 against the real tactile image as the pose pseudo-label. The adjacent results paragraph was shortened to avoid repeating table values and retain six pages. This is the search baseline only; the renderer-free MeshTac framing is unchanged. Long-version sources and shared figures/tables were not edited in this clarification. Pushed to Overleaf as `83753bb`; the remote commit was verified and the short version still compiles to six pages.
 - **MeshTac = renderer-free pipeline** (code names `rf` / `maplnr_m`: real-only teacher, aligner trained on real perturbations only, student without synthetic frames). The former main configuration (`al2` / `mapl_m`, K-pair learned renderer in aligner, teacher and student) is now the variant "+ synthetic frames" and appears as an indented row under MeshTac. Fig. 3, Fig. 5 (predictions of the rf models), Table I-IV and all numbers in the text follow this. Do not swap back.
-- **Checkpoints**: dense metrics at the best-validation-depth checkpoint; pose metrics (rotation, translation) at the FINAL epoch, no selection (`build_tables.hist()`); the text also reports final-epoch depth MSE. The old "best-rotation checkpoint" policy is gone.
+- **Checkpoints**: dense metrics at the best-validation-depth checkpoint; pose metrics (rotation, translation) at the best-validation-rotation checkpoint, uniformly (see the 2026-10-08 policy note above). The text still reports final-epoch depth MSE for the seed comparison.
 - **Table I** has Normal (deg) and Trans. (mm) columns; translation = normalized L1 x 41 mm (`HALF_MM`).
 - **"leaky" is retired** -> "all-pairs renderer / all-pairs reference" everywhere (tables, figure legends, text).
 - **Fig. 5** frames = the object's median MeshTac contact MAE (not the median improvement).
@@ -59,7 +72,7 @@ Main sensor-A aligner logs include synthetic examples (24 real + 40 synthetic pe
 | 6-page paper | `main.tex`, `sections/01_intro … 06_conclusion.tex` |
 | Extended version | `main_long.tex`, `sections_long/01_intro, 02_related, 03_setup, 04_mapl, 05_experiments, 06_conclusion.tex` |
 | Shared | `refs.bib`, `ieeeconf.cls`, `data/tables.tex` (generated), `figures/` |
-| Overview figure (Fig. 1) | **`figures/fig_arch.pdf`**, the author's latest polished figure; both versions include this PDF directly. Preserve this PDF unless the author requests a figure change. |
+| Overview figure (Fig. 1) | Short: **`figures/fig_arch_training_inference.pdf`**, author-approved TRAINING/INFERENCE figure with expanded teacher/student architectures. Long: original **`figures/fig_arch.pdf`** (preserved). |
 | Tables | `scripts/build_tables.py` → `data/tables.tex`; one `\newcommand{\tab<name>}` per table body |
 | Figures | `scripts/make_paper_figs.py`; `scripts/make_arch_assets.py` (thumbnails of Fig. 1); `scripts/dump_qual_preds.py` (predictions for Fig. 5) |
 | Overleaf | project `6ab1c9afe47f399544728ef3`; `OVERLEAF_TOKEN=… bash sync_overleaf.sh push "<msg>"` (also `pull`) |
@@ -173,7 +186,7 @@ self-training 0.300/0.707, MeshTac 0.252/0.743 (no renderer 0.288/0.707).
 - Sensor A = GelSlim 5.0 (`\sensor`), sensor B = GelSlim 4.0 (`\sensorB`, public dataset, Sipos et al.).
 - Metrics: depth MSE over all pixels (mm²); contact MAE inside the GT contact region (mm); IoU over the union of predicted (>0.05 mm) and GT (>0) masks;
   normal angular error inside the contact (deg); rotation error (deg). Dense metrics come from
-  `best_depth.pt`; main sensor-A within-session/pose-refinement pose metrics use `best_pose.pt`. Legacy cross-session/sensor-B result JSONs use the evaluated depth checkpoint; do not mix their rotation values with pose-refinement results.
+  `best_depth.pt`; all pose metrics use `best_pose.pt` (tags `*_bp` for session 2 and sensor B). The old `cross_session_fv` / `sensorB_mesh` rotation and translation values were taken at the depth checkpoint and are no longer used in the paper.
 
 ## 5. Facts that are easy to get wrong
 
