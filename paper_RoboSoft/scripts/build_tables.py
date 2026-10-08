@@ -271,8 +271,8 @@ T["crossmain"] = table([
 ], [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",))
 T["loomain"] = table([
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}), ("+ PBR", row("A_blender", "TEST"), {}),
-    ("+ learned renderer", row("A_ganloo", "TEST"), {}), ("\\quad learned renderer, no held-out meshes", row("A_ganloo_9obj", "TEST"), {}),
-    ("\\quad learned renderer + background", row("A_bgcondloo", "TEST"), {}), ("+ learned renderer (full)", row("A_ganfull", "TEST"), {"leaky": True}),
+    ("+ learned renderer", row("A_ganloo", "TEST"), {}), ("\\quad w/o held-out meshes", row("A_ganloo_9obj", "TEST"), {}),
+    ("\\quad + background", row("A_bgcondloo", "TEST"), {}), ("+ learned renderer (full)", row("A_ganfull", "TEST"), {"leaky": True}),
 ], [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 _r = labq("real_pseudo_k25_ro_al", ["mesh (kept)"]); _rt = labq("real_pseudo_k25_ro_al", ["teacher (all)"])
 T["rcablmain"] = "\n".join(x for x in (

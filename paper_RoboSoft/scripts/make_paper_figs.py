@@ -309,7 +309,7 @@ def fig_align(out, K=25):
         sc = sorted((iou_of(t), t) for t in cand[::7])
         rows.append(sc[len(sc) // 2][1])                       # the object's median-quality frame
     fig, axes = plt.subplots(len(rows), 5, figsize=(3.45, 0.64 * len(rows) + 0.24))   # vertical colorbar on the right
-    titles = ["unlabeled\nframe", "teacher\ndepth", "mesh at\nteacher pose", "mesh at\naligned pose", "GT\n"]
+    titles = ["unlabeled\nframe", "teacher\ndepth", "mesh at\nteacher pose", "mesh at\naligned pose", "GT mesh\ndepth"]
     for r, t in enumerate(rows):
         f = fits[t]; o = t.split("/")[-5]
         gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
@@ -394,7 +394,7 @@ def fig_poseref(out):
     meth = [("Real only", "B_k{K}_realonly", "#52514e"), ("MeshTac (ours)", "B_k{K}_rf_realonly", "#8a4fd3")]
     panels = [("rot", "Rotation [deg]", "val", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
               ("trans", "Translation [mm]", "val", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
-    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.3)); axes = axes.ravel()
+    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.15)); axes = axes.ravel()
     w = 0.19; x = np.arange(len(Ks))
     for i, (ax, (key, lab, split, sname)) in enumerate(zip(axes, panels)):
         sc = HALF_MM if key == "trans" else 1.0
@@ -402,8 +402,8 @@ def fig_poseref(out):
             pre = [PRJ[f"pilot150_{run.format(K=K)}/{split}"][key] * sc for K in Ks]
             post = [PRJ[f"pilot150_{run.format(K=K)}/{split}"][key + "_al"] * sc for K in Ks]
             off = (j - 0.5) * 2 * w
-            ax.bar(x + off - w / 2, pre, w, color="white", edgecolor=c, lw=0.8, label=f"{name}, pred." if i == 0 else None)
-            ax.bar(x + off + w / 2, post, w, color=c, edgecolor=c, lw=0.8, label=f"{name}, +align" if i == 0 else None)
+            ax.bar(x + off - w / 2, pre, w, color="white", edgecolor=c, lw=0.8, label=name if i == 0 else None)
+            ax.bar(x + off + w / 2, post, w, color=c, edgecolor=c, lw=0.8, label=f"{name} + align" if i == 0 else None)
         ax.set_xticks(x); ax.set_xticklabels(Ks)
         if i >= 2:
             ax.set_xlabel("Labels per object, $K$")

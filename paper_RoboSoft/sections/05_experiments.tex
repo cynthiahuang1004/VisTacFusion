@@ -30,7 +30,7 @@ We vary $K$ to compare mesh-aligned supervision with real-only training, rendere
 
 MeshTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $21\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$. The same comparison holds for $K=50$ versus $100$. MeshTac also lowers pose error on sensor A. Three-seed runs at $K=25$ give depth MSE $0.0433\pm0.0004$, compared with $0.0551\pm0.0010$ for real-only training; the improvement persists at the final epoch.
 
-The baselines behave differently at small and large budgets. At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; both improve contact metrics at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic images to MeshTac gives small gains at $K=10$ but no consistent further improvement across budgets.
+At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; their contact gains appear mainly at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic images to MeshTac gives small gains at $K=10$ but no consistent further improvement across budgets.
 
 \begin{table}[!htb]
 \centering
@@ -39,14 +39,14 @@ The baselines behave differently at small and large budgets. At $K\le25$, learne
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
-\multicolumn{2}{@{}l}{Pseudo-label source} & \multicolumn{4}{c}{Pseudo-label accuracy} & \multicolumn{4}{c}{Student accuracy} \\
+\multicolumn{2}{@{}l}{Pseudo-label source} & \multicolumn{4}{c}{Pseudo-label quality} & \multicolumn{4}{c}{Student accuracy} \\
 \cmidrule(lr){1-2}\cmidrule(lr){3-6}\cmidrule(lr){7-10}
 \shortstack[l]{\strut Depth\\\strut source} & \shortstack[l]{\strut Pose\\\strut source} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} \\
 \midrule
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label source ablation} ($K=25$). Students share the architecture and training schedule. Left: pseudo-label accuracy against withheld training GT; right: student validation accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Shaded: MeshTac.}
+\caption{\textbf{Pseudo-label source ablation} ($K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student validation accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Shaded: MeshTac.}
 \label{tab:abl}
 \end{table}
 
@@ -60,7 +60,7 @@ The baselines behave differently at small and large budgets. At $K\le25$, learne
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_conv.pdf}
-    \caption{\textbf{Aligner convergence} ($K=25$, $472$ validation frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Rotation error after six updates from perturbed GT states, with random translation and indentation offsets. Shading: training rotation range ($\pm8^\circ$).}
+    \caption{\textbf{Aligner convergence} ($K=25$, $472$ validation frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Rotation error after six updates from perturbed GT states, with random translation and indentation offsets. Shaded region: training rotation range ($\pm8^\circ$).}
     \label{fig:conv}
 \end{figure}
 
@@ -70,7 +70,7 @@ We compare pseudo-label sources to separate the effects of mesh geometry, pose s
 
 At the unrefined teacher pose (row 3), mesh labels have lower IoU than teacher depth ($0.47$ vs.\ $0.56$), and their student performs worse than real-only training. Adding teacher pose supervision (row 2) mainly improves student rotation. L1 search (row 4) improves both label and student IoU, but the aligner (row 5) gives the best labels and student across the reported metrics despite its less accurate initial teacher. Relative to the unrefined state, alignment lowers label rotation error from $6.0^\circ$ to $1.1^\circ$ and translation error from $1.1$ to $0.67\,$mm. Label improvements also hold on sensor B and across budgets (Fig.~\ref{fig:labels}).
 
-The renderer's search score can favor an incorrect state: at $K=25$, the search-selected pose has lower RGB L1 error than GT on $93\%$ of frames. This limits image similarity as a criterion for geometric alignment. The aligner instead learns state corrections from known perturbations. From teacher initialization, mean rotation error reaches $1.1^\circ$ after three updates (Fig.~\ref{fig:conv}). Six updates also reduce $15^\circ$ rotation perturbations to $0.6^\circ$, with simultaneous translation and indentation offsets, beyond the training rotation range. At $30^\circ$, the remaining error rises to $3.2^\circ$. Tested aligner settings and two random label selections preserve the gains; a second labeling round adds little. On unlabeled sensor-A training contacts, $1.6\%$ of aligned poses exceed $5^\circ$ error at $K=25$, mostly on one nearly symmetric object.
+Image similarity can favor an incorrect geometric state: at $K=25$, the search-selected pose has lower RGB L1 error than the GT pose on $93\%$ of frames. The aligner instead learns state corrections from known perturbations. From teacher initialization, mean rotation error reaches $1.1^\circ$ after three updates (Fig.~\ref{fig:conv}). Six updates also reduce $15^\circ$ rotation perturbations to $0.6^\circ$, with simultaneous translation and indentation offsets, beyond the training rotation range. At $30^\circ$, the remaining error rises to $3.2^\circ$. Tested aligner settings and two random label selections preserve the gains; a second labeling round adds little. On unlabeled sensor-A training contacts, $1.6\%$ of aligned poses exceed $5^\circ$ error at $K=25$, mostly on one nearly symmetric object.
 
 \begin{figure}[t]
     \centering
@@ -109,7 +109,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 
 \subsection{Robustness Across Sessions and Sensors}
 \label{sec:general}
-We test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). Separately, we train each method on sensor B with unchanged aligner settings (bottom; Fig.~\ref{fig:kshot}d--f). The second evaluation tests whether the procedure remains useful with a different sensor design; it does not test zero-shot model transfer.
+We evaluate two forms of robustness separately. First, we test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}, top). Second, we retrain each method on sensor B with unchanged aligner settings (bottom; Fig.~\ref{fig:kshot}d--f); this tests whether the procedure transfers across sensor designs after sensor-specific retraining, not zero-shot model transfer.
 
 On session 2, MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.252\,$mm at $K=100$, a $28\%$ reduction from real-only training. Translation error rises to $1.7$--$2.1\,$mm for all methods, about twice the session-1 level, so better contact reconstruction only partly compensates for the placement change.
 
@@ -126,7 +126,7 @@ The examples in Fig.~\ref{fig:qual} show improved ridge continuity and junction 
 
 \subsection{Mesh-Assisted Test-Time Pose Refinement}
 \label{sec:tta}
-When the mesh is available at inference, we reuse the labeling aligner to refine predictions from both real-only and MeshTac models. We apply six updates without retraining on session-1 validation and session-2 test images (Fig.~\ref{fig:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.2^\circ$ mean rotation error within session 1, with translation error reduced by $20$--$50\%$. On session 2, mean rotation error is approximately $5$--$7^\circ$ and median error $1.5$--$1.8^\circ$. Thus, the same aligner improves both predictors, but some contacts retain large errors under the session change. The mean--median gap motivates confidence estimates for refinement.
+Standard MeshTac inference needs no mesh rendering. When a known mesh is additionally available, we reuse the labeling aligner to refine the predicted pose of both real-only and MeshTac models. We apply six updates without retraining on session-1 validation and session-2 test images (Fig.~\ref{fig:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.2^\circ$ mean rotation error within session 1, with translation error reduced by $20$--$50\%$. On session 2, mean rotation error remains $5$--$7^\circ$ despite a median of $1.5$--$1.8^\circ$, indicating a few contacts that stay poorly aligned and motivating confidence estimates for refinement.
 
 \begin{table}[!htb]
 \centering
@@ -142,7 +142,7 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \label{tab:loo}
 \end{table}
 
-\subsection{Renderer Baselines: Unseen Objects and Label Budgets}
+\subsection{Renderer Baselines: Held-Out Objects and Label Budgets}
 \label{sec:study}
 We evaluate renderer augmentation separately from MeshTac, first on objects excluded from real training, then under different renderer supervision budgets. For the held-out-object test, we remove three objects' real contacts while retaining their meshes for simulation (Table~\ref{tab:loo}). A control also removes their meshes; a background-conditioned renderer additionally receives a no-contact image from the session.
 
