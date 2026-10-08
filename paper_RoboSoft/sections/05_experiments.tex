@@ -39,14 +39,14 @@ Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned 
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
-\multicolumn{2}{@{}l}{Label of each unlabeled image} & \multicolumn{4}{c}{Label vs.\ withheld GT} & \multicolumn{4}{c}{Student (validation)} \\
+\multicolumn{2}{@{}l}{Pseudo-label source} & \multicolumn{4}{c}{Pseudo-label accuracy} & \multicolumn{4}{c}{Student accuracy} \\
 \cmidrule(lr){1-2}\cmidrule(lr){3-6}\cmidrule(lr){7-10}
 \shortstack[l]{\strut Depth\\\strut from} & \shortstack[l]{\strut Pose\\\strut from} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} \\
 \midrule
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Where the gain comes from.} The same student is trained on the same unlabeled sensor-A images ($K=25$); rows differ only in the depth label (teacher prediction or projected mesh) and in where its pose comes from ($A$: the aligner of Fig.~\ref{fig:mapl}). Left: label accuracy against withheld training GT (evaluation only); right: the resulting student (50 epochs; three-seed means except rows 2--3). Shaded: MeshTac. Rows 1, 2 and 4 use the teacher trained with learned renderer ($K$) frames (pose error $4.9^\circ$), rows 3 and 5 the real-only teacher ($6.0^\circ$). $^{1/2}$: mesh depth on the half of each object's frames with the lowest render error, teacher depth on the rest. $\ddagger$: learned renderer ($K$) frames in aligner and student training.}
+\caption{\textbf{Pseudo-label source ablation.} The same student is trained on the same unlabeled sensor-A images ($K=25$); rows differ only in the depth label (teacher prediction or projected mesh) and in where its pose comes from ($\mathcal{A}$: the aligner of Fig.~\ref{fig:mapl}). Left: label accuracy against withheld training GT (evaluation only); right: the resulting student on validation (50 epochs; three-seed means except rows 2--3). Shaded: MeshTac. Rows 1, 2 and 4 use the teacher trained with learned renderer ($K$) frames (pose error $4.9^\circ$), rows 3 and 5 the real-only teacher ($6.0^\circ$). L1 search uses mesh depth on the half of each object's frames with the lowest render error and teacher depth on the rest; the last row adds learned renderer ($K$) frames to aligner and student training.}
 \label{tab:abl}
 \end{table}
 

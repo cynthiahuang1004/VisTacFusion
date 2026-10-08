@@ -39,9 +39,9 @@ The learned renderer replaces $\mathcal{P}_\theta$ by a conditional GAN~\cite{is
 
 \subsection{Zero-Label Alternative: Contact-Preserving Unpaired Refiner}
 \label{sec:refiner}
-We also test whether unlabeled real images can improve synthetic appearance without paired renderer supervision. Following unpaired image translation~\cite{shrivastava2017simgan,park2020cut,chen2022cyclegan}, we train a refiner to change the shading of a physical render while preserving its contact region. The refiner $\mathcal{F}$ takes the physical render $\hat I_{\mathrm{phys}}$, the session background $B$ and the contact mask $m$ (simulated depth $>0$, dilated by 4\,px and feathered) and outputs
+We also test whether unlabeled real images can improve synthetic appearance without paired renderer supervision. Following unpaired image translation~\cite{shrivastava2017simgan,park2020cut,chen2022cyclegan}, we train a refiner to change the shading of a physical render while preserving its contact region. The refiner $\mathcal{F}$ takes the physical render $\hat{\mathcal{I}}_{\mathrm{phys}}$, the session background $B$ and the contact mask $m$ (simulated depth $>0$, dilated by 4\,px and feathered) and outputs
 \begin{equation}
-    \hat I = m \odot \mathcal{F}(\hat I_{\mathrm{phys}}, B, m) + (1-m) \odot B ,
+    \hat{\mathcal{I}} = m \odot \mathcal{F}(\hat{\mathcal{I}}_{\mathrm{phys}}, B, m) + (1-m) \odot B ,
 \end{equation}
 The background is therefore taken from the real sensor, while the refiner changes only the contact region. Depth, normal and pose targets remain those of the physical render.
 

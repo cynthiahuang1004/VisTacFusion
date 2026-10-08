@@ -47,9 +47,9 @@
 % ====================================================================
 % inputs
 \node[thumb] (frame) at (0, 3.55) {\img{frame.png}};
-\node[capt, below=1pt of frame] {Unlabeled frame $I$};
+\node[capt, below=1pt of frame] {Unlabeled frame $\mathcal{I}$};
 \node[thumb] (mesh) at (0, 1.75) {\img{mesh.png}};
-\node[capt, below=1pt of mesh] {Object mesh $M$};
+\node[capt, below=1pt of mesh] {Object mesh $\mathcal{M}$};
 
 % teacher
 \node[blk, fill=cVis, draw=cVisB] (teacher) at (2.35, 3.55)
@@ -58,12 +58,12 @@
 
 % ---- mesh alignment lane ----
 \node[blk, fill=cOut, draw=cOutB] (render) at (5.15, 1.75)
-  {\textbf{Mesh depth}\\[0.5pt]{\scriptsize $d(M,q)$}};
+  {\textbf{Mesh depth}\\[0.5pt]{\scriptsize $d(\mathcal{M},q)$}};
 \node[thumb] (dq0) at (6.95, 1.75) {\img[0.85cm]{mesh_q0.png}};
-\node[capt, above=1pt of dq0] {$d(M,q)$};
+\node[capt, above=1pt of dq0] {$d(\mathcal{M},q)$};
 \node[draw=black!60, circle, inner sep=0.6pt, font=\scriptsize, fill=white] (cat) at (8.1, 2.65) {$\oplus$};
 \node[blk, fill=cTac, draw=cTacB] (al) at (10.0, 2.65)
-  {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize ResNet-18, 4-ch.\ input}};
+  {\textbf{Aligner $\mathcal{A}$}\\[0.5pt]{\scriptsize ResNet-18, 4-ch.\ input}};
 \node[smallblk, fill=cOut, draw=cOutB] (dq) at (12.75, 2.65)
   {\textbf{$\boldsymbol{\Delta q}$}\\[0.5pt]{\scriptsize $(\Delta\theta,\Delta x,\Delta y,\Delta z)$}};
 
@@ -71,7 +71,7 @@
 \draw[arr] (teacher.east) -| node[lbl, pos=0.78, right] {pose $q_0$} (render.north);
 \draw[arr] (render) -- (dq0);
 \draw[arr] (dq0.east) -| (cat.south);
-\draw[arr] (frame.north) -- ++(0,0.42) -| node[lbl, pos=0.25, above] {frame $I$} (cat.north);
+\draw[arr] (frame.north) -- ++(0,0.42) -| node[lbl, pos=0.25, above] {frame $\mathcal{I}$} (cat.north);
 \draw[arr] (cat) -- (al);
 \draw[arr] (al) -- (dq);
 % iteration (feedback)
@@ -131,7 +131,7 @@
 \draw[arr] (lane_st.east |- loss) -- (loss.west);
 
 % test-time use of the aligner (optional)
-\node[smallblk, fill=cTac, draw=cTacB] (al2) at (11.75, -2.0) {\textbf{Aligner $A$}\\[0.5pt]{\scriptsize same weights, $\times 6$}};
+\node[smallblk, fill=cTac, draw=cTacB] (al2) at (11.75, -2.0) {\textbf{Aligner $\mathcal{A}$}\\[0.5pt]{\scriptsize same weights, $\times 6$}};
 \node[smallblk, fill=cOut, draw=cOutB] (rp) at (14.25, -2.0) {\textbf{Refined pose}};
 \draw[arr] (se2.east) -- node[lbl, pos=0.62, above] {test time} (al2.west);
 \draw[arr] (al2) -- (rp);
@@ -144,7 +144,7 @@
   \node[draw=cVisB, fill=cVis, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg1) at (0.2,0) {};
   \node[anchor=west, text=black!70] at (lg1.east) {perception network ($f_0$, $f_1$)};
   \node[draw=cTacB, fill=cTac, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg2) at (4.3,0) {};
-  \node[anchor=west, text=black!70] at (lg2.east) {aligner $A$};
+  \node[anchor=west, text=black!70] at (lg2.east) {aligner $\mathcal{A}$};
   \node[draw=cOutB, fill=cOut, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg3) at (6.3,0) {};
   \node[anchor=west, text=black!70] at (lg3.east) {geometry and pose};
   \node[draw=cHeadB, fill=cHead, rounded corners=1pt, minimum width=0.34cm, minimum height=0.22cm, inner sep=0pt] (lg4) at (9.3,0) {};

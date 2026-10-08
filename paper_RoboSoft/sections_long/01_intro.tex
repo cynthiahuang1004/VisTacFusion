@@ -5,7 +5,7 @@ Contact geometry tells a robot where an object meets its fingertip and how the o
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_arch.pdf}
-    \caption{\textbf{MeshTac overview.} Teacher $f_0$ initializes the contact state, and aligner $A$ iteratively corrects it by comparing the tactile image with projected mesh depth. The aligned mesh provides depth, normal and planar-pose targets for student $f_1$. Every trainable component in the matched-budget pipeline shares the same $K$ registered contacts; synthetic frames from a renderer are an optional addition evaluated separately. At standard inference, $f_1$ predicts without rendering the mesh. Optional pose refinement reuses $A$ with the known mesh. The thumbnails show an actual $K=25$ example and prediction.}
+    \caption{\textbf{MeshTac overview.} Teacher $f_0$ initializes the contact state, and aligner $\mathcal{A}$ iteratively corrects it by comparing the tactile image with projected mesh depth. The aligned mesh provides depth, normal and planar-pose targets for student $f_1$. Every trainable component in the matched-budget pipeline shares the same $K$ registered contacts; synthetic frames from a renderer are an optional addition evaluated separately. At standard inference, $f_1$ predicts without rendering the mesh. Optional pose refinement reuses $\mathcal{A}$ with the known mesh. The thumbnails show an actual $K=25$ example and prediction.}
     \label{fig:mapl}
 \end{figure*}
 

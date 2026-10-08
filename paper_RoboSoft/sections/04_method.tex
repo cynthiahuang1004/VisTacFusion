@@ -10,17 +10,17 @@
 
 MeshTac uses the known mesh and object identity to label unlabeled real contacts. A teacher initializes each contact state, an aligner corrects it, and a student learns from the resulting mesh projections.
 
-\noindent\textbf{Contact geometry.} Let $d(M,q)$ denote the depth projection of mesh $M$ at state $q=(\theta,x,y,z)$: in-plane rotation $\theta$, translation $(x,y)$ and indentation $z$. This state determines the mesh depth, surface normals and planar-pose label $(\theta,x,y)$. Alignment changes $q$ while keeping the object geometry fixed.
+\noindent\textbf{Contact geometry.} Let $d(\mathcal{M},q)$ denote the depth projection of mesh $\mathcal{M}$ at state $q=(\theta,x,y,z)$: in-plane rotation $\theta$, translation $(x,y)$ and indentation $z$. This state determines the mesh depth, surface normals and planar-pose label $(\theta,x,y)$. Alignment changes $q$ while keeping the object geometry fixed.
 
-\noindent\textbf{Learning the aligner.} For a labeled image $I$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. A ResNet-18 aligner, initialized from ImageNet, receives the concatenated tactile RGB and candidate depth as four input channels and learns to recover the correction:
+\noindent\textbf{Learning the aligner.} For a labeled image $\mathcal{I}$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. A ResNet-18 aligner, initialized from ImageNet, receives the concatenated tactile RGB and candidate depth as four input channels and learns to recover the correction:
 \begin{equation}
-    A\big(I,d(M,q^\ast+\delta)\big)\approx-\delta.
+    \mathcal{A}\big(\mathcal{I},d(\mathcal{M},q^\ast+\delta)\big)\approx-\delta.
 \end{equation}
 Sampling perturbations produces training examples from the original $K$ registered contacts without additional real labels. We normalize the residual dimensions and optimize smooth-L1 loss. Perturbation ranges and training settings are given in Sec.~\ref{sec:setup}.
 
 \noindent\textbf{Generating pseudo-labels.} Teacher $f_0$ predicts the initial planar pose of an unlabeled image; its maximum predicted depth initializes indentation. We refine the state over six iterations,
 \begin{equation}
-    q_{t+1}=q_t+A\big(I,d(M,q_t)\big),
+    q_{t+1}=q_t+\mathcal{A}\big(\mathcal{I},d(\mathcal{M},q_t)\big),
 \end{equation}
 clipping indentation to $[0.3,1.6]\,$mm. The final mesh projection supplies depth, normal and planar-pose targets. We retain all pseudo-labeled training frames in the evaluated configuration (Sec.~\ref{sec:ablation}).
 
