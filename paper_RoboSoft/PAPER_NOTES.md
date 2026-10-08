@@ -242,3 +242,5 @@ self-training 0.300/0.707, MeshTac 0.252/0.743 (no renderer 0.288/0.707).
 I-Hsuan Huang*, Xiaohao Xu*, Xiangdong Wang, Xiaonan Huang, Nima Fazeli (University of Michigan;
 * equal contribution). Correspondence `{ihsuan, xiaohaox}@umich.edu`. Check the author list before
 submission.
+
+- PBR calibration provenance (confirmed by the author 2026-10-08): one no-contact image for the automatic illumination fit, one contact image of one object outside the training set for manual gel/contact tuning; no labels used, nothing counted in K.
