@@ -325,11 +325,11 @@ def fig_align(out, K=25):
                 ax.set_title(titles[c], fontsize=5.5, pad=2, linespacing=1.0)
     fig.subplots_adjust(left=0.005, right=0.925, top=0.885, bottom=0.01, wspace=0.03, hspace=0.03)
     from matplotlib.cm import ScalarMappable
-    cax = fig.add_axes([0.94, 0.06, 0.016, 0.78])
+    cax = fig.add_axes([0.94, 0.04, 0.016, 0.72])
     cb = fig.colorbar(ScalarMappable(norm=plt.Normalize(0, 1.2), cmap="viridis"), cax=cax,
                       orientation="vertical", ticks=[0, 0.4, 0.8, 1.2], extend="max")
     cb.ax.tick_params(labelsize=5.5, pad=1, length=2)
-    cb.set_label("Depth [mm]", fontsize=5.5, labelpad=2)
+    cax.set_title("Depth\n[mm]", fontsize=5.5, pad=2, linespacing=1.0)
     fig.savefig(osp.join(out, "fig_align.pdf"), dpi=300); plt.close(fig)
 
 
