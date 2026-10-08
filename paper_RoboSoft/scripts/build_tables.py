@@ -305,7 +305,6 @@ _rows2 = [x for x in (
     _abl2("mesh", "teacher", "B_k25_rf0", _tp0, _lpz("ro_tp0")),
     _abl2("mesh", "L1 search", "B_k25_rcp", _h, _lpz("rcp"), 3),
     _abl2("mesh", "$\\mathcal{A}$ (MeshTac)", "B_k25_rf", _r, _lpz("ro_al"), 3),
-    _abl2("mesh", "$\\mathcal{A}$ + learned synth.", "B_k25_al2", _a, _lpz("al"), 3),
 ) if x]
 _cols2 = (("l_iou", "iou", max), ("l_mae", "mae", min), ("l_rot", "rot", min), ("l_tr", "tr", min), ("s_iou", "iou", max), ("s_mae", "mae", min), ("s_rot", "rot", min), ("s_tr", "tr", min))
 _best2 = {k: fn(_sig2(v[k], kind) for v in _rows2 if v[k] is not None) for k, kind, fn in _cols2}   # best at the printed precision; ties all bold
