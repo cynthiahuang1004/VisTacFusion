@@ -1,6 +1,6 @@
 \section{Discussion and Conclusion}
 
-MeshTac shows that the value of known object geometry as supervision depends on contact-state accuracy. By aligning meshes to unlabeled real tactile images, it improves contact reconstruction with fewer registered contacts and without synthetic tactile RGB, on two sensors and a second session; the same aligner also improves pose at inference when the mesh is available.
+MeshTac shows that the value of known object geometry as supervision depends on contact-state accuracy. Across two tactile sensors and a separate capture session, aligning meshes to unlabeled real images improves contact reconstruction with fewer registered contacts and without synthetic tactile RGB; the same aligner also improves pose at inference when the mesh is available.
 
 An unrefined mesh gives worse labels than teacher depth, while correcting its placement improves both labels and student predictions; because unlabeled real images already carry the sensor's appearance, alignment improves their supervision without synthesizing RGB.
 

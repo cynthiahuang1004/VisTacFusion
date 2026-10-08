@@ -17,7 +17,7 @@ For known objects, unlabeled real images provide a complementary source of super
 
 MeshTac learns this correction from the registered contacts (Fig.~\ref{fig:mapl}). We perturb their states and train a residual aligner to recover them from the real image and candidate mesh depth. Applied to the teacher's estimates, the aligner places the mesh before generating depth, normal and pose pseudo-labels. A student learns from these labels and predicts without mesh rendering.
 
-We hypothesize that correcting the contact state before projecting the mesh yields more label-efficient supervision than teacher predictions or synthetic augmentation alone, and test this on two sensors. Our contributions are:
+We investigate whether contact-state alignment improves the effectiveness of mesh-derived supervision under limited real-label budgets, and compare it with self-training and synthetic augmentation on two tactile sensors. Our contributions are:
 \begin{itemize}
     \item MeshTac, a method that converts known meshes into depth, normal and pose supervision for unlabeled real contacts through learned alignment, without generating tactile RGB images.
     \item A renderer study under matched supervision budgets and held-out-object conditions, distinguishing gains from simulated geometric coverage from those obtained with additional real training labels.
