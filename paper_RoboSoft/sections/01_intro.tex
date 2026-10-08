@@ -5,7 +5,7 @@ Contact geometry tells a robot where an object meets its fingertip and how it is
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.9\textwidth]{figures/fig_arch_training_inference.pdf}
-    \caption{\textbf{MeshTac training and inference.} (a) Teacher $f_0$ initializes mesh alignment to generate pseudo-labels for student $f_1$. Both use a frozen SITR encoder, DPT decoder and Pose MLP, with object identity conditioning pose. (b) The student predicts without a mesh; optional refinement reuses aligner $\mathcal{A}$ with the real image and mesh. Thumbnails: a real $K=25$ example.}
+    \caption{\textbf{MeshTac training and inference.} (a) Teacher $f_0$ initializes mesh alignment to generate pseudo-labels for student $f_1$. Both use a frozen SITR encoder, DPT decoder and Pose MLP. (b) The student predicts without a mesh; optional refinement reuses aligner $\mathcal{A}$ with the real image and mesh. Thumbnails: a real $K=25$ example.}
     \label{fig:mapl}
 \end{figure*}
 
