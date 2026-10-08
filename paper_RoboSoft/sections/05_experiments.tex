@@ -30,7 +30,7 @@ We vary $K$ to compare mesh-aligned supervision with real-only training, rendere
 
 MeshTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $21\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$. The same comparison holds for $K=50$ versus $100$. MeshTac also lowers pose error on sensor A. Three-seed runs at $K=25$ give depth MSE $0.0433\pm0.0004$, compared with $0.0551\pm0.0010$ for real-only training; the improvement persists at the final epoch.
 
-The baselines behave differently at small and large budgets. At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; both improve contact metrics at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. These differences show why all-pixel MSE alone is insufficient to assess contact quality. Adding synthetic images to MeshTac gives small gains at $K=10$ but no consistent further improvement across budgets.
+The baselines behave differently at small and large budgets. At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; both improve contact metrics at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic images to MeshTac gives small gains at $K=10$ but no consistent further improvement across budgets.
 
 \begin{table}[!htb]
 \centering

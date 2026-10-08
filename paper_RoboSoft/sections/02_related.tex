@@ -1,7 +1,7 @@
 \section{Related Work}
 
 \noindent\textbf{Tactile simulation and transfer.}
-TACTO~\cite{wang2022tacto}, Taxim~\cite{si2022taxim}, Tacchi~\cite{chen2023tacchi} and physics-based rendering~\cite{agarwal2021simulation} model tactile images through optical response and contact geometry or deformation. Differentiable~\cite{xu2022efficient} and GPU-based~\cite{akinola2025tacsl} simulation support learning and control. Transfer methods translate tactile appearance~\cite{chen2022cyclegan}, map real images to simulated depth~\cite{church2022tactile}, or generate tactile images from visual RGB-D~\cite{zhong2025tactgen}. Their data requirements differ. Our study concerns depth-to-RGB renderers fitted on real contact pairs and counts those pairs in the training-label budget.
+TACTO~\cite{wang2022tacto}, Taxim~\cite{si2022taxim}, Tacchi~\cite{chen2023tacchi} and physics-based rendering~\cite{agarwal2021simulation} model tactile images through optical response and contact geometry or deformation. Differentiable~\cite{xu2022efficient} and GPU-based~\cite{akinola2025tacsl} simulation support learning and control. Transfer methods translate tactile appearance~\cite{chen2022cyclegan}, map real images to simulated depth~\cite{church2022tactile}, or generate tactile images from visual RGB-D~\cite{zhong2025tactgen}. Our study concerns depth-to-RGB renderers fitted on real contact pairs and counts those pairs in the training-label budget.
 
 \noindent\textbf{Tactile representations.}
 Pretrained encoders such as SITR, T3 and Sparsh~\cite{gupta2025sitr,zhao2024transferable,higuera2024sparsh} reduce feature learning from scratch; all our predictors share a frozen SITR backbone, and MeshTac addresses supervision rather than the encoder.
