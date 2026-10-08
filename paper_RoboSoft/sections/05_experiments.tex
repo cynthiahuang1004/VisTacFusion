@@ -46,7 +46,7 @@ Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned 
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label source ablation} (sensor A, $K=25$). The same student is trained on the same unlabeled images; rows differ only in where the depth label and its pose come from ($\mathcal{A}$: the aligner of Fig.~\ref{fig:mapl}). Left: accuracy of the pseudo-labels against withheld GT; right: accuracy of the resulting student on the validation split. Shaded: MeshTac.}
+\caption{\textbf{Pseudo-label source ablation} ($K=25$). The same student is trained on the same unlabeled images; rows differ only in where the depth label and its pose come from ($\mathcal{A}$: the aligner of Fig.~\ref{fig:mapl}). Left: accuracy of the pseudo-labels against withheld GT; right: accuracy of the resulting student on the validation split. Shaded: MeshTac.}
 \label{tab:abl}
 \end{table}
 
@@ -60,7 +60,7 @@ Adding synthetic frames from learned renderer ($K$) to MeshTac (\emph{+ learned 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_conv.pdf}
-    \caption{\textbf{Aligner convergence} (sensor A, $K=25$). (a) Rotation error against the number of updates, starting from the teacher's pose; dotted line: the six updates used. (b) Error after six updates against the initial error of a perturbed GT pose; shaded: the $\pm8^\circ$ training range.}
+    \caption{\textbf{Aligner convergence} ($K=25$). (a) Rotation error against the number of updates, starting from the teacher's pose; dotted line: the six updates used. (b) Error after six updates against the initial error of a perturbed GT pose; shaded: the $\pm8^\circ$ training range.}
     \label{fig:conv}
 \end{figure}
 
@@ -72,7 +72,7 @@ L1 search (row 4) starts from the teacher's pose and fits the mesh to the teache
 
 At the teacher's unrefined pose (row 3), the mesh produces worse labels than teacher depth (IoU $0.47$ vs.\ $0.56$), and its student falls below real-only training. Adding teacher pose supervision (row 2) mainly improves student rotation. L1 search improves label and student IoU, but the aligner (row 5) gives more accurate labels and a better student. Alignment lowers label rotation error from $6.0^\circ$ to $1.1^\circ$ and translation error from $1.1$ to $0.67\,$mm, with label improvements on both sensors (Fig.~\ref{fig:labels}). Search is limited because the renderer scores the selected pose better than the GT pose on $93\%$ of frames at $K=25$: image similarity can favor a wrong state. Mesh geometry provides useful supervision once its placement is corrected.
 
-On the $472$ validation frames, mean rotation error from the teacher's pose falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; starting instead from GT poses perturbed by a rotation and a random shift of up to $1.5\,$mm, six updates recover $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned sensor-A training poses exceed $5^\circ$ error, mostly on one nearly symmetric object.
+On the $472$ validation frames, mean rotation error from the teacher's pose falls to $2.1^\circ$ after one update and $1.1^\circ$ after three (Fig.~\ref{fig:conv}) and translation error from $1.2$ to $0.8\,$mm; starting instead from GT poses perturbed by a rotation and a random shift of up to $1.5\,$mm, six updates recover $15^\circ$ (to $0.6^\circ$), beyond the $\pm8^\circ$ training range, and only $30^\circ$ starts leave $3^\circ$. Gains persist with varied aligner settings and two random label selections; a second labeling round adds little. At $K=25$, $1.6\%$ of aligned training poses exceed $5^\circ$ error, mostly on one nearly symmetric object.
 
 \begin{figure}[t]
     \centering
@@ -131,7 +131,7 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \tabposeref
 \bottomrule
 \end{tabular}
-\caption{\textbf{Pose error before and after test-time refinement} (sensor A). \emph{pred.}: predictor output; \emph{+align}: after six updates of the fixed aligner with the known mesh, without retraining.}
+\caption{\textbf{Pose error before and after test-time refinement.} \emph{pred.}: predictor output; \emph{+align}: after six updates of the fixed aligner with the known mesh, without retraining.}
 \label{tab:poseref}
 \end{table}
 
@@ -149,7 +149,7 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 \tabloomain
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Renderer baselines on held-out objects} (sensor A, three objects). Matched rows use no real contacts of these objects; the italic learned renderer (full) does. Bold: best matched result.}
+\caption{\textbf{Renderer baselines on held-out objects} (three objects). Matched rows use no real contacts of these objects; the italic learned renderer (full) does. Bold: best matched result.}
 \label{tab:loo}
 \end{table}
 

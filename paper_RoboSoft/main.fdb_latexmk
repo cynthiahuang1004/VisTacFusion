@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1791424183.50983 "main.aux" "main.bbl" "main" 1791424184.13062 0
+["bibtex main"] 1791424547.80916 "main.aux" "main.bbl" "main" 1791424548.43218 0
   "./refs.bib" 1791423199.23666 16116 e3fdbf50f0f19508e2c9481351c07860 ""
   "/home/shared/.TinyTeX/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1791424184.04783 11796 b1dd79515613fd50ca093172c594f3a5 "pdflatex"
+  "main.aux" 1791424548.34504 11676 dd4a8da1dd2fb146f8e8236a591f8a2a "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1791424183.52214 "main.tex" "main.pdf" "main" 1791424184.13078 0
+["pdflatex"] 1791424547.82138 "main.tex" "main.pdf" "main" 1791424548.43234 0
   "/home/shared/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm" 1136768653 4524 6bce29db5bc272ba5f332261583fee9c ""
@@ -47,8 +47,8 @@
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1248133631 32569 5e5ddc8df908dea60932f3c484a54c0d ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb" 1248133631 32587 1788b0c1c5b39540c96f5e42ccd6dae8 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb" 1248133631 32716 08e384dc442464e7285e891af9f45947 ""
+  "/home/shared/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb" 1248133631 32626 4f5c1b83753b1dd3a97d1b399a005b4b ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb" 1248133631 32442 c975af247b6702f7ca0c299af3616b80 ""
-  "/home/shared/.TinyTeX/texmf-dist/fonts/type1/public/rsfs/rsfs10.pfb" 1229303445 16077 4737ac34f0fb5608550f3780a0202c22 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/urw/symbol/usyr.pfb" 1136849748 33709 b09d2e140b7e807d3a97058263ab6693 ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb" 1136849748 44729 811d6c62865936705a31c797a1d5dada ""
   "/home/shared/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb" 1136849748 44656 0cbca70e0534538582128f6b54593cca ""
@@ -194,22 +194,22 @@
   "/home/shared/.TinyTeX/texmf.cnf" 1786246766 637 edd806fb06a89761a6034e1968af9017 ""
   "data/tables.tex" 1791423475.00954 34588 ecd83c00fbc84775f046363a6e88dc1c ""
   "figures/fig_align.pdf" 1791423199.24466 332690 84ddd075de923ad346c8e95a003462c6 ""
-  "figures/fig_arch.pdf" 1791423255.58484 319864 45a67d0949ba0a3ee8894de4c10aa024 ""
+  "figures/fig_arch.pdf" 1791424546.90103 332424 82bc710b27518126ce97ed6ebbaec0f3 ""
   "figures/fig_conv.pdf" 1791423199.24866 36668 83daf2be75989dbcbf3af67f43d4e71d ""
   "figures/fig_kshot.pdf" 1791423199.24866 69725 fd6d0fff0aa06944b963b5002a7f44c5 ""
   "figures/fig_labels.pdf" 1791423199.24866 53965 841eaed3864641c702d420701130ab60 ""
   "figures/fig_qual.pdf" 1791423199.24866 309252 c29f73f94720d5eed131d242d0bfa004 ""
   "figures/fig_renders_small.pdf" 1791423199.24866 406403 48bc360d548312f4a38d265a59026de3 ""
   "ieeeconf.cls" 1791423199.23666 197574 c8a8a2004c9762153e255667fc17d954 ""
-  "main.aux" 1791424184.04783 11796 b1dd79515613fd50ca093172c594f3a5 "pdflatex"
-  "main.bbl" 1791424183.51583 6320 ef983a541dc2f3c1b7505943ee1c38ee "bibtex main"
-  "main.out" 1791424184.05183 2203 e5a1393f90883b158399d993710700a2 "pdflatex"
+  "main.aux" 1791424548.34504 11676 dd4a8da1dd2fb146f8e8236a591f8a2a "pdflatex"
+  "main.bbl" 1791424547.81303 6320 ef983a541dc2f3c1b7505943ee1c38ee "bibtex main"
+  "main.out" 1791424548.34904 2203 e5a1393f90883b158399d993710700a2 "pdflatex"
   "main.tex" 1791423199.23266 3589 68a05512d0bfdfd6e99c46d93b39bb22 ""
   "sections/01_intro.tex" 1791424139.87169 2763 8422a57723c5de6289bee261a1bafaad ""
   "sections/02_related.tex" 1791423199.24066 1627 c2ace8b66235d9ab6e724240bf28c614 ""
-  "sections/03_setup.tex" 1791424163.31576 4648 2b95d6c1ee1c714a285ec3044d8ce5ba ""
-  "sections/04_method.tex" 1791424182.78783 2925 87e0e238c673c22c8d5a4e043fa1604c ""
-  "sections/05_experiments.tex" 1791424182.78783 13067 ae00dee80f57ed1423c57aa3aa6290c4 ""
+  "sections/03_setup.tex" 1791424546.43303 4681 834845a3436e88aa6990cda13919eece ""
+  "sections/04_method.tex" 1791424546.43303 2915 bc1e055f5d243e73dbe212362b401c98 ""
+  "sections/05_experiments.tex" 1791424546.43303 13017 90f01b4cf0c6d0ff38538c3c83338e7f ""
   "sections/06_conclusion.tex" 1791423199.24066 1791 29629195fb9af573c41aeab51b82e276 ""
   (generated)
   "main.aux"

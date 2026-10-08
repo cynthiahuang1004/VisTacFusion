@@ -5,14 +5,14 @@
 
 \noindent\textbf{Data splits and label budgets.} Sensor A has $4{,}669$ filtered frames, with every tenth frame reserved for validation ($472$ frames). A second session, recorded on another day after object re-placement, provides $854$ reviewed test frames from 11 objects; poses are re-estimated from contact masks. Sensor B has $1{,}620$ test frames. We select $K\in\{10,25,50,100\}$ evenly spaced labeled training frames per object. The teacher, renderer and aligner share this set; remaining training images are available without labels. Validation and test images are excluded from component training. The $472$ validation labels lie outside this budget and serve only for checkpoint selection (below); sensor-B and session-2 results use separate test sets.
 
-\noindent\textbf{Predictor architecture and training.} All predictors process $224\times224$ images with a frozen SITR-B/18 encoder~\cite{gupta2025sitr}, a DPT decoder~\cite{ranftl2021dpt} for depth and normals, and a planar-pose MLP ($12$M trainable parameters). A learned object embedding conditions the pose head. Main sensor-A runs use 150 epochs; ablations, three-seed checks and sensor-B runs use 50. The teacher uses the $K$ real frames only; in the \emph{+ learned synth.} variant, teacher and student also see learned-renderer images, the student's from a renderer retrained on registered and aligned pairs.
+\noindent\textbf{Predictor architecture and training.} All predictors process $224\times224$ images with a frozen SITR-B/18 encoder~\cite{gupta2025sitr}, a DPT decoder~\cite{ranftl2021dpt} for depth and normals, and a planar-pose MLP ($12$M trainable parameters). A learned object embedding conditions the pose head. Unless stated otherwise, experiments use sensor A. Main runs use 150 epochs; ablations, three-seed checks and sensor-B runs use 50. The teacher uses the $K$ real frames only; in the \emph{+ learned synth.} variant, teacher and student also see learned-renderer images, the student's from a renderer retrained on registered and aligned pairs.
 
 \noindent\textbf{Aligner training.} Perturbations span $\pm8^\circ$, $\pm1.5\,$mm in-plane and $\pm0.15\,$mm in indentation; half use ranges scaled by $0.3$. We train for 8,000 steps with batch size 64 and AdamW (learning rate $3\times10^{-4}$). Aligners train on real examples only. The \emph{+ learned synth.} variant adds 40 examples from learned renderer ($K$) to each batch of 24 real ones and also trains teacher and student with such synthetic frames.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_renders_small.pdf}
-    \caption{\textbf{Renderers on the same contact.} Two sensor-A validation frames with their GT depth, rendered at the recorded pose by PBR and by the learned renderer trained on $K=25$ real pairs or on the full real set.}
+    \caption{\textbf{Renderers on the same contact.} Two validation frames with their GT depth, rendered at the recorded pose by PBR and by the learned renderer trained on $K=25$ real pairs or on the full real set.}
     \label{fig:renders}
 \end{figure}
 
