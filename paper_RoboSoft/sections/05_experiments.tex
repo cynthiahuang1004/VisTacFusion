@@ -55,7 +55,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_conv.pdf}
-    \caption{\textbf{Aligner convergence} ($K=25$, $472$ validation frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Rotation error after six updates from perturbed GT states, with random translation and indentation offsets. Shaded region: training rotation range ($\pm8^\circ$).}
+    \caption{\textbf{Aligner convergence} ($K=25$, $530$ held-out test frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Rotation error after six updates from perturbed GT states, with random translation and indentation offsets. Shaded region: training rotation range ($\pm8^\circ$).}
     \label{fig:conv}
 \end{figure}
 
@@ -65,7 +65,7 @@ We compare pseudo-label sources to separate the effects of mesh geometry, pose s
 
 Rows 3 and 5 isolate the effect of alignment with the same real-only teacher. Direct mesh projection at the teacher-estimated pose produces inaccurate pseudo-labels (IoU $0.47$), whereas learned alignment raises IoU to $0.72$ and reduces rotation error from $6.0^\circ$ to $1.1^\circ$. Without alignment, the resulting student also underperforms a real-only baseline trained under the same 50-epoch schedule (depth MSE $0.060$ vs.\ $0.049$); with alignment it is the best student across the reported metrics. Teacher pose supervision (row 2) mainly improves student rotation, and L1 search (row 4) improves both label and student IoU but remains below the aligner. Accurate mesh placement, not access to geometry alone, therefore determines the value of mesh-derived labels. Relative to the real-only teacher's own depth labels, aligned-mesh labels improve IoU on both sensors (at $K=25$: $0.55\to0.72$ on sensor A, $0.85\to0.91$ on sensor B), with the same ordering at the other three budgets.
 
-Image similarity can favor an incorrect geometric state: at $K=25$, the search-selected pose has lower RGB L1 error than the GT pose on $93\%$ of frames. The aligner instead learns state corrections from known perturbations. From teacher initialization, mean rotation error reaches $1.1^\circ$ after three updates (Fig.~\ref{fig:conv}). Six updates also reduce $15^\circ$ rotation perturbations to $0.6^\circ$, with simultaneous translation and indentation offsets, beyond the training rotation range. At $30^\circ$, the remaining error rises to $3.2^\circ$. On unlabeled sensor-A training contacts, $1.6\%$ of aligned poses exceed $5^\circ$ error at $K=25$, mostly on one nearly symmetric object.
+Image similarity can favor an incorrect geometric state: at $K=25$, the search-selected pose has lower RGB L1 error than the GT pose on $93\%$ of frames. The aligner instead learns state corrections from known perturbations. From teacher initialization, mean rotation error falls from $5.7^\circ$ to $1.2^\circ$ after three updates (Fig.~\ref{fig:conv}). Six updates also reduce $15^\circ$ rotation perturbations to $0.5^\circ$, with simultaneous translation and indentation offsets, beyond the training rotation range. At $30^\circ$, the remaining error rises to $3.3^\circ$. On unlabeled sensor-A training contacts, $1.6\%$ of aligned poses exceed $5^\circ$ error at $K=25$, mostly on one nearly symmetric object.
 
 \begin{figure}[t]
     \centering

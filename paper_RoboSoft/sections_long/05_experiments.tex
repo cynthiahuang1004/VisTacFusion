@@ -9,9 +9,42 @@ Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency.} Contact MAE, rotation and translation error against the label budget. (a--c) Sensor-A validation results; (d--f) sensor-B test results. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ learned renderer (full) (50); sensor B uses 50.}
+    \caption{\textbf{Label efficiency.} Contact MAE, rotation and translation error against the label budget. (a--c) sensor-A held-out test frames (clean protocol) results; (d--f) sensor-B test results. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ learned renderer (full) (50); sensor B uses 50.}
     \label{fig:kshot}
 \end{figure*}
+
+\begin{table*}[t]
+\centering
+\tableformat
+\begin{tabularx}{\textwidth}{lXrrrrrr}
+\toprule
+$\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Normal}{(deg)} & \metrichead{Rot.}{(deg)} & \metrichead{Trans.}{(mm)} \\
+\midrule
+\tabkshotT
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Label-budget comparison under the clean protocol} (sensor A, $530$ held-out test frames never used for training, renderer fitting or pseudo-labeling; validation used only for checkpoint selection). Self-training and MeshTac use the unlabeled training frames; no self-trained renderer is used. Italic: full-set renderer, which exceeds $\Kreal$. Bold: best matched result at each $\Kreal$.}
+\label{tab:kshotT}
+\end{table*}
+
+\begin{table}[!tbp]
+\centering
+\tableformat
+\scriptsize
+\setlength{\tabcolsep}{1.8pt}
+{%
+\begin{tabular}{@{}llrrrr@{\hspace{7pt}}rrrr@{}}
+\toprule
+\multicolumn{2}{@{}l}{Pseudo-label source} & \multicolumn{4}{c}{Pseudo-label quality} & \multicolumn{4}{c}{Student accuracy} \\
+\cmidrule(lr){1-2}\cmidrule(lr){3-6}\cmidrule(lr){7-10}
+\shortstack[l]{\strut Depth\\\strut source} & \shortstack[l]{\strut Pose\\\strut source} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{MAE}{(mm)} & \metrichead{Rot.}{($^\circ$)} & \metrichead{Trans.}{(mm)} \\
+\midrule
+\tabrcablii
+\bottomrule
+\end{tabular}}
+\caption{\textbf{Pseudo-label source ablation under the clean protocol} ($\Kreal=25$, 50 epochs, students renderer-free; three-seed means for rows 1, 4 and 5). Left: pseudo-label quality against withheld training GT; right: student accuracy on the $530$ held-out test frames.}
+\label{tab:rcablT}
+\end{table}
 
 \begin{table*}[t]
 \centering
@@ -23,7 +56,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotfew
 \bottomrule
 \end{tabularx}
-\caption{\textbf{$\Kreal$-shot with a shared real budget.} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Learned renderer (full) rows use the renderer trained on all real pairs (the $\Kreal=10$ learned renderer (full) row is a 50-epoch run). \emph{+ learned synth.}: MeshTac with the $K$-pair renderer added to aligner, teacher and student training.}
+\caption{\textbf{$\Kreal$-shot with a shared real budget (validation split, legacy protocol).} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Learned renderer (full) rows use the renderer trained on all real pairs (the $\Kreal=10$ learned renderer (full) row is a 50-epoch run). \emph{+ learned synth.}: MeshTac with the $K$-pair renderer added to aligner, teacher and student training.}
 \label{tab:kshot}
 \end{table*}
 
@@ -37,7 +70,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotmore
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Larger training-label budgets.} Continuation of Table~\ref{tab:kshot}, $K=50$ and $100$. All data-access and metric conventions are unchanged.}
+\caption{\textbf{Larger training-label budgets (validation split, legacy protocol).} Continuation of Table~\ref{tab:kshot}, $K=50$ and $100$. All data-access and metric conventions are unchanged.}
 \label{tab:kshotmore}
 \end{table*}
 
@@ -67,7 +100,7 @@ $\Kreal$ & Method & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabseeds
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Seeds.} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``+ learned synth.'': the $K$-pair renderer added to aligner, teacher and student.}
+\caption{\textbf{Seeds (validation split, legacy protocol).} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``+ learned synth.'': the $K$-pair renderer added to aligner, teacher and student.}
 \label{tab:seeds}
 \end{table*}
 
@@ -87,7 +120,7 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 \tabrcabl
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Alignment ablation} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld GT labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: MeshTac (renderer retrained on the aligned pairs).}
+\caption{\textbf{Alignment ablation (validation split, legacy protocol)} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld GT labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: MeshTac (renderer retrained on the aligned pairs).}
 \label{tab:rcabl}
 \end{table}
 
@@ -106,12 +139,12 @@ We use the same unlabeled images to compare teacher predictions, render-and-comp
 
 \noindent\textbf{L1 render-and-compare.} Replacing the aligner by a search---fit the mesh to the teacher depth on a pose grid, then pick, among $567$ neighbouring poses, the one whose GAN-$\Kreal$ render is closest to the frame in image L1---helps less (label IoU $0.63$ with the half-frame gate, pose error $2.5^\circ$) and requires gating: on the half of the frames with the larger render error the mesh label is no better than the teacher's. Image similarity does not reliably identify the correct pose with this few-shot renderer; at $\Kreal=25$ its render at the true pose is farther from the frame than its render at the selected pose on $93\%$ of the frames. This measures score ordering, rather than a pose-failure rate.
 
-\noindent\textbf{Learned aligner.} The aligner lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$ on the $3{,}897$ unlabeled frames and yields labels with IoU $0.72$ and contact MAE $0.24\,$mm (teacher: $0.55$, $0.32$). Label quality grows with the budget (IoU $0.65$, $0.72$, $0.77$, $0.83$ and pose error $3.1^\circ$, $1.1^\circ$, $0.9^\circ$, $0.5^\circ$ for $\Kreal=10$--$100$; teacher $9.9^\circ$, $6.0^\circ$, $4.3^\circ$, $3.3^\circ$). Relative to teacher-depth self-training, the student lowers contact error ($0.310\!\to\!0.247$) and raises IoU ($0.624\!\to\!0.722$). Without any refinement, the mesh projected at the teacher's pose is a worse label than the teacher's own depth (IoU $0.47$ vs.\ $0.56$, contact MAE $0.40$ vs.\ $0.32\,$mm) and the student trained on it falls below real-only training (depth MSE $0.0641$, contact MAE $0.384$, IoU $0.497$): exact geometry placed at a wrong pose misleads the student, so the alignment step is what makes mesh supervision usable. Fig.~\ref{fig:conv} shows the convergence: from the teacher's pose the mean error falls to $2.1^\circ$ after one update, $1.1^\circ$ after three and $1.05^\circ$ after five, then drifts up slightly ($1.2^\circ$ at ten); six updates recover perturbations of up to $15^\circ$ to $0.6^\circ$, beyond the $\pm8^\circ$ training range, and degrade only from $20^\circ$ ($0.8^\circ$; $1.5^\circ$ at $25^\circ$, $3.2^\circ$ at $30^\circ$).
+\noindent\textbf{Learned aligner.} The aligner lowers the teacher's pose error from $6.0^\circ$ to $1.1^\circ$ on the $3{,}897$ unlabeled frames and yields labels with IoU $0.72$ and contact MAE $0.24\,$mm (teacher: $0.55$, $0.32$). Label quality grows with the budget (IoU $0.65$, $0.72$, $0.77$, $0.83$ and pose error $3.1^\circ$, $1.1^\circ$, $0.9^\circ$, $0.5^\circ$ for $\Kreal=10$--$100$; teacher $9.9^\circ$, $6.0^\circ$, $4.3^\circ$, $3.3^\circ$). Relative to teacher-depth self-training, the student lowers contact error ($0.310\!\to\!0.247$) and raises IoU ($0.624\!\to\!0.722$). Without any refinement, the mesh projected at the teacher's pose is a worse label than the teacher's own depth (IoU $0.47$ vs.\ $0.56$, contact MAE $0.40$ vs.\ $0.32\,$mm) and the student trained on it falls below real-only training (depth MSE $0.0641$, contact MAE $0.384$, IoU $0.497$): exact geometry placed at a wrong pose misleads the student, so the alignment step is what makes mesh supervision usable. Fig.~\ref{fig:conv} shows the convergence on the $530$ held-out test frames: from the teacher's pose ($5.7^\circ$) the mean error falls to $2.0^\circ$ after one update, $1.2^\circ$ after three and $1.15^\circ$ after five, then stays flat ($1.11^\circ$ at ten); six updates recover perturbations of up to $15^\circ$ to $0.5^\circ$, beyond the $\pm8^\circ$ training range, and degrade only from $20^\circ$ on ($0.6^\circ$ at $20^\circ$, $1.4^\circ$ at $25^\circ$, $3.3^\circ$ at $30^\circ$).
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_conv.pdf}
-    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $472$ validation frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Error after six updates when the GT pose is perturbed by a rotation of the given magnitude plus a random in-plane shift of up to $1.5\,$mm; the shaded band is the $\pm8^\circ$ training range.}
+    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Error after six updates when the GT pose is perturbed by a rotation of the given magnitude plus a random in-plane shift of up to $1.5\,$mm; the shaded band is the $\pm8^\circ$ training range.}
     \label{fig:conv}
 \end{figure}
 
@@ -143,7 +176,7 @@ Method & \metrichead{Contact}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow
 \tabcross
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Cross-session.} Sensor-A models evaluated on the curated session-2 set ($854$ frames, 11 objects; poses re-estimated per frame and manually reviewed). Rot.: raw; Rot.$^{\ast}$: after removing a per-object constant offset (the re-placement of the object). Rows without a $\Kreal$ use the session-1 training set of nine objects; object coverage therefore differs from the $K$-shot rows.}
+\caption{\textbf{Cross-session (legacy sensor-A models).} Sensor-A models evaluated on the curated session-2 set ($854$ frames, 11 objects; poses re-estimated per frame and manually reviewed). Rot.: raw; Rot.$^{\ast}$: after removing a per-object constant offset (the re-placement of the object). Rows without a $\Kreal$ use the session-1 training set of nine objects; object coverage therefore differs from the $K$-shot rows.}
 \label{tab:cross}
 \end{table}
 
@@ -157,7 +190,7 @@ Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{
 \tabselection
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Robustness to the choice of the $\Kreal$ labeled frames} (sensor A, $\Kreal=25$, 50 epochs, real validation split). Selection 0 is the evenly spaced selection used elsewhere; selections 1 and 2 are random permutations of the training frames with the validation split unchanged. Every component (teacher, aligner, student) is retrained on the new selection.}
+\caption{\textbf{Robustness to the choice of the $\Kreal$ labeled frames (validation split, legacy protocol)} (sensor A, $\Kreal=25$, 50 epochs, real validation split). Selection 0 is the evenly spaced selection used elsewhere; selections 1 and 2 are random permutations of the training frames with the validation split unchanged. Every component (teacher, aligner, student) is retrained on the new selection.}
 \label{tab:selection}
 \end{table}
 
@@ -257,7 +290,7 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \tabposeref
 \bottomrule
 \end{tabular}
-\caption{\textbf{Test-time alignment.} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
+\caption{\textbf{Test-time alignment (clean protocol: held-out test frames and session 2).} Rotation error (deg) of the predicted pose and after six aligner iterations against the object mesh. No retraining.}
 \label{tab:poseref}
 \end{table}
 
@@ -345,7 +378,7 @@ Variant & \shortstack[c]{\strut Fidelity\\\strut $\downarrow$} & \metrichead{Con
 \tabvariants
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Appearance-side and training-side variants} at $\Kreal=25$ (real validation split) and leave-object-out (unseen objects). Fidelity is the contact-region L1 of Fig.~\ref{fig:fidelity}; physics-guided variants were stopped at the fidelity stage. Only the background-conditioned renderer improves unseen-object depth.}
+\caption{\textbf{Appearance-side and training-side variants (validation split, legacy protocol)} at $\Kreal=25$ (real validation split) and leave-object-out (unseen objects). Fidelity is the contact-region L1 of Fig.~\ref{fig:fidelity}; physics-guided variants were stopped at the fidelity stage. Only the background-conditioned renderer improves unseen-object depth.}
 \label{tab:variants}
 \end{table}
 

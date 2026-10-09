@@ -33,12 +33,16 @@ def errs(p, g, half):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--device", default="cuda:0"); ap.add_argument("--iters", type=int, default=10)
     ap.add_argument("--run", default="B_k25_realonly"); ap.add_argument("--aligner", default="outputs/aligner_k25_realonly/aligner.pt")
-    ap.add_argument("--out", default="ablation/pilot_robosoft/aligner_convergence.json"); a = ap.parse_args()
+    ap.add_argument("--out", default="ablation/pilot_robosoft/aligner_convergence.json")
+    ap.add_argument("--real-root", default=REAL, help="mirror root of held-out frames (all frames used) instead of the validation split")
+    a = ap.parse_args()
     os.chdir(ROOT); dev = a.device; torch.manual_seed(0); rng = np.random.RandomState(0)
     cfg = merge_configs("ablation/encoder/tac_sitr_single.yaml", "ablation/pilot_robosoft/train_pilot_e50.yaml", f"ablation/pilot_robosoft/data_{a.run}.yaml")
     with contextlib.redirect_stdout(io.StringIO()):
-        c1 = copy.deepcopy(cfg); c1["real"]["root"] = REAL
-        val = SimVisuoTactileDataset(c1, cfg.image_size, augment=False, split="val", data_section="real")
+        c1 = copy.deepcopy(cfg); c1["real"]["root"] = a.real_root
+        if a.real_root != REAL:
+            c1["real"]["val_every"] = 1; c1["real"].pop("exclude_frames", None)
+        val = SimVisuoTactileDataset(c1, cfg.image_size, augment=False, split=("all" if a.real_root != REAL else "val"), data_section="real")
         mp = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, "pilot150_" + a.run, "best_pose.pt"), mp, device=dev)
         md = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, "pilot150_" + a.run, "best_depth.pt"), md, device=dev)
     A = Aligner().to(dev).eval(); A.load_state_dict(torch.load(a.aligner, map_location=dev))

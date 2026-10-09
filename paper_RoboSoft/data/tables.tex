@@ -367,6 +367,41 @@ MeshTac, selection 2 & 0.0425 & 0.244 & 0.718 \\
    & \textit{Learned renderer (full)} & \textit{0.0260} & \textit{0.193} & \textit{0.789} & \textit{19.3} & \textit{4.6} & \textit{0.90} \\
 }
 
+% ---- kshotT ----
+\newcommand{\tabkshotT}{%
+10 & Real only & 0.0573 & 0.313 & 0.645 & 28.8 & 9.9 & 1.59 \\
+  & PBR & 0.0581 & 0.357 & 0.614 & 30.2 & 5.3 & 1.09 \\
+  & Learned renderer ($K$) & 0.0559 & 0.331 & 0.608 & 30.0 & 5.9 & 1.28 \\
+  & Self-training & 0.0525 & 0.332 & 0.601 & 27.8 & 13.2 & 1.90 \\
+  & MeshTac (ours) & \textbf{0.0470} & \textbf{0.265} & \textbf{0.696} & \textbf{25.2} & 4.3 & \textbf{0.98} \\
+  & \quad + learned synth. & 0.0484 & 0.279 & 0.684 & 27.5 & \textbf{4.2} & 1.04 \\
+   & \textit{Learned renderer (full)} & \textit{0.0444} & \textit{0.272} & \textit{0.701} & \textit{26.9} & \textit{6.5} & \textit{1.32} \\
+\midrule
+25 & Real only & 0.0489 & 0.291 & 0.676 & 27.4 & 5.7 & 1.09 \\
+  & PBR & 0.0513 & 0.297 & 0.673 & 26.5 & 4.9 & 0.96 \\
+  & Learned renderer ($K$) & 0.0481 & 0.298 & 0.617 & 28.4 & 5.3 & 1.04 \\
+  & Self-training & 0.0462 & 0.301 & 0.641 & 25.9 & 8.6 & 1.51 \\
+  & MeshTac (ours) & \textbf{0.0383} & \textbf{0.233} & \textbf{0.737} & \textbf{23.1} & \textbf{3.2} & \textbf{0.88} \\
+  & \quad + learned synth. & 0.0394 & 0.240 & 0.726 & 23.9 & 4.0 & 0.96 \\
+   & \textit{Learned renderer (full)} & \textit{0.0407} & \textit{0.253} & \textit{0.721} & \textit{25.1} & \textit{5.1} & \textit{1.00} \\
+\midrule
+50 & Real only & 0.0429 & 0.285 & 0.700 & 25.0 & 4.2 & 0.73 \\
+  & PBR & 0.0440 & 0.266 & 0.694 & 24.9 & 4.6 & 0.87 \\
+  & Learned renderer ($K$) & 0.0411 & 0.263 & 0.708 & 24.7 & 4.9 & 0.94 \\
+  & Self-training & 0.0349 & 0.253 & 0.713 & 22.3 & 6.6 & 1.17 \\
+  & MeshTac (ours) & 0.0301 & \textbf{0.197} & \textbf{0.779} & \textbf{19.9} & \textbf{3.1} & \textbf{0.66} \\
+  & \quad + learned synth. & \textbf{0.0289} & 0.199 & 0.774 & 20.2 & 4.0 & 0.86 \\
+   & \textit{Learned renderer (full)} & \textit{0.0341} & \textit{0.229} & \textit{0.750} & \textit{22.5} & \textit{4.9} & \textit{0.94} \\
+\midrule
+100 & Real only & 0.0323 & 0.228 & 0.753 & 21.3 & 3.3 & 0.63 \\
+  & PBR & 0.0297 & 0.208 & 0.767 & 20.4 & 4.3 & 0.84 \\
+  & Learned renderer ($K$) & 0.0282 & 0.202 & 0.779 & 19.7 & 4.7 & 0.90 \\
+  & Self-training & 0.0261 & 0.206 & 0.751 & 19.2 & 4.9 & 0.96 \\
+  & MeshTac (ours) & 0.0206 & 0.163 & \textbf{0.818} & 16.6 & \textbf{2.9} & \textbf{0.62} \\
+  & \quad + learned synth. & \textbf{0.0205} & \textbf{0.158} & 0.816 & \textbf{16.5} & 4.0 & 0.83 \\
+   & \textit{Learned renderer (full)} & \textit{0.0260} & \textit{0.193} & \textit{0.789} & \textit{19.3} & \textit{4.6} & \textit{0.90} \\
+}
+
 % ---- sbshort ----
 \newcommand{\tabsbshort}{%
 10 & Real only & 0.0314 & 0.180 & 0.780 & 11.4 \\

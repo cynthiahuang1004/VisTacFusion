@@ -465,6 +465,18 @@ for K in (10, 25, 50, 100):
             blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
     ks.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)], bold_max=("iou",)))
 T["kshotshort"] = "\n\\midrule\n".join(ks)
+# long version: clean-protocol table with the PBR rows as well
+ksT = []
+for K in (10, 25, 50, 100):
+    blk = []
+    for label, run, flags in (("Real only", f"T_k{K}_realonly", {}), ("+ PBR", f"T_k{K}_blender", {}), ("+ learned renderer ($K$)", f"T_k{K}_gank", {}),
+                              ("+ self-training", f"T_k{K}_semipm", {}), ("+ MeshTac (ours)", f"T_k{K}_rf", {}), ("\\quad + learned synth.", f"T_k{K}_al2", {}),
+                              ("+ learned renderer (full)", f"T_k{K}_ganfull", {"leaky": True})):
+        r = trow(run, "pilot_" if (K == 10 and run.endswith("ganfull")) else "pilot150_")
+        if r is not None:
+            blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
+    ksT.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)], bold_max=("iou",)))
+T["kshotT"] = "\n\\midrule\n".join(ksT)
 sbs = []
 for K in (10, 25, 50, 100):
     blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & + MeshTac (ours)", sbm(f"S_k{K}_maplnr_m"), {})]
