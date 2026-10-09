@@ -321,8 +321,8 @@ def _abl2(depth, pose, run, dep, lpose, n=1):
 _lpz = lambda tag, tp=False: ((LP[tag]["tp_rot"], LP[tag]["tp_trans"]) if tp else (LP[tag]["rot"], LP[tag]["trans"])) if tag in LP else None
 _rows2 = [x for x in (
     _abl2("Teacher", "--", "T_k25_semipm", _t, None, 3),
-    _abl2("Teacher", "Teacher", "T_k25_tp", _t, _lpz("rc100", tp=True)),
-    _abl2("Mesh", "Teacher", "T_k25_rf0", _tp0, _lpz("ro_tp0")),
+    _abl2("Teacher", "Teacher", "T_k25_tp", _t, _lpz("rc100", tp=True), 3),
+    _abl2("Mesh", "Teacher", "T_k25_rf0", _tp0, _lpz("ro_tp0"), 3),
     _abl2("Mesh", "L1 search", "T_k25_rcp", _h, _lpz("rcp"), 3),
     _abl2("Mesh", "Aligner (ours)", "T_k25_rf", _r, _lpz("ro_al"), 3),
 ) if x]

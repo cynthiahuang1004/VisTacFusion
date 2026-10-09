@@ -20,6 +20,6 @@ MeshTac learns this correction from the registered contacts (Fig.~\ref{fig:mapl}
 We evaluate mesh-aligned supervision against self-training and synthetic augmentation under limited real-label budgets on two tactile sensors. Our contributions are:
 \begin{itemize}
     \item A geometry-constrained pseudo-labeling strategy that turns a small set of registered contacts into dense depth, normal and planar-pose supervision for additional real tactile images, without synthetic tactile RGB generation.
-    \item Evidence that the accuracy of the contact state, not access to the mesh alone, determines pseudo-label quality and student accuracy, with label efficiency shown on two sensors and robustness on a second session.
+    \item Evidence that accurate contact-state alignment, not access to the mesh alone, is critical for pseudo-label quality and student accuracy, with label efficiency shown on two sensors and robustness on a second session.
     \item A matched-budget renderer study showing where simulation is complementary: geometric coverage for held-out objects and session changes, with gains that must be weighed against the real labels used to fit the renderer.
 \end{itemize}
