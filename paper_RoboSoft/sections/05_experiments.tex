@@ -30,7 +30,7 @@ We vary $K$ to compare mesh-aligned supervision with real-only training, rendere
 
 MeshTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $20\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$. MeshTac also lowers pose error on sensor A. Three-seed $50$-epoch runs at $K=25$ give depth MSE $0.0380\pm0.0008$, compared with $0.0486\pm0.0007$ for real-only training. Without checkpoint selection (final epoch, one checkpoint for all metrics), MeshTac still lowers contact MAE by $20$--$33\%$; at $K=25$ this single checkpoint gives depth MSE $0.041$, IoU $0.74$, rotation $3.2^\circ$ and translation $0.88\,$mm.
 
-At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; their contact gains appear mainly at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic images to MeshTac gives no consistent further improvement: metric-specific gains at $K\ge50$ and none at $K\le25$.
+At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; their contact gains appear mainly at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic tactile RGB images to MeshTac yields occasional metric-specific gains at larger budgets but no consistent benefit at $K\le25$.
 
 \begin{table}[!htb]
 \centering
