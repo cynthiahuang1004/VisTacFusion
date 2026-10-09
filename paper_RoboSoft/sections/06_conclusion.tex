@@ -2,8 +2,8 @@
 
 MeshTac shows that the value of known object geometry as supervision depends on contact-state accuracy. Across two tactile sensors and a separate capture session, aligning meshes to unlabeled real images improves contact reconstruction with fewer registered contacts and without synthetic tactile RGB; the same aligner also improves pose at inference when the mesh is available.
 
-An unrefined mesh gives worse labels than teacher depth, while correcting its placement improves both labels and student predictions; because unlabeled real images already carry the sensor's appearance, alignment improves their supervision without synthesizing RGB.
+An unrefined mesh gives worse labels than teacher depth, while correcting its placement improves both labels and student predictions; because unlabeled real images already carry the sensor's appearance, no RGB synthesis is needed.
 
 Simulation plays a complementary role: it supplies geometric pose coverage for held-out objects and adds session robustness at the larger budget. For known objects with unlabeled contacts, we favor starting with mesh alignment and adding synthetic data only when coverage or session robustness is limiting.
 
-Our evaluation is limited to quasi-static contacts with 12 ridge-pattern objects of known identity, using object-conditioned pose prediction and available meshes. Targets describe registered object geometry rather than membrane deformation. Repeated ridges can make pose ambiguous despite accurate local geometry. Future work will add confidence estimates and symmetry-aware refinement, extend evaluation to dynamic and closed-loop contact, and study joint shape and state estimation without meshes.
+Our evaluation is limited to quasi-static contacts with 12 ridge-pattern objects of known identity, using object-conditioned pose prediction and available meshes. Targets describe registered object geometry rather than membrane deformation. Repeated ridges can make pose ambiguous despite accurate local geometry. Future work will add confidence estimates and symmetry-aware refinement, extend evaluation to dynamic contact, and study state estimation without meshes.
