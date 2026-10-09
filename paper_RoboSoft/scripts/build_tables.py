@@ -19,6 +19,18 @@ import statistics as st
 OUT = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2"
 P = "ablation/pilot_robosoft"
 MASKED = json.load(open(f"{P}/masked_results.json"))
+# Clean protocol (2026-10-09): sensor-A runs T_* trained without the 530 held-out frames; dense metrics from best_depth.pt
+# (tag testA) and pose from best_pose.pt (tag testA_bp) on those frames; validation is used only for checkpoint selection.
+_ta = f"{P}/testA_results.json"; TA = json.load(open(_ta)) if osp.exists(_ta) else {}
+def trow(run, pre="pilot150_"):
+    d = TA.get(f"{pre}{run}/testA"); q = TA.get(f"{pre}{run}/testA_bp")
+    if not d:
+        return None
+    return dict(depth_mse=d["full_mse"], c_mae=d["c_mae"], iou=d["iou"], nrm=d["normal_deg"], rot=(q or {}).get("rot_deg"),
+                trans_mm=(q["trans_l1"] * HALF_MM / 2 if q else None), prefix=pre)
+def tseeds(run, pre="pilot_", keys=("depth_mse", "c_mae", "iou", "nrm", "rot", "trans_mm")):
+    rs = [trow(f"{run}{sfx}", pre) for sfx in ("", "_seed1", "_seed2")]; rs = [r for r in rs if r]
+    return {k: (st.mean(v), st.stdev(v) if len(v) > 1 else 0.0, len(v)) if (v := [r[k] for r in rs if r.get(k) is not None]) else None for k in keys}
 CROSS = json.load(open(f"{P}/cross_session_results.json"))
 SB = json.load(open(f"{P}/sensorB_results.json"))
 XS = json.load(open(f"{P}/cross_sensor_results.json"))
@@ -298,8 +310,8 @@ def _sig2(v, kind):
     return f"{v:.1f}" if v >= 1 else f"{v:.2f}"
 def _abl2(depth, pose, run, dep, lpose, n=1):
     """lpose: (rot, trans) of the label pose, or None"""
-    sd = seeds(run, keys=("depth_mse", "c_mae", "iou", "rot", "trans_mm")) if n > 1 else None
-    r = row(run, prefix="pilot_")
+    sd = tseeds(run) if n > 1 else None
+    r = trow(run, "pilot_")
     if r is None:
         return None
     g = lambda k: (sd[k][0] if sd and sd.get(k) else r.get(k))
@@ -308,14 +320,14 @@ def _abl2(depth, pose, run, dep, lpose, n=1):
                 s_iou=g("iou"), s_mae=g("c_mae"), s_rot=g("rot"), s_tr=g("trans_mm"))
 _lpz = lambda tag, tp=False: ((LP[tag]["tp_rot"], LP[tag]["tp_trans"]) if tp else (LP[tag]["rot"], LP[tag]["trans"])) if tag in LP else None
 _rows2 = [x for x in (
-    _abl2("Teacher", "--", "B_k25_semipm_pseudo", _t, None, 3),
-    _abl2("Teacher", "Teacher", "B_k25_tp", _t, _lpz("rc100", tp=True)),
-    _abl2("Mesh", "Teacher", "B_k25_rf0", _tp0, _lpz("ro_tp0")),
-    _abl2("Mesh", "L1 search", "B_k25_rcp", _h, _lpz("rcp"), 3),
-    _abl2("Mesh", "Aligner (ours)", "B_k25_rf", _r, _lpz("ro_al"), 3),
+    _abl2("Teacher", "--", "T_k25_semipm", _t, None, 3),
+    _abl2("Teacher", "Teacher", "T_k25_tp", _t, _lpz("rc100", tp=True)),
+    _abl2("Mesh", "Teacher", "T_k25_rf0", _tp0, _lpz("ro_tp0")),
+    _abl2("Mesh", "L1 search", "T_k25_rcp", _h, _lpz("rcp"), 3),
+    _abl2("Mesh", "Aligner (ours)", "T_k25_rf", _r, _lpz("ro_al"), 3),
 ) if x]
 _cols2 = (("l_iou", "iou", max), ("l_mae", "mae", min), ("l_rot", "rot", min), ("l_tr", "tr", min), ("s_iou", "iou", max), ("s_mae", "mae", min), ("s_rot", "rot", min), ("s_tr", "tr", min))
-_best2 = {k: fn(_sig2(v[k], kind) for v in _rows2 if v[k] is not None) for k, kind, fn in _cols2}   # best at the printed precision; ties all bold
+_best2 = {k: _sig2(fn((v[k] for v in _rows2 if v[k] is not None), key=lambda x: float(_sig2(x, kind))), kind) for k, kind, fn in _cols2}   # best at the printed precision (numeric compare); ties all bold
 _out2 = []
 for v in _rows2:
     cells = [("--" if v[k] is None else (f"\\textbf{{{_sig2(v[k], kind)}}}" if _sig2(v[k], kind) == _best2[k] else _sig2(v[k], kind))) for k, kind, _ in _cols2]
@@ -328,17 +340,17 @@ PR = json.load(open(_pr)) if osp.exists(_pr) else {}
 pr = [r"\multicolumn{9}{@{}l}{\emph{Rotation error (deg)}} \\"]
 for K in (10, 25, 50, 100):
     cells = []
-    for split in ("val", "session2"):
-        for run in (f"B_k{K}_realonly", f"B_k{K}_rf"):
-            e = PR.get(f"pilot150_{run}_realonly/{split}") or PR.get(f"pilot150_{run}/{split}")
+    for split in ("testA", "session2"):
+        for run in (f"T_k{K}_realonly", f"T_k{K}_rf"):
+            e = PR.get(f"pilot150_{run}_realonly/{split}")
             cells += [f(e["rot"], 1), f(e["rot_al"], 1)] if e else ["--", "--"]
     pr.append(f"{K} & " + " & ".join(cells) + r" \\")
 pr.append(r"\midrule"); pr.append(r"\multicolumn{9}{@{}l}{\emph{Translation error (mm)}} \\")
 for K in (10, 25, 50, 100):
     cells = []
-    for split in ("val", "session2"):
-        for run in (f"B_k{K}_realonly", f"B_k{K}_rf"):
-            e = PR.get(f"pilot150_{run}_realonly/{split}") or PR.get(f"pilot150_{run}/{split}")
+    for split in ("testA", "session2"):
+        for run in (f"T_k{K}_realonly", f"T_k{K}_rf"):
+            e = PR.get(f"pilot150_{run}_realonly/{split}")
             cells += [f(e["trans"] * HALF_MM, 2), f(e["trans_al"] * HALF_MM, 2)] if e else ["--", "--"]
     pr.append(f"{K} & " + " & ".join(cells) + r" \\")
 T["poseref"] = "\n".join(pr)
@@ -446,9 +458,9 @@ T["selection"] = "\n".join(f"{lab} & " + " & ".join(f"{a:.4f}" if i == 0 else f"
 ks = []
 for K in (10, 25, 50, 100):
     blk = []
-    for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ learned renderer ($K$)", f"B_k{K}_gank", {}), ("+ self-training", f"B_k{K}_semipm_pseudo", {}),
-                              ("+ MeshTac (ours)", f"B_k{K}_rf", {}), ("\\quad + learned synth.", f"B_k{K}_al2", {}), ("+ learned renderer (full)", f"B_k{K}_ganfull", {"leaky": True})):
-        r = row(run)
+    for label, run, flags in (("Real only", f"T_k{K}_realonly", {}), ("+ learned renderer ($K$)", f"T_k{K}_gank", {}), ("+ self-training", f"T_k{K}_semipm", {}),
+                              ("+ MeshTac (ours)", f"T_k{K}_rf", {}), ("\\quad + learned synth.", f"T_k{K}_al2", {}), ("+ learned renderer (full)", f"T_k{K}_ganfull", {"leaky": True})):
+        r = trow(run, "pilot_" if (K == 10 and run.endswith("ganfull")) else "pilot150_")
         if r is not None:
             blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
     ks.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("trans_mm", 2)], bold_max=("iou",)))
@@ -473,13 +485,13 @@ def _c(v, nd, bold=False):
     t = "--" if v is None else f"{v:.{nd}f}"
     return f"\\textbf{{{t}}}" if bold else t
 _ct = []
-for label, run in (("Real only", "realonly"), ("Self-training", "semipm_pseudo"), ("MeshTac (ours)", "rf"), ("\\quad + learned synth.", "al2")):
+for label, run in (("Real only", "realonly"), ("Self-training", "semipm"), ("MeshTac (ours)", "rf"), ("\\quad + learned synth.", "al2")):
     cells = []
     for K in (25, 100):
-        r = cs(f"B_k{K}_{run}")
-        best_mae = min(cs(f"B_k{K}_{x}")["c_mae"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
-        best_iou = max(cs(f"B_k{K}_{x}")["iou"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
-        best_tr = min(cs(f"B_k{K}_{x}")["trans_mm"] for x in ("realonly", "semipm_pseudo", "rf", "al2"))
+        r = cs(f"T_k{K}_{run}")
+        best_mae = min(cs(f"T_k{K}_{x}")["c_mae"] for x in ("realonly", "semipm", "rf", "al2"))
+        best_iou = max(cs(f"T_k{K}_{x}")["iou"] for x in ("realonly", "semipm", "rf", "al2"))
+        best_tr = min(cs(f"T_k{K}_{x}")["trans_mm"] for x in ("realonly", "semipm", "rf", "al2"))
         cells += [_c(r["c_mae"], 3, r["c_mae"] == best_mae), _c(r["iou"], 3, r["iou"] == best_iou), _c(r["trans_mm"], 2, r["trans_mm"] == best_tr)]
     _ct.append(f"{label} & " + " & ".join(cells) + r" \\")
 T["crossT"] = "\n".join(_ct)

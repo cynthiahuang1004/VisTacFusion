@@ -15,6 +15,7 @@ Usage:
 """
 import argparse
 import glob
+import json
 import os
 import os.path as osp
 import random
@@ -66,7 +67,7 @@ class RealPairs(Dataset):
         p = tac.replace(REAL_ROOT, self.phys_root) if tac.startswith(REAL_ROOT) else tac
         return np.array(Image.open(p).convert("RGB"), np.float32) / 127.5 - 1
 
-    def __init__(self, root=REAL_ROOT, split="train", exclude_objects=(), per_object=None):
+    def __init__(self, root=REAL_ROOT, split="train", exclude_objects=(), per_object=None, exclude_frames=None):
         """exclude_objects: leave-object-out (held-out objects never seen by G).
         per_object: keep K evenly spaced train pairs per session — the SAME linspace
         rule as SimVisuoTactileDataset.train_samples_per_session, so G and the
@@ -83,11 +84,15 @@ class RealPairs(Dataset):
             if obj in exclude_objects:
                 continue
             per_unit.setdefault(unit, []).append((idx, tac))
+        ex = set(json.load(open(exclude_frames))["frames"]) if exclude_frames else None
         for unit, lst in per_unit.items():
             lst.sort()
             if split == "train" and per_object is not None and len(lst) > per_object:
                 pos = np.linspace(0, len(lst) - 1, per_object).round().astype(int)
                 lst = [lst[i] for i in sorted(set(pos.tolist()))]
+            if ex:   # held-out test frames: dropped after the K-shot subsampling (same rule as the dataset)
+                rel = osp.relpath(unit, root)
+                lst = [(i, t) for i, t in lst if f"{rel}/{i:04d}" not in ex]
             for idx, tac in lst:
                 dep = osp.join(unit, "raw_data", f"{idx:04d}_gt.npy")
                 if not osp.exists(dep):
@@ -300,6 +305,7 @@ def main():
                     help="condition G on the session no-contact background (6-ch input)")
     ap.add_argument("--diff", action="store_true",
                     help="learn depth -> (tactile - session background) difference images")
+    ap.add_argument("--exclude-frames", default=None, help="json of held-out test frames to drop from training pairs")
     ap.add_argument("--min-steps", type=int, default=0,
                     help="raise epochs so total G updates >= this (small K-shot sets)")
     args = ap.parse_args()
@@ -317,7 +323,7 @@ def main():
         tr = SimPairs()
     else:
         tr = RealPairs(root=args.real_root, split="train", exclude_objects=set(args.exclude_objects),
-                       per_object=args.per_object)
+                       per_object=args.per_object, exclude_frames=args.exclude_frames)
     va = RealPairs(root=args.real_root, split="val", exclude_objects=set(args.exclude_objects))
     if len(va) == 0:   # pseudo-labeled roots hold train frames only; preview on the real val split
         va = RealPairs(root=REAL_ROOT, split="val", exclude_objects=set(args.exclude_objects))

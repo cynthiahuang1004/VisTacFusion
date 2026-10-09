@@ -184,6 +184,13 @@ class SimVisuoTactileDataset(Dataset):
         # Optional per-session train subsampling (sim-quantity ablation).
         # Applies to the TRAIN split only; val keeps every val_every-th sample.
         self.train_samples_per_session = sim.get("train_samples_per_session", None)
+        # Optional held-out test frames (json with "frames": ["<obj>/<session>/<sensor>/<idx>", ...], paths
+        # relative to the data root). They are dropped from EVERY split of this root, AFTER the K-shot
+        # subsampling, so the K registered frames of a run are unchanged; evaluate them from a mirror root.
+        self.exclude_frames = None
+        _ex = sim.get("exclude_frames", None)
+        if _ex:
+            self.exclude_frames = set(json.load(open(_ex))["frames"])
         # Sim-to-real rotation alignment: use ABSOLUTE session rotation as pose GT
         # (matching real data convention) and keep only sessions whose base rotation
         # falls inside the object's real rotation window (rotation_windows json).
@@ -345,6 +352,10 @@ class SimVisuoTactileDataset(Dataset):
                 else:
                     pos = np.linspace(0, len(selected) - 1, k).round().astype(int)
                     selected = [selected[i] for i in sorted(set(pos.tolist()))]
+
+            if self.exclude_frames:
+                _rel = osp.relpath(unit, self.root)
+                selected = [i for i in selected if f"{_rel}/{i:04d}" not in self.exclude_frames]
 
             trans_lim = None
             if self._translation_bounds is not None and obj_name in self._translation_bounds:

@@ -513,6 +513,9 @@ def main():
             dist.barrier()
 
     if is_main_process():
+        # keep the final-epoch weights (latest.pt is overwritten every epoch and may be cleaned up afterwards)
+        save_checkpoint(os.path.join(args.output_dir, "final.pt"),
+                        model, optimizer, scheduler, scaler, epoch, best_metric, criterion=criterion)
         print("Training complete.")
         if writer is not None:
             writer.close()

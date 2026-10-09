@@ -83,6 +83,8 @@ def main():
     ap.add_argument("runs", nargs="+", help="run:prefix:K")
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--iters", type=int, default=6)
+    ap.add_argument("--real-root", default=REAL, help="session-1 root for the first split (default: validation split of REAL)")
+    ap.add_argument("--first-name", default="val", help="result-key name of the first split (e.g. testA for the held-out mirror root)")
     ap.add_argument("--json", default=osp.join(ROOT, "ablation/pilot_robosoft/pose_refine_results.json"))
     args = ap.parse_args()
     os.chdir(ROOT); dev = args.device
@@ -92,8 +94,10 @@ def main():
         parts = spec.split(":"); run, prefix, K = parts[:3]; atag = parts[3] if len(parts) > 3 else ""
         cfg = merge_configs("ablation/encoder/tac_sitr_single.yaml", "ablation/pilot_robosoft/train_pilot_e50.yaml", f"ablation/pilot_robosoft/data_{run}.yaml")
         with contextlib.redirect_stdout(io.StringIO()):
-            c1 = copy.deepcopy(cfg); c1["real"]["root"] = REAL
-            val = SimVisuoTactileDataset(c1, cfg.image_size, augment=False, split="val", data_section="real")
+            c1 = copy.deepcopy(cfg); c1["real"]["root"] = args.real_root
+            if args.real_root != REAL:   # mirror root holding only held-out frames: take all of them
+                c1["real"]["val_every"] = 1; c1["real"].pop("exclude_frames", None)
+            val = SimVisuoTactileDataset(c1, cfg.image_size, augment=False, split=("all" if args.real_root != REAL else "val"), data_section="real")
             c2 = copy.deepcopy(cfg); c2["real"]["root"] = NEW; c2["real"]["val_every"] = 1; c2["real"].pop("test_objects", None)
             new = SimVisuoTactileDataset(c2, cfg.image_size, augment=False, split="all", data_section="real", shared_obj_map=val._obj_to_id)
             mp = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, prefix + run, "best_pose.pt"), mp, device=dev)
@@ -101,7 +105,7 @@ def main():
         A = Aligner().to(dev).eval(); A.load_state_dict(torch.load(f"outputs/aligner_k{K}{atag}/aligner.pt", map_location=dev))
         for o in sorted({u.split("/")[-3] for u, _ in val.samples}):
             B.get_zmap(o)
-        for name, ds in (("val", val), ("session2", new)):
+        for name, ds in ((args.first_name, val), ("session2", new)):
             rows = run_split(mp, md, A, ds, dev, args.iters)
             objs = [r[0] for r in rows]; v = np.array([r[1:] for r in rows], float)
             r = dict(rot=float(np.abs(v[:, 0]).mean()), rot_al=float(np.abs(v[:, 2]).mean()), rot_med=float(np.median(np.abs(v[:, 0]))), rot_med_al=float(np.median(np.abs(v[:, 2]))),

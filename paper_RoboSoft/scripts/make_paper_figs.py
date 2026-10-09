@@ -63,6 +63,16 @@ def best(run, key="depth_mse", select="depth_mse", split="val"):
 HALF_MM = 41.0   # pose normalization of both sensors: translations are fractions of half the 82 mm object frame
 
 
+TA = json.load(open("ablation/pilot_robosoft/testA_results.json")) if osp.exists("ablation/pilot_robosoft/testA_results.json") else {}
+def ta(run, key, pre="pilot150_"):
+    """clean-protocol sensor-A test-set metric: dense from best_depth.pt (testA), pose from best_pose.pt (testA_bp)."""
+    if key == "c_mae":
+        d = TA.get(f"{pre}{run}/testA"); return d["c_mae"] if d else None
+    q = TA.get(f"{pre}{run}/testA_bp")
+    if not q: return None
+    return q["rot_deg"] if key == "pose_rot_deg" else q["trans_l1"] / 2   # mean coordinate error (normalized)
+
+
 def pose_ckpt(run, key, split="val"):
     """metric at the checkpoint with the lowest validation rotation error (= best_pose.pt); used for the pose metrics, as in the tables."""
     h = json.load(open(f"{OUT_RUNS}/{prefix_of(run)}{run}/history.json"))
@@ -77,12 +87,12 @@ def masked(run, split="val", key="c_mae"):
 def fig_kshot(out):
     Ks = [10, 25, 50, 100]
     series = {
-        "Real only": ["B_k10_realonly", "B_k25_realonly", "B_k50_realonly", "B_k100_realonly"],
-        "+ Blender (physical)": ["B_k10_blender", "B_k25_blender", "B_k50_blender", "B_k100_blender"],
-        "+ GAN-K (learned, strict)": ["B_k10_gank", "B_k25_gank", "B_k50_gank", "B_k100_gank"],
-        "+ self-training": ["B_k10_semipm_pseudo", "B_k25_semipm_pseudo", "B_k50_semipm_pseudo", "B_k100_semipm_pseudo"],
-        "+ GAN-full (leaky)": ["B_k10_ganfull", "B_k25_ganfull", "B_k50_ganfull", "B_k100_ganfull"],
-        "+ MeshTac (ours, strict)": ["B_k10_rf", "B_k25_rf", "B_k50_rf", "B_k100_rf"],
+        "Real only": ["T_k10_realonly", "T_k25_realonly", "T_k50_realonly", "T_k100_realonly"],
+        "+ Blender (physical)": ["T_k10_blender", "T_k25_blender", "T_k50_blender", "T_k100_blender"],
+        "+ GAN-K (learned, strict)": ["T_k10_gank", "T_k25_gank", "T_k50_gank", "T_k100_gank"],
+        "+ self-training": ["T_k10_semipm", "T_k25_semipm", "T_k50_semipm", "T_k100_semipm"],
+        "+ GAN-full (leaky)": ["T_k10_ganfull", "T_k25_ganfull", "T_k50_ganfull", "T_k100_ganfull"],
+        "+ MeshTac (ours, strict)": ["T_k10_rf", "T_k25_rf", "T_k50_rf", "T_k100_rf"],
     }
     names = {"+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
              "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
@@ -95,9 +105,12 @@ def fig_kshot(out):
             c, m, ls = STY[name]
             xs, ys = [], []
             for K, r in zip(Ks, runs):
-                if r is None or f"{prefix_of(r)}{r}/val" not in MASKED:
+                pre = "pilot_" if r == "T_k10_ganfull" else "pilot150_"
+                y = ta(r, key, pre)
+                if r is None or y is None:
                     continue
-                y = masked(r) if src == "masked" else pose_ckpt(r, "pose_rot_deg") if src == "rot" else pose_ckpt(r, "pose_trans") * HALF_MM if src == "trans" else best(r)
+                if src == "trans":
+                    y = y * HALF_MM
                 xs.append(K); ys.append(y)
             ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=names.get(name, name))
         ax.set_title(f"({letters[i]}) {lab} $\\downarrow$", loc="left", fontsize=7, pad=3)
@@ -391,9 +404,9 @@ def fig_poseref(out):
     (renderer-free) predictors, rotation and translation, session-1 validation and session-2 test (data: eval_pose_refine.py)."""
     PRJ = json.load(open("ablation/pilot_robosoft/pose_refine_results.json"))
     Ks = [10, 25, 50, 100]
-    meth = [("Real only", "B_k{K}_realonly", "#52514e"), ("MeshTac (ours)", "B_k{K}_rf_realonly", "#8a4fd3")]
-    panels = [("rot", "Rotation [deg]", "val", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
-              ("trans", "Translation [mm]", "val", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
+    meth = [("Real only", "T_k{K}_realonly_realonly", "#52514e"), ("MeshTac (ours)", "T_k{K}_rf_realonly", "#8a4fd3")]
+    panels = [("rot", "Rotation [deg]", "testA", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
+              ("trans", "Translation [mm]", "testA", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
     fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.0)); axes = axes.ravel()
     w = 0.19; x = np.arange(len(Ks))
     for i, (ax, (key, lab, split, sname)) in enumerate(zip(axes, panels)):
@@ -418,7 +431,7 @@ def fig_poseref(out):
 def fig_qual(out):
     """Held-out frames of both sensors at K=25: frame | real only | MeshTac (renderer-free) | GT.  Per object, the frame with the
     object's median MeshTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
-    sets = [("A", "B_k25_realonly", "B_k25_rf", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
+    sets = [("A", "T_k25_realonly", "T_k25_rf", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
             ("B", "S_k25_realonly_m", "S_k25_maplnr_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
     fig = plt.figure(figsize=(3.45, 1.85))                      # cells square -> no gaps between the tiles of a group
     outer = fig.add_gridspec(1, 2, left=0.003, right=0.997, top=0.875, bottom=0.2, wspace=0.05)

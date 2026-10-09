@@ -125,6 +125,7 @@ def main():
             if args.fixed_crop is not None:
                 cfg_new["fixed_crop"] = args.fixed_crop
             cfg_new["real"].pop("test_objects", None)  # don't exclude any objects
+            cfg_new["real"].pop("exclude_frames", None)  # the held-out test frames ARE the evaluation set here
             if cfg_new["real"].get("bg_subtract"):     # new-session backgrounds live in real_new/
                 cfg_new["real"]["bg_subtract"] = "real_new"
             new_ds = SimVisuoTactileDataset(cfg_new, cfg.image_size, augment=False, split="all",

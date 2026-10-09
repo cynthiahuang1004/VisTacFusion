@@ -12,8 +12,9 @@ from vistacfusion.utils.config import merge_configs
 
 OUT = "/media/hdd2/ihsuan/VisTacFusion_outputs_hdd2"; P = "ablation/pilot_robosoft"
 MODEL = "ablation/encoder/tac_sitr_single.yaml"; TRAIN = f"{P}/train_pilot_e50.yaml"
-SETS = {"A": dict(runs=[("pilot150_", "B_k25_realonly"), ("pilot150_", "B_k25_al2"), ("pilot150_", "B_k25_rf")], root=None, step=1),
-        "B": dict(runs=[("pilot_", "S_k25_realonly_m"), ("pilot_", "S_k25_mapl_m"), ("pilot_", "S_k25_maplnr_m")], root="/media/hdd2/ihsuan/gs_blender/real_gelslim40_test_mesh", step=4)}
+# Sensor A: clean-protocol runs (T_*) on the held-out session-1 test mirror root; sensor B: test set.
+SETS = {"A": dict(runs=[("pilot150_", "T_k25_realonly"), ("pilot150_", "T_k25_al2"), ("pilot150_", "T_k25_rf")], root="/media/hdd2/ihsuan/gs_blender/real_filtered_testA", step=1, fixed_crop=None),
+        "B": dict(runs=[("pilot_", "S_k25_realonly_m"), ("pilot_", "S_k25_mapl_m"), ("pilot_", "S_k25_maplnr_m")], root="/media/hdd2/ihsuan/gs_blender/real_gelslim40_test_mesh", step=4, fixed_crop=1.0)}
 
 
 @torch.no_grad()
@@ -28,7 +29,9 @@ def main():
                     _, ds = build_datasets(cfg)
                 else:
                     old = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False, split="val", data_section="real")
-                    c2 = copy.deepcopy(cfg); c2["real"]["root"] = S["root"]; c2["real"]["val_every"] = 1; c2["fixed_crop"] = 1.0
+                    c2 = copy.deepcopy(cfg); c2["real"]["root"] = S["root"]; c2["real"]["val_every"] = 1; c2["real"].pop("exclude_frames", None)
+                    if S.get("fixed_crop"):
+                        c2["fixed_crop"] = S["fixed_crop"]
                     ds = SimVisuoTactileDataset(c2, cfg.image_size, augment=False, split="all", data_section="real", shared_obj_map=old._obj_to_id)
                 model = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, prefix + run, "best_depth.pt"), model, device=dev)
             idx = list(range(0, len(ds), S["step"]))

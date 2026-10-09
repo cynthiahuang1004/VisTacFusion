@@ -4,7 +4,7 @@
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency on two tactile sensors.} Contact MAE, rotation and translation error versus labeled contacts per object, $K$. Sensor A: (a--c), validation; sensor B: (d--f), test. Lower is better.}
+    \caption{\textbf{Label efficiency on two tactile sensors.} Contact MAE, rotation and translation error versus labeled contacts per object, $K$. Sensor A: (a--c), held-out test frames; sensor B: (d--f), test. Lower is better.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -20,7 +20,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotshort
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Label-budget comparison on sensor A} ($472$ validation frames). Matched methods use the same $K$ registered contacts per object; self-training and MeshTac also use unlabeled training images. Italic: the full-set renderer reference, which exceeds $K$. Bold: best matched result, including the synthetic variant, at each $K$. All methods share the frozen SITR backbone and predictor architecture. Dense and pose metrics use separately selected checkpoints (Sec.~\ref{sec:setup}).}
+\caption{\textbf{Label-budget comparison on sensor A} ($530$ held-out test frames). Matched methods use the same $K$ registered contacts per object; self-training and MeshTac also use unlabeled training images. Italic: the full-set renderer reference, which exceeds $K$. Bold: best matched result, including the synthetic variant, at each $K$. All methods share the frozen SITR backbone and predictor architecture. Dense and pose metrics use separately selected checkpoints (Sec.~\ref{sec:setup}).}
 \label{tab:kshot}
 \end{table}
 
@@ -28,9 +28,9 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \label{sec:kshot}
 We vary $K$ to compare mesh-aligned supervision with real-only training, renderer augmentation and self-training (Table~\ref{tab:kshot}, Fig.~\ref{fig:kshot}). Matched methods use the same registered contacts; self-training and MeshTac also use the same unlabeled images.
 
-MeshTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $21\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$. MeshTac also lowers pose error on sensor A. Three-seed runs at $K=25$ give depth MSE $0.0433\pm0.0004$, compared with $0.0551\pm0.0010$ for real-only training. To assess sensitivity to checkpoint selection, we also evaluate the final training epoch: MeshTac retains a $10$--$40\%$ reduction in depth MSE over real-only training across budgets, with pose metrics changing by at most $0.3^\circ$ and $0.1\,$mm.
+MeshTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $20\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$. MeshTac also lowers pose error on sensor A. Three-seed $50$-epoch runs at $K=25$ give depth MSE $0.0380\pm0.0008$, compared with $0.0486\pm0.0007$ for real-only training.
 
-At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; their contact gains appear mainly at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic images to MeshTac gives small gains at $K=10$ but no consistent further improvement across budgets.
+At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU; their contact gains appear mainly at larger $K$. PBR improves rotation at small budgets, but its gains in contact reconstruction are limited and inconsistent. Adding synthetic images to MeshTac gives no consistent further improvement: small gains at $K\ge50$ and none at $K\le25$.
 
 \begin{table}[!htb]
 \centering
@@ -47,7 +47,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label source ablation} ($K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student validation accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Shaded: MeshTac (ours).}
+\caption{\textbf{Pseudo-label source ablation} ($K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student test accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Shaded: MeshTac (ours).}
 \label{tab:abl}
 \end{table}
 
@@ -63,7 +63,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \label{sec:ablation}
 We compare pseudo-label sources to separate the effects of mesh geometry, pose supervision and alignment (Table~\ref{tab:abl}). Students train for 50 epochs; results average three seeds except rows 2--3. Rows 1, 2 and 4 use a renderer-augmented teacher ($4.9^\circ$ pose error). Rows 3 and 5 share the real-only teacher ($6.0^\circ$), directly testing the effect of alignment.
 
-Rows 3 and 5 isolate the effect of alignment with the same real-only teacher. Direct mesh projection at the teacher-estimated pose produces inaccurate pseudo-labels (IoU $0.47$), whereas learned alignment raises IoU to $0.72$ and reduces rotation error from $6.0^\circ$ to $1.1^\circ$. Without alignment, the resulting student also underperforms a real-only baseline trained under the same 50-epoch schedule (depth MSE $0.064$ vs.\ $0.055$); with alignment it is the best student across the reported metrics. Teacher pose supervision (row 2) mainly improves student rotation, and L1 search (row 4) improves both label and student IoU but remains below the aligner. Accurate mesh placement, not access to geometry alone, therefore determines the value of mesh-derived labels. Relative to the real-only teacher's own depth labels, aligned-mesh labels improve IoU on both sensors (at $K=25$: $0.55\to0.72$ on sensor A, $0.85\to0.91$ on sensor B), with the same ordering at the other three budgets.
+Rows 3 and 5 isolate the effect of alignment with the same real-only teacher. Direct mesh projection at the teacher-estimated pose produces inaccurate pseudo-labels (IoU $0.47$), whereas learned alignment raises IoU to $0.72$ and reduces rotation error from $6.0^\circ$ to $1.1^\circ$. Without alignment, the resulting student also underperforms a real-only baseline trained under the same 50-epoch schedule (depth MSE $0.060$ vs.\ $0.049$); with alignment it is the best student across the reported metrics. Teacher pose supervision (row 2) mainly improves student rotation, and L1 search (row 4) improves both label and student IoU but remains below the aligner. Accurate mesh placement, not access to geometry alone, therefore determines the value of mesh-derived labels. Relative to the real-only teacher's own depth labels, aligned-mesh labels improve IoU on both sensors (at $K=25$: $0.55\to0.72$ on sensor A, $0.85\to0.91$ on sensor B), with the same ordering at the other three budgets.
 
 Image similarity can favor an incorrect geometric state: at $K=25$, the search-selected pose has lower RGB L1 error than the GT pose on $93\%$ of frames. The aligner instead learns state corrections from known perturbations. From teacher initialization, mean rotation error reaches $1.1^\circ$ after three updates (Fig.~\ref{fig:conv}). Six updates also reduce $15^\circ$ rotation perturbations to $0.6^\circ$, with simultaneous translation and indentation offsets, beyond the training rotation range. At $30^\circ$, the remaining error rises to $3.2^\circ$. On unlabeled sensor-A training contacts, $1.6\%$ of aligned poses exceed $5^\circ$ error at $K=25$, mostly on one nearly symmetric object.
 
@@ -96,7 +96,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 \label{sec:general}
 We evaluate two forms of robustness separately. First, we test sensor-A models on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}). Second, we retrain each method on sensor B with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f); this tests whether the procedure transfers across sensor designs after sensor-specific retraining, not zero-shot model transfer.
 
-\noindent\textbf{Cross-session robustness.} On session 2, MeshTac lowers contact MAE by $17$--$18\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.252\,$mm at $K=100$, a $28\%$ reduction from real-only training. Translation error rises to $1.7$--$2.1\,$mm for all methods, about twice the session-1 level, so better contact reconstruction only partly compensates for the placement change.
+\noindent\textbf{Cross-session robustness.} On session 2, MeshTac lowers contact MAE by $15$--$20\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.248\,$mm at $K=100$, a $31\%$ reduction from real-only training. Translation error rises to $1.7$--$2.1\,$mm for all methods, about twice the session-1 level, so better contact reconstruction only partly compensates for the placement change.
 
 \noindent\textbf{Cross-sensor applicability.} On sensor B, MeshTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are less consistent at larger budgets (Fig.~\ref{fig:kshot}).
 
@@ -105,13 +105,13 @@ Fig.~\ref{fig:qual} illustrates differences in ridge continuity and junction pla
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_poseref.pdf}
-    \caption{\textbf{Pose error before and after test-time refinement.} Hollow bars: predictor output; filled bars: after six updates of the fixed aligner with the known mesh. Mean errors over session-1 validation (a, c) and session-2 test frames (b, d); no retraining.}
+    \caption{\textbf{Pose error before and after test-time refinement.} Hollow bars: predictor output; filled bars: after six updates of the fixed aligner with the known mesh. Mean errors over session-1 test frames (a, c) and session-2 frames (b, d); no retraining.}
     \label{fig:poseref}
 \end{figure}
 
 \subsection{Mesh-Assisted Test-Time Pose Refinement}
 \label{sec:tta}
-This experiment tests whether the aligner, trained only to correct mesh states for labeling, also serves as a pose-refinement module at inference. Standard MeshTac inference needs no mesh; when a known mesh is additionally available, we reuse the aligner to refine the predicted pose of both real-only and MeshTac models. We apply six updates without retraining on session-1 validation and session-2 test images (Fig.~\ref{fig:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.2^\circ$ mean rotation error within session 1, with translation error reduced by $20$--$50\%$. On session 2, mean rotation error remains $5$--$7^\circ$ despite a median of $1.5$--$1.8^\circ$, indicating a few contacts that stay poorly aligned and motivating confidence estimates for refinement.
+This experiment tests whether the aligner, trained only to correct mesh states for labeling, also serves as a pose-refinement module at inference. Standard MeshTac inference needs no mesh; when a known mesh is additionally available, we reuse the aligner to refine the predicted pose of both real-only and MeshTac models. We apply six updates without retraining on session-1 test and session-2 images (Fig.~\ref{fig:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.1^\circ$ mean rotation error within session 1, with translation error reduced by $30$--$55\%$. On session 2, mean rotation error remains $4$--$7^\circ$ despite a median of $1.4$--$1.9^\circ$, indicating a few contacts that stay poorly aligned and motivating confidence estimates for refinement.
 
 \begin{table}[!htb]
 \centering
