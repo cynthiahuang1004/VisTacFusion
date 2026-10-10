@@ -96,6 +96,7 @@ def main():
     ap.add_argument("--fixed-crop", type=float, default=None, help="override fixed_crop for the eval root (sensor B: 1.0)")
     ap.add_argument("--tag", default="cross_session_curated", help="result key suffix")
     ap.add_argument("--batch", type=int, default=64)
+    ap.add_argument("--model", default=MODEL, help="model yaml (e.g. the no-object-embedding variant)")
     args = ap.parse_args()
 
     results = json.load(open(args.json)) if osp.exists(args.json) else {}
@@ -111,7 +112,7 @@ def main():
         data_cfg = f"ablation/pilot_robosoft/data_{base}.yaml"
         if not osp.exists(data_cfg):
             data_cfg = f"ablation/pilot_robosoft/data_A_realonly.yaml"
-        cfg = merge_configs(MODEL, TRAIN, data_cfg)
+        cfg = merge_configs(args.model, TRAIN, data_cfg)
         with contextlib.redirect_stdout(io.StringIO()):
             # Build the old-session obj map so object IDs match the checkpoint
             old_ds = SimVisuoTactileDataset(cfg, cfg.image_size, augment=False, split="val",
