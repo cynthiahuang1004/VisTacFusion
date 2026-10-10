@@ -3,7 +3,7 @@
 \tableformat
 \scriptsize\renewcommand{\arraystretch}{1.02}
 \setlength{\tabcolsep}{2.4pt}
-\caption{\textbf{Label-budget comparison on marker-free GelSlim~4.0} (sensor A, $530$ held-out test frames). In the upper block, methods share $K$ labeled contacts per object; self-training and AlignTac also use unlabeled images. Highlights mark \ranklegend{} per metric and $K$, including the synthetic variant; ties at displayed precision share a color. $\dagger$~The gray reference block is not budget-matched: the renderer uses all $3{,}667$ real training pairs, while $K$ indexes the nominal predictor budget. All methods share the frozen SITR backbone and predictor architecture. Dense and pose metrics use separately selected checkpoints (Sec.~\ref{sec:setup}).}
+\caption{\textbf{Label-budget comparison on marker-free GelSlim~4.0} (sensor A, $530$ held-out test frames). In the upper block, methods share $K$ GT-labeled contacts per object; self-training and AlignTac also use unlabeled images. Highlights mark \ranklegend{} per metric and $K$, including the synthetic variant; ties at displayed precision share a color. $\dagger$~The gray reference block is not budget-matched: the renderer uses all $3{,}667$ real training pairs, while $K$ indexes the nominal predictor budget. All methods share the frozen SITR backbone and predictor architecture. Dense and pose metrics use separately selected checkpoints (Sec.~\ref{sec:setup}).}
 \label{tab:kshot}
 \begin{tabularx}{\columnwidth}{rXrrrrrr}
 \toprule
@@ -20,7 +20,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_kshot.pdf}
-    \caption{\textbf{Label efficiency on the two GelSlim~4.0 variants.} Contact MAE, rotation and translation error versus labeled contacts per object, $K$. Marker-free sensor A: (a--c); dot-marker sensor B: (d--f). Results use each variant's held-out test frames. PBR and the full-set renderer are reported for sensor A only; PBR is calibrated to its illumination, and the full-set renderer uses additional real training pairs.}
+    \caption{\textbf{Label efficiency on the two GelSlim~4.0 variants.} Contact MAE, rotation and translation error versus GT-labeled contacts per object, $K$. Marker-free sensor A: (a--c); dot-marker sensor B: (d--f). Results use each variant's held-out test frames. PBR and the full-set renderer are reported for sensor A only; PBR is calibrated to its illumination, and the full-set renderer uses additional real training pairs.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -28,7 +28,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-We vary $K$ to compare AlignTac's aligned-geometry supervision with real-only training, tactile RGB augmentation and self-training (Table~\ref{tab:kshot}, Fig.~\ref{fig:kshot}). Matched methods use the same $K$ labeled contacts; self-training and \FinalLine{AlignTac also use the same unlabeled images.}
+We vary $K$ to compare AlignTac's aligned-geometry supervision with real-only training, tactile RGB augmentation and self-training (Table~\ref{tab:kshot}, Fig.~\ref{fig:kshot}). Matched methods use the same $K$ GT-labeled contacts; self-training and \FinalLine{AlignTac also use the same unlabeled images.}
 
 AlignTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $20\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$. AlignTac also lowers pose error on the marker-free variant (A). Three-seed $50$-epoch runs at $K=25$ give depth MSE $0.0380\pm0.0008$, compared with $0.0486\pm0.0007$ for real-only training. Without checkpoint selection (final epoch, one checkpoint for all metrics), AlignTac still lowers contact MAE by $20$--$33\%$; at $K=25$ that checkpoint gives depth MSE $0.041$, IoU $0.74$, rotation $3.2^\circ$ and translation $0.88\,$mm.
 

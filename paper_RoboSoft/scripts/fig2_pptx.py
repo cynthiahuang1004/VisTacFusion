@@ -126,7 +126,7 @@ arrow(P2[0] + P2[1] + 0.02, Y0 + 0.36, P3[0] - 0.02, Y0 + 0.36, GRAY, 2.25, name
 
 # ① teacher and aligner from the K registered contacts
 step(P1[0], Y0, 1, "Train teacher and aligner", "", P1[1])
-text(P1[0] + 0.2, Y0 + 0.62, P1[1] - 0.4, 0.3, [("on ", ("", GRAY)), ("K", ("i", GRAY)), (" labeled contacts per object", ("", GRAY))], CAP, "l", name="Step 1 data note")
+text(P1[0] + 0.2, Y0 + 0.62, P1[1] - 0.4, 0.3, [("on ", ("", GRAY)), ("K", ("i", GRAY)), (" GT-labeled contacts per object", ("", GRAY))], CAP, "l", name="Step 1 data note")
 ts, bw, bh = 1.02, 1.18, 0.8
 xa = P1[0] + 0.24; xb = xa + ts + 0.4; xc = xb + bw + 0.4
 ya = 1.64                                                             # teacher row
@@ -136,7 +136,7 @@ arrow(xa + ts + 0.04, ya + ts / 2, xb - 0.04, ya + ts / 2, name="Registered imag
 box(xb, ya + (ts - bh) / 2, bw, bh, [("Teacher", "b"), "\n"] + fmath("f", "t"), TEACHER, name="Teacher (training)")
 arrow(xb + bw + 0.04, ya + ts / 2, xc - 0.04, ya + ts / 2, name="Teacher to registered label")
 pic(f"{A}/reg_depth.png", xc, ya + 0.1, ts - 0.2, "Registered label (mesh at q*)", border=GREEN)
-text(xc - 0.25, ya + ts + 0.03, ts + 0.3, 0.3, [("label at ", ("", GREEN)), ("q", ("i", GREEN)), ("*", ("i sup", GREEN))], CAP, name="Registered label caption")
+text(xc - 0.45, ya + ts + 0.03, ts + 0.5, 0.3, [("GT label at ", ("", GREEN)), ("q", ("i", GREEN)), ("*", ("i sup", GREEN))], CAP, name="Registered label caption")
 yb = 3.4                                                             # aligner row
 pic(f"{A}/reg_overlay_perturbed.png", xa, yb, ts, "Registered image with mesh outline at q*+delta")
 text(xa - 0.2, yb + ts + 0.03, ts + 0.5, 0.3, [("mesh at ", ("", ORANGE)), ("q", ("i", ORANGE)), ("*", ("i sup", ORANGE)), (" + δ", ("i", ORANGE))], CAP, name="Perturbed state caption")
@@ -184,7 +184,7 @@ text(P2[0] + 0.2, Y0 + PH - 0.4, 3.6, 0.3, [("outlines: mesh contact region at t
 step(P3[0], Y0, 3, "Train student", "", P3[1])
 text(P3[0] + 0.2, Y0 + 0.62, P3[1] - 0.3, 0.3, [("on all real images", ("", GRAY))], CAP, "l", name="Step 3 data note")
 tg = 0.74; xg = P3[0] + 0.22; yg1 = 2.12; yg2 = yl
-text(xg - 0.05, yg1 - 0.4, 2 * tg + 0.3, 0.3, [("K", "i b"), (" labeled", "b")], CAP, "l", name="Registered group caption")
+text(xg - 0.05, yg1 - 0.4, 2 * tg + 0.3, 0.3, [("K", "i b"), (" GT-labeled", "b")], CAP, "l", name="Registered group caption")
 pic(f"{A}/reg_real.png", xg, yg1, tg, "Registered image (student data)")
 pic(f"{A}/reg_depth.png", xg + tg + 0.08, yg1, tg, "Registered label (student data)", border=GREEN)
 text(xg - 0.05, yg2 - 0.44, 2 * tg + 0.6, 0.3, [("pseudo-labeled", "b")], CAP, "l", name="Pseudo-labeled group caption")
