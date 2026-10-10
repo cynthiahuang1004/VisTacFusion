@@ -7,7 +7,7 @@ In real data collection (Fig.~\ref{fig:teaser}a), repeatable pressing motions do
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig_teaser.pdf}
-    \caption{\textbf{Where the labels come from.} (a) Real contacts have the right appearance, but each label requires registering the robot pose to the image. (b) Simulated contacts come with free geometry, but their appearance differs from the sensor, and fitting a renderer consumes real image--label pairs. (c) AlignTac keeps the real image and aligns the known mesh to it, so unlabeled real contacts receive geometry labels without registration or RGB synthesis.}
+    \caption{\textbf{Three ways to label real tactile contacts.} (a) Registering real contacts gives correct appearance, but every label needs a contact state read from the robot, which carries kinematic, mounting and placement errors and must be redone per session. (b) Simulation gives free geometry, but the rendered appearance must be calibrated per sensor or fitted on real image--label pairs. (c) AlignTac keeps the real image fixed and lets a learned aligner move the mesh state, so unlabeled real contacts receive geometry labels from $K$ registered contacts, without further registration or RGB synthesis.}
     \label{fig:teaser}
 \end{figure}
 

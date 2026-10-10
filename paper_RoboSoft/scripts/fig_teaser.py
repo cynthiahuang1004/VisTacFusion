@@ -66,3 +66,14 @@ fig.patches.append(FancyArrowPatch((xc + tw + gw / 2, y0 + th + 0.03), (xc + tw 
 fig.text(0.5, 0.04, "cost:  a pose per label   |   renderer fit on real pairs   |   K registered contacts, then unlabeled images", ha="center", va="bottom", fontsize=4.8, color="#555", style="italic")
 out = sys.argv[1]; os.makedirs(out, exist_ok=True)
 fig.savefig(os.path.join(out, "fig_teaser.pdf")); fig.savefig(os.path.join(out, "fig_teaser.png"), dpi=300); print("teaser written", t)
+
+# individual thumbnails for the TikZ teaser (paper_RoboSoft/teaser_diagram.tex)
+from matplotlib import cm
+td = os.path.join(sys.argv[1], "teaser"); os.makedirs(td, exist_ok=True)
+def save(name, im, depth=False):
+    if depth:
+        im = (cm.viridis(np.clip(im / 1.2, 0, 1))[..., :3] * 255).astype(np.uint8)
+    Image.fromarray(np.asarray(im).astype(np.uint8)).resize((224, 224), Image.BILINEAR).save(os.path.join(td, name + ".png"))
+save("real", real); save("gt", gt, True); save("sim_depth", sim_d, True); save("pbr", pbr); save("gan", gan); save("mesh_teacher", m0, True); save("mesh_aligned", m1, True)
+sim_real = np.array(Image.open(t).convert("RGB")); save("real2", sim_real)
+print("thumbnails in", td)

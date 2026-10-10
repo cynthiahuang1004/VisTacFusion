@@ -7,7 +7,7 @@ set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
 URL="https://git:${OVERLEAF_TOKEN:?set OVERLEAF_TOKEN}@git.overleaf.com/6ab1c9afe47f399544728ef3"
 TMP=$(mktemp -d); git clone -q "$URL" "$TMP"
-FILES="main.tex main_long.tex architecture_diagram.tex architecture_diagram_training_inference.tex table_style.tex refs.bib ieeeconf.cls .gitignore sections sections_long figures data"
+FILES="main.tex main_long.tex architecture_diagram.tex architecture_diagram_training_inference.tex teaser_diagram.tex table_style.tex refs.bib ieeeconf.cls .gitignore sections sections_long figures data"
 case "$1" in
   pull) for f in $FILES; do rm -rf "$HERE/$f"; cp -r "$TMP/$f" "$HERE/$f"; done
         git -C "$TMP" rev-parse HEAD > "$HERE/.overleaf_head"; echo "pulled";;
