@@ -1,5 +1,9 @@
 # RoboSoft 2027 paper — data provenance
 
+**最新語句與論證修訂（2026-10-08）**：修訂六頁稿的 abstract 與所有短版章節，讓句子更易讀、實驗依比較設定／結果／解釋組織，Discussion 以連貫段落提出 insight、限制與 future work。補明不同 teacher、checkpoint 與 translation aggregation，修正 IoU 方向、self-training／synthetic augmentation 的過度概括；細節與實質 before/after 見 [`EDITORIAL_REVIEW.md`](EDITORIAL_REVIEW.md) 最新紀錄。短版仍為 **6 頁**，長版與既有結果圖表不變；本輪尚未推送 Overleaf。
+
+**Fig. 1 更新（作者確認後推送）**：六頁稿採用 TRAINING／INFERENCE 分區圖，展開 teacher 與 student 的 SITR-B/18、DPT、Pose MLP，並更新 caption。Overleaf commit `180a0f0` 已核對；短版仍為 6 頁。長版保留原圖。
+
 **最新六頁版修訂（2026-10-07）**：參考 DeepIM、Self6D、Sparsh、SITR、TACTO、Taxim 等原始論文的全文，逐節修訂 introduction、related work、method、setup、experiments、discussion/conclusion 及圖表 captions。保留目前摘要中的數字、三項貢獻、五個實驗標題和指定的 Fig. 1；本輪只編輯短版，PDF 維持 **6 頁**。參考文獻、實質內容更正、並行檔案更新與驗證詳見 [`EDITORIAL_REVIEW.md`](EDITORIAL_REVIEW.md) 最上方紀錄。已依作者後續要求推送六個短版章節檔至 Overleaf：`a233bb8`。
 
 **歷史文句修訂（2026-10-06；摘要偏好已由 10-07 紀錄更新）**：參考 TACTO、Taxim、DeepIM、Sparsh 的段落組織，當時兩版摘要改為無數字的定性敘述，四項貢獻整合為三項，並明確限定 known-object setting、mesh-derived geometry 與 manipulation scope。數值比較保留在實驗；圖表不變，短版 6 頁、長版 15 頁。詳見 `EDITORIAL_REVIEW.md` 對應日期紀錄。

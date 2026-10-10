@@ -11,6 +11,9 @@ Sources (all produced by ablation/pilot_robosoft/*):
 Writes paper_RoboSoft/data/tables.tex with one \\newcommand per table body and prints a summary.
 usage: python paper_RoboSoft/scripts/build_tables.py
 """
+import sys as _sys
+if "--force" not in _sys.argv:
+    raise SystemExit("data/tables.tex carries manual rank-color edits (2026-10-09, X. Xu). Re-apply them after regenerating; run with --force to overwrite.")
 import json
 import os.path as osp
 import re
@@ -149,8 +152,8 @@ for K in (0, 10, 25, 50, 100):
                               ("\\quad center window only (no stitching)", f"B_k{K}_semipm_c1", {}),
                               ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo", {}),
                               ("\\quad round 2", f"B_k{K}_semipm_pseudo_r2", {}),
-                              ("+ MeshTac, L1 search", f"B_k{K}_rcp", {}),
-                              ("+ MeshTac (ours)", f"B_k{K}_rf", {}),
+                              ("+ AlignTac, L1 search", f"B_k{K}_rcp", {}),
+                              ("+ AlignTac (ours)", f"B_k{K}_rf", {}),
                               ("\\quad + learned synth.", f"B_k{K}_al2", {}),
                               ("\\quad synthetic frames for the aligner only", f"B_k{K}_al0", {}),
                               ("+ GAN-full (full real set)", f"B_k{K}_ganfull", {"leaky": True})):
@@ -177,7 +180,7 @@ T["kshot"] = "\n\\midrule\n".join(table(b, cols5, bold_max=("iou",)) for b in bl
 # seeds (50 ep, 3 seeds) for K=25 and K=100
 sd = []
 for K in (25, 100):
-    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ MeshTac, L1 search", f"B_k{K}_rcp"), ("+ MeshTac", f"B_k{K}_rf"), ("\\quad + learned synth.", f"B_k{K}_al2")):
+    for label, run in (("Real only", f"B_k{K}_realonly"), (f"+ GAN-{K}", f"B_k{K}_gank"), ("+ teacher-label self-training", f"B_k{K}_semipm_pseudo"), ("+ AlignTac, L1 search", f"B_k{K}_rcp"), ("+ AlignTac", f"B_k{K}_rf"), ("\\quad + learned synth.", f"B_k{K}_al2")):
         s = seeds(run)
         sd.append(f"{K} & {label} & " + " & ".join(f"{s[k][0]:.{nd}f} $\\pm$ {s[k][1]:.{nd}f}" if s.get(k) else "--" for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\")
 T["seeds"] = "\n".join(sd)
@@ -246,18 +249,18 @@ cross = [
     ("$\\Kreal=25$ + refiner-25 (0 labels)", cs("B_k25_ref"), {}),
     ("$\\Kreal=25$ + self-trained GAN-25", cs("B_k25_pseudo"), {}),
     ("$\\Kreal=25$ + teacher-label self-training", cs("B_k25_semipm_pseudo"), {}),
-    ("$\\Kreal=25$ + MeshTac, L1 search", cs("B_k25_rcp"), {}),
-    ("$\\Kreal=25$ + MeshTac", cs("B_k25_rf"), {}),
-    ("$\\Kreal=25$ + MeshTac + learned synth.", cs("B_k25_al2"), {}),
+    ("$\\Kreal=25$ + AlignTac, L1 search", cs("B_k25_rcp"), {}),
+    ("$\\Kreal=25$ + AlignTac", cs("B_k25_rf"), {}),
+    ("$\\Kreal=25$ + AlignTac + learned synth.", cs("B_k25_al2"), {}),
     ("$\\Kreal=100$ real only", cs("B_k100_realonly"), {}),
     ("$\\Kreal=100$ + Blender", cs("B_k100_blender"), {}),
     ("$\\Kreal=100$ + GAN-100", cs("B_k100_gank"), {}),
     ("$\\Kreal=100$ + refiner-100 (0 labels)", cs("B_k100_ref"), {}),
     ("$\\Kreal=100$ + self-trained GAN-100", cs("B_k100_pseudo"), {}),
     ("$\\Kreal=100$ + teacher-label self-training", cs("B_k100_semipm_pseudo"), {}),
-    ("$\\Kreal=100$ + MeshTac, L1 search", cs("B_k100_rcp"), {}),
-    ("$\\Kreal=100$ + MeshTac", cs("B_k100_rf"), {}),
-    ("$\\Kreal=100$ + MeshTac + learned synth.", cs("B_k100_al2"), {}),
+    ("$\\Kreal=100$ + AlignTac, L1 search", cs("B_k100_rcp"), {}),
+    ("$\\Kreal=100$ + AlignTac", cs("B_k100_rf"), {}),
+    ("$\\Kreal=100$ + AlignTac + learned synth.", cs("B_k100_al2"), {}),
 ]
 T["cross"] = table(cross, [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1), ("rotc", 1)], bold_max=("iou",))
 # ---------------- compact tables of the 8-page paper ----------------
@@ -265,7 +268,7 @@ km = []
 for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"B_k{K}_realonly", {}), ("+ PBR", f"B_k{K}_blender", {}), (f"+ learned renderer", f"B_k{K}_gank", {}),
-                              ("+ self-training", f"B_k{K}_semipm_pseudo", {}), ("+ MeshTac (ours)", f"B_k{K}_al2", {}), ("\\quad no renderer", f"B_k{K}_rf", {}),
+                              ("+ self-training", f"B_k{K}_semipm_pseudo", {}), ("+ AlignTac (ours)", f"B_k{K}_al2", {}), ("\\quad no renderer", f"B_k{K}_rf", {}),
                               ("+ learned renderer (full)", f"B_k{K}_ganfull", {"leaky": True})):
         r = row(run)
         if r is None:
@@ -277,9 +280,9 @@ T["crossmain"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("  & + PBR", cs("A_blender"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}),
     ("  & + learned renderer (full)", cs("A_ganfull"), {"leaky": True}), ("", None, {"sep": r"\midrule"}),
     ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + learned renderer", cs("B_k25_gank"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}),
-    ("  & + MeshTac (ours)", cs("B_k25_al2"), {}), ("  & \\quad no renderer", cs("B_k25_rf"), {}), ("", None, {"sep": r"\midrule"}),
+    ("  & + AlignTac (ours)", cs("B_k25_al2"), {}), ("  & \\quad no renderer", cs("B_k25_rf"), {}), ("", None, {"sep": r"\midrule"}),
     ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + learned renderer", cs("B_k100_gank"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}),
-    ("  & + MeshTac (ours)", cs("B_k100_al2"), {}), ("  & \\quad no renderer", cs("B_k100_rf"), {}),
+    ("  & + AlignTac (ours)", cs("B_k100_al2"), {}), ("  & \\quad no renderer", cs("B_k100_rf"), {}),
 ], [("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",))
 T["loomain"] = table([
     ("Real only (9 objects)", row("A_realonly", "TEST"), {}), ("+ PBR", row("A_blender", "TEST"), {}),
@@ -294,7 +297,7 @@ T["rcablmain"] = "\n".join(x for x in (
     r"\multicolumn{8}{@{}l}{\emph{Mesh projected at a fitted pose}} \\",
     abl("\\quad pose by the teacher (no alignment)", "B_k25_rf0", _tp0, _tp0[2] if _tp0 else None, 1),
     abl("\\quad pose by L1 render-and-compare$^{1/2}$", "B_k25_rcp", _h, _m[2] if _m else None, 3),
-    abl("\\quad pose by learned aligner (MeshTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
+    abl("\\quad pose by learned aligner (AlignTac)", "B_k25_rf", _r, _r[2] if _r else None, 3),
     abl("\\quad\\quad + learned synth.$^{\\ddagger}$", "B_k25_al2", _a, _a[2] if _a else None, 3),
 ) if x)
 # Table II of the 6-page paper, restructured: explicit "depth label" / "pose from" columns, symmetric label / student metrics
@@ -407,7 +410,7 @@ variants = [
     var("\\quad + L2-SP", "B_k25_ft_l2sp", None, None, None),
 ]
 T["variants"] = table(variants, [("fk", 3), ("c_mae", 3), ("fl", 3), ("c_mae_loo", 3), ("rot_loo", 1)])
-# ---------------- sensor B with mesh-registered labels: MeshTac ----------------
+# ---------------- sensor B with mesh-registered labels: AlignTac ----------------
 def sbm(run):
     r = SB.get(f"pilot_{run}/sensorB_mesh")
     if not r:
@@ -439,27 +442,27 @@ sbl = []
 for K in (10, 25, 50, 100):
     blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}),
            ("  & + learned renderer", sbm(f"S_k{K}_gan40m"), {}), ("  & + self-training", sbm(f"S_k{K}_semipm_m"), {})]
-    blk.append(("  & + MeshTac (ours)", sbm(f"S_k{K}_maplnr_m"), {}))
+    blk.append(("  & + AlignTac (ours)", sbm(f"S_k{K}_maplnr_m"), {}))
     if K == 25:
         blk.append(("  & \\quad + learned synth.", sbm("S_k25_mapl_m"), {}))
     sbl.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("nrm", 1), ("rot", 1)], bold_max=("iou",)))
 T["sbmapl"] = "\n\\midrule\n".join(sbl)
 # seeds version (mean ± std over three seeds) of the real-only vs renderer-free rows, all budgets
 T["sbseeds"] = "\n".join(f"{K} & {lab} & " + " & ".join(pm(run, k, nd) for k, nd in (("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1))) + r" \\"
-                          for K in (10, 25, 50, 100) for lab, run in (("Real only", f"S_k{K}_realonly_m"), ("MeshTac", f"S_k{K}_maplnr_m")))
+                          for K in (10, 25, 50, 100) for lab, run in (("Real only", f"S_k{K}_realonly_m"), ("AlignTac", f"S_k{K}_maplnr_m")))
 # K-frame selection robustness (K=25, 50 ep): seed-0 selection (evenly spaced) vs two random selections (sel1, sel2)
 def mv(run):
     r = MASKED.get(f"pilot_{run}/val"); return (r["full_mse"], r["c_mae"], r["iou"]) if r else None
 T["selection"] = "\n".join(f"{lab} & " + " & ".join(f"{a:.4f}" if i == 0 else f"{a:.3f}" for i, a in enumerate(mv(run))) + r" \\"
                             for lab, run in (("Real only, selection 0", "B_k25_realonly"), ("Real only, selection 1", "B_k25_realonly_sel1"), ("Real only, selection 2", "B_k25_realonly_sel2"),
-                                             ("MeshTac, selection 0", "B_k25_rf"), ("MeshTac, selection 1", "B_k25_rf_sel1"), ("MeshTac, selection 2", "B_k25_rf_sel2")) if mv(run))
+                                             ("AlignTac, selection 0", "B_k25_rf"), ("AlignTac, selection 1", "B_k25_rf_sel1"), ("AlignTac, selection 2", "B_k25_rf_sel2")) if mv(run))
 
 # ---------------- 6-page paper: both sensors in one table, short cross-session table ----------------
 ks = []
 for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"T_k{K}_realonly", {}), ("+ learned renderer ($K$)", f"T_k{K}_gank", {}), ("+ self-training", f"T_k{K}_semipm", {}),
-                              ("+ MeshTac (ours)", f"T_k{K}_rf", {}), ("\\quad + learned synth.", f"T_k{K}_al2", {}), ("+ learned renderer (full)", f"T_k{K}_ganfull", {"leaky": True})):
+                              ("+ AlignTac (ours)", f"T_k{K}_rf", {}), ("\\quad + learned synth.", f"T_k{K}_al2", {}), ("+ learned renderer (full)", f"T_k{K}_ganfull", {"leaky": True})):
         r = trow(run, "pilot_" if (K == 10 and run.endswith("ganfull")) else "pilot150_")
         if r is not None:
             blk.append(((f"{K} & " if not blk else "  & ") + label, r, flags))
@@ -470,7 +473,7 @@ ksT = []
 for K in (10, 25, 50, 100):
     blk = []
     for label, run, flags in (("Real only", f"T_k{K}_realonly", {}), ("+ PBR", f"T_k{K}_blender", {}), ("+ learned renderer ($K$)", f"T_k{K}_gank", {}),
-                              ("+ self-training", f"T_k{K}_semipm", {}), ("+ MeshTac (ours)", f"T_k{K}_rf", {}), ("\\quad + learned synth.", f"T_k{K}_al2", {}),
+                              ("+ self-training", f"T_k{K}_semipm", {}), ("+ AlignTac (ours)", f"T_k{K}_rf", {}), ("\\quad + learned synth.", f"T_k{K}_al2", {}),
                               ("+ learned renderer (full)", f"T_k{K}_ganfull", {"leaky": True})):
         r = trow(run, "pilot_" if (K == 10 and run.endswith("ganfull")) else "pilot150_")
         if r is not None:
@@ -479,25 +482,25 @@ for K in (10, 25, 50, 100):
 T["kshotT"] = "\n\\midrule\n".join(ksT)
 sbs = []
 for K in (10, 25, 50, 100):
-    blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & + MeshTac (ours)", sbm(f"S_k{K}_maplnr_m"), {})]
+    blk = [(f"{K} & Real only", sbm(f"S_k{K}_realonly_m"), {}), ("  & + AlignTac (ours)", sbm(f"S_k{K}_maplnr_m"), {})]
     sbs.append(table(blk, [("depth_mse", 4), ("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",)))
 T["sbshort"] = "\n\\midrule\n".join(sbs)
 T["crossshort"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("  & + learned renderer", cs("A_bgcondloo"), {}), ("", None, {"sep": r"\midrule"}),
-    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}), ("  & + MeshTac (ours)", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
-    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}), ("  & + MeshTac (ours)", cs("B_k100_al2"), {}),
+    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & + self-training", cs("B_k25_semipm_pseudo"), {}), ("  & + AlignTac (ours)", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & + self-training", cs("B_k100_semipm_pseudo"), {}), ("  & + AlignTac (ours)", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3), ("rot", 1)], bold_max=("iou",))
 T["crossshortb"] = table([
     ("$\\dagger$ & Real only", cs("A_realonly"), {}), ("", None, {"sep": r"\midrule"}),
-    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-training", cs("B_k25_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k25_rf"), {}), ("  & \\quad + learned synth.", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
-    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-training", cs("B_k100_semipm_pseudo"), {}), ("  & MeshTac", cs("B_k100_rf"), {}), ("  & \\quad + learned synth.", cs("B_k100_al2"), {}),
+    ("25 & Real only", cs("B_k25_realonly"), {}), ("  & Self-training", cs("B_k25_semipm_pseudo"), {}), ("  & AlignTac", cs("B_k25_rf"), {}), ("  & \\quad + learned synth.", cs("B_k25_al2"), {}), ("", None, {"sep": r"\midrule"}),
+    ("100 & Real only", cs("B_k100_realonly"), {}), ("  & Self-training", cs("B_k100_semipm_pseudo"), {}), ("  & AlignTac", cs("B_k100_rf"), {}), ("  & \\quad + learned synth.", cs("B_k100_al2"), {}),
 ], [("c_mae", 3), ("iou", 3)], bold_max=("iou",))
 # transposed compact Table III: sensor A (session 2) methods x {K=25, K=100}; sensor B metrics x K with three-seed +- std
 def _c(v, nd, bold=False):
     t = "--" if v is None else f"{v:.{nd}f}"
     return f"\\textbf{{{t}}}" if bold else t
 _ct = []
-for label, run in (("Real only", "realonly"), ("Self-training", "semipm"), ("MeshTac (ours)", "rf"), ("\\quad + learned synth.", "al2")):
+for label, run in (("Real only", "realonly"), ("Self-training", "semipm"), ("AlignTac (ours)", "rf"), ("\\quad + learned synth.", "al2")):
     cells = []
     for K in (25, 100):
         r = cs(f"T_k{K}_{run}")
@@ -509,7 +512,7 @@ for label, run in (("Real only", "realonly"), ("Self-training", "semipm"), ("Mes
 T["crossT"] = "\n".join(_ct)
 _sb = []
 for key, nd, name, better in (("c_mae", 3, "Contact MAE", min), ("iou", 3, "IoU", max)):
-    for lab, run in (("real only", "realonly_m"), ("MeshTac (ours)", "maplnr_m")):
+    for lab, run in (("real only", "realonly_m"), ("AlignTac (ours)", "maplnr_m")):
         cells = []
         for K in (10, 25, 50, 100):
             m = sbm(f"S_k{K}_{run}"); o = sbm(f"S_k{K}_{'maplnr_m' if run == 'realonly_m' else 'realonly_m'}")
@@ -522,7 +525,7 @@ T["sbT"] = "\n".join(_sb)
 def sb_pm_rows(K):
     rows = []
     mr, _, _ = sbm_seeds(f"S_k{K}_realonly_m"); mm, _, _ = sbm_seeds(f"S_k{K}_maplnr_m")
-    for label, run, m, other in ((f"{K} & Real only", f"S_k{K}_realonly_m", mr, mm), ("  & MeshTac", f"S_k{K}_maplnr_m", mm, mr)):
+    for label, run, m, other in ((f"{K} & Real only", f"S_k{K}_realonly_m", mr, mm), ("  & AlignTac", f"S_k{K}_maplnr_m", mm, mr)):
         cells = []
         for key, nd, better in (("c_mae", 3, min), ("iou", 3, max)):
             c = pm(run, key, nd).replace("{$\\pm$0.", "{$\\pm$.").replace("scalebox{0.8}", "scalebox{0.78}")   # compact: ±.006
@@ -540,7 +543,7 @@ T["kshotmore"] = "\n\\midrule\n".join(blocks[3:])
 for old, new in [("Teacher depth (self-training)", "Teacher depth"),
                  ("Teacher depth + teacher pose", "Teacher depth + pose"),
                  ("Mesh at L1-search pose", "L1-search mesh"),
-                 ("Mesh at aligned pose (MeshTac)", "MeshTac"),
+                 ("Mesh at aligned pose (AlignTac)", "AlignTac"),
                  ("no renderer anywhere", "no renderer")]:
     T["rcablmain"] = T["rcablmain"].replace(old, new)
 # ---------------- write ----------------

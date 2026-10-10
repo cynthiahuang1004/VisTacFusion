@@ -3,7 +3,7 @@
 
 The experiments examine label efficiency, the contribution of alignment, and performance under changes in session or sensor. We then study renderer supervision and appearance variants to explain when synthetic data helps.
 
-Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 50 (other exceptions are noted). Metrics are evaluated on real images; depth MSE in $\mathrm{mm}^2$, contact MAE in mm, normals and rotation in degrees. Sections~\ref{sec:kshot}--\ref{sec:qual} evaluate MeshTac; Sections~\ref{sec:loo}--\ref{sec:fidelity} report the renderer comparisons under explicit data-access constraints.
+Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 50 (other exceptions are noted). Metrics are evaluated on real images; depth MSE in $\mathrm{mm}^2$, contact MAE in mm, normals and rotation in degrees. Sections~\ref{sec:kshot}--\ref{sec:qual} evaluate AlignTac; Sections~\ref{sec:loo}--\ref{sec:fidelity} report the renderer comparisons under explicit data-access constraints.
 
 
 \begin{figure*}[t]
@@ -23,7 +23,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotT
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Label-budget comparison under the clean protocol} (sensor A, $530$ held-out test frames never used for training, renderer fitting or pseudo-labeling; validation used only for checkpoint selection). Self-training and MeshTac use the unlabeled training frames; no self-trained renderer is used. Italic: full-set renderer, which exceeds $\Kreal$. Bold: best matched result at each $\Kreal$.}
+\caption{\textbf{Label-budget comparison under the clean protocol} (sensor A, $530$ held-out test frames never used for training, renderer fitting or pseudo-labeling; validation used only for checkpoint selection). Self-training and AlignTac use the unlabeled training frames; no self-trained renderer is used. Italic: full-set renderer, which exceeds $\Kreal$. Bold: best matched result at each $\Kreal$.}
 \label{tab:kshotT}
 \end{table*}
 
@@ -56,7 +56,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabkshotfew
 \bottomrule
 \end{tabularx}
-\caption{\textbf{$\Kreal$-shot with a shared real budget (validation split, legacy protocol).} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. MeshTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Learned renderer (full) rows use the renderer trained on all real pairs (the $\Kreal=10$ learned renderer (full) row is a 50-epoch run). \emph{+ learned synth.}: MeshTac with the $K$-pair renderer added to aligner, teacher and student training.}
+\caption{\textbf{$\Kreal$-shot with a shared real budget (validation split, legacy protocol).} Every object contributes $\Kreal$ real frames; GAN-$\Kreal$ is trained on the same frames. AlignTac and self-trained rows additionally use the unlabeled training frames (Sec.~\ref{sec:unlabeled}); refiner training uses no paired label. Real validation split ($472$ frames). Learned renderer (full) rows use the renderer trained on all real pairs (the $\Kreal=10$ learned renderer (full) row is a 50-epoch run). \emph{+ learned synth.}: AlignTac with the $K$-pair renderer added to aligner, teacher and student training.}
 \label{tab:kshot}
 \end{table*}
 
@@ -76,15 +76,15 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} compare, under the same training-label budget, real-only training, co-training with either renderer, self-training on the teacher's own predictions (Sec.~\ref{sec:ablation}) and MeshTac. Each MeshTac run uses the $2{,}997$--$4{,}077$ training frames outside the $\Kreal$ budget without their labels.
+Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} compare, under the same training-label budget, real-only training, co-training with either renderer, self-training on the teacher's own predictions (Sec.~\ref{sec:ablation}) and AlignTac. Each AlignTac run uses the $2{,}997$--$4{,}077$ training frames outside the $\Kreal$ budget without their labels.
 
 \noindent\textbf{Simulation alone.} Neither paired-renderer baseline improves both contact MAE and IoU for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), PBR by at most $5\%$. Both lower rotation error at $\Kreal=10$ ($9.6^\circ\!\to\!5$--$6^\circ$) and raise it at $\Kreal=100$.
 
-\noindent\textbf{MeshTac.} Mesh-aligned supervision improves dense prediction at every evaluated budget: depth MSE by $19\%$, $22\%$, $40\%$ and $38\%$ and contact MAE by $11\%$, $21\%$, $30\%$ and $29\%$ at $\Kreal=10$, $25$, $50$ and $100$, with IoU $+0.04$ to $+0.07$ and normal error $-3.3^\circ$ to $-5.7^\circ$. Over three seeds (50 epochs) the depth MSE is $0.0433\pm0.0004$ and $0.0222\pm0.0004$ at $\Kreal=25$ and $100$ against $0.0551\pm0.0010$ and $0.0366\pm0.0008$ for real-only training (Table~\ref{tab:seeds}). Without checkpoint selection, at the final epoch, depth MSE is $0.0613$, $0.0457$, $0.0313$ and $0.0239$ against $0.0680$, $0.0575$, $0.0500$ and $0.0396$ ($-10$ to $-40\%$).
+\noindent\textbf{AlignTac.} Mesh-aligned supervision improves dense prediction at every evaluated budget: depth MSE by $19\%$, $22\%$, $40\%$ and $38\%$ and contact MAE by $11\%$, $21\%$, $30\%$ and $29\%$ at $\Kreal=10$, $25$, $50$ and $100$, with IoU $+0.04$ to $+0.07$ and normal error $-3.3^\circ$ to $-5.7^\circ$. Over three seeds (50 epochs) the depth MSE is $0.0433\pm0.0004$ and $0.0222\pm0.0004$ at $\Kreal=25$ and $100$ against $0.0551\pm0.0010$ and $0.0366\pm0.0008$ for real-only training (Table~\ref{tab:seeds}). Without checkpoint selection, at the final epoch, depth MSE is $0.0613$, $0.0457$, $0.0313$ and $0.0239$ against $0.0680$, $0.0575$, $0.0500$ and $0.0396$ ($-10$ to $-40\%$).
 
-The improvement also reduces the number of labels needed to reach a given depth error. MeshTac with $50$ labels per object ($0.0291$) has lower depth MSE than real-only training with $100$ ($0.0369$) and than the learned renderer at $100$ ($0.0311$). At $\Kreal\ge50$ it has lower error than the learned renderer (full) (depth MSE $0.0227$ vs.\ $0.0274$, contact MAE $0.166$ vs.\ $0.205$ at $\Kreal=100$), and at $\Kreal=25$ it has lower contact MAE ($0.245$ vs.\ $0.262$) and equal IoU, despite $4\%$ higher depth MSE.
+The improvement also reduces the number of labels needed to reach a given depth error. AlignTac with $50$ labels per object ($0.0291$) has lower depth MSE than real-only training with $100$ ($0.0369$) and than the learned renderer at $100$ ($0.0311$). At $\Kreal\ge50$ it has lower error than the learned renderer (full) (depth MSE $0.0227$ vs.\ $0.0274$, contact MAE $0.166$ vs.\ $0.205$ at $\Kreal=100$), and at $\Kreal=25$ it has lower contact MAE ($0.245$ vs.\ $0.262$) and equal IoU, despite $4\%$ higher depth MSE.
 
-Pose improves as well: MeshTac has the lowest budget-matched rotation error at every budget ($4.7^\circ$, $2.8^\circ$, $2.7^\circ$, $2.5^\circ$ against $9.8^\circ$, $5.6^\circ$, $4.3^\circ$, $3.2^\circ$ for real-only training) and lower translation error for $\Kreal\le50$ ($1.13$, $0.91$, $0.73\,$mm vs.\ $1.71$, $1.13$, $0.89$; equal at $\Kreal=100$). Test-time alignment reduces the errors further (Sec.~\ref{sec:tta}).
+Pose improves as well: AlignTac has the lowest budget-matched rotation error at every budget ($4.7^\circ$, $2.8^\circ$, $2.7^\circ$, $2.5^\circ$ against $9.8^\circ$, $5.6^\circ$, $4.3^\circ$, $3.2^\circ$ for real-only training) and lower translation error for $\Kreal\le50$ ($1.13$, $0.91$, $0.73\,$mm vs.\ $1.71$, $1.13$, $0.89$; equal at $\Kreal=100$). Test-time alignment reduces the errors further (Sec.~\ref{sec:tta}).
 
 Adding synthetic frames from the $K$-pair renderer to the pipeline (``+ learned synth.'': renderer data for aligner, teacher and student) does not improve the within-session results: depth MSE $0.0559$, $0.0450$, $0.0307$, $0.0232$ against $0.0521$, $0.0433$, $0.0291$, $0.0227$ without, rotation $3.7$--$4.0^\circ$ against $2.5$--$4.7^\circ$, and IoU within $\pm0.02$. The renderer provides a benefit across sessions instead (Sec.~\ref{sec:cross}).
 
@@ -100,11 +100,11 @@ $\Kreal$ & Method & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabseeds
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Seeds (validation split, legacy protocol).} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``MeshTac'': real-only teacher, no synthetic frame; ``+ learned synth.'': the $K$-pair renderer added to aligner, teacher and student.}
+\caption{\textbf{Seeds (validation split, legacy protocol).} Mean $\pm$ standard deviation over three seeds (50 epochs) on the real validation split. ``AlignTac'': real-only teacher, no synthetic frame; ``+ learned synth.'': the $K$-pair renderer added to aligner, teacher and student.}
 \label{tab:seeds}
 \end{table*}
 
-\noindent\textbf{Seeds.} Table~\ref{tab:seeds} reports the comparison over three seeds. The depth-MSE differences between MeshTac and real-only training exceed the variation across these runs.
+\noindent\textbf{Seeds.} Table~\ref{tab:seeds} reports the comparison over three seeds. The depth-MSE differences between AlignTac and real-only training exceed the variation across these runs.
 
 \begin{table}[!tbp]
 \centering
@@ -120,7 +120,7 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 \tabrcabl
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Alignment ablation (validation split, legacy protocol)} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld GT labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: MeshTac (renderer retrained on the aligned pairs).}
+\caption{\textbf{Alignment ablation (validation split, legacy protocol)} ($\Kreal=25$, 50 epochs; first, fifth and last row are three-seed means). Left: quality of the pseudo labels of the unlabeled frames against their withheld GT labels (evaluation only). Right: real validation error of the model trained on them. Depth label: teacher prediction or mesh depth at the fitted pose ($^{1/2}$: mesh on the half of each object's frames with the lowest render error, teacher on the rest). Pose label: none (pose loss on the $\Kreal$ labeled frames only), teacher pose, pose found by L1 render-and-compare search with GAN-$\Kreal$ ($^{1/2}$: on the confident half only), or the learned aligner. $\ddagger$: synthetic data from the teacher-pair renderer; $\dagger$: AlignTac (renderer retrained on the aligned pairs).}
 \label{tab:rcabl}
 \end{table}
 
@@ -164,7 +164,7 @@ Aligned pairs improve renderer fidelity further: contact-region error falls by $
 
 \noindent\textbf{Window stitching.} Without alignment the label is the teacher depth, and labeling $U$ on the center window alone leaves the pseudo depth empty outside the $0.816$ crop (pseudo-label contact MAE $0.41\,$mm over the full frame instead of $0.32$). The self-trained model then has the same depth MSE ($0.0518$ vs.\ $0.0517$, model only, $\Kreal=25$; Table~\ref{tab:kshot}) but a worse contact MAE ($0.328$ vs.\ $0.300$) and a $30\%$ larger peak-depth error, and the gap persists across sessions (contact MAE $0.358$ vs.\ $0.318$): the rotation augmentation brings the frame border into the training crop, where unstitched labels are wrong.
 
-\noindent\textbf{Rounds.} Without alignment, relabeling $U$ with $f_1$ and repeating the renderer and model steps improves the pseudo labels at $\Kreal=25$ (label IoU $0.56\!\to\!0.60$, contact MAE $0.32\!\to\!0.31\,$mm, $3{,}516$ frames kept instead of $3{,}260$) but not at $\Kreal=100$ ($0.66\!\to\!0.65$), and the downstream change is small in both directions: depth MSE $0.0508\!\to\!0.0500$ and IoU $0.628\!\to\!0.642$ at $\Kreal=25$, $0.0285\!\to\!0.0295$ and $0.750\!\to\!0.736$ at $\Kreal=100$, rotation unchanged ($6.2^\circ$, $4.9^\circ$). Additional self-training rounds have limited benefit in these runs. A second MeshTac round likewise yields little further improvement, as reported above.
+\noindent\textbf{Rounds.} Without alignment, relabeling $U$ with $f_1$ and repeating the renderer and model steps improves the pseudo labels at $\Kreal=25$ (label IoU $0.56\!\to\!0.60$, contact MAE $0.32\!\to\!0.31\,$mm, $3{,}516$ frames kept instead of $3{,}260$) but not at $\Kreal=100$ ($0.66\!\to\!0.65$), and the downstream change is small in both directions: depth MSE $0.0508\!\to\!0.0500$ and IoU $0.628\!\to\!0.642$ at $\Kreal=25$, $0.0285\!\to\!0.0295$ and $0.750\!\to\!0.736$ at $\Kreal=100$, rotation unchanged ($6.2^\circ$, $4.9^\circ$). Additional self-training rounds have limited benefit in these runs. A second AlignTac round likewise yields little further improvement, as reported above.
 
 \begin{table}[!tbp]
 \centering
@@ -194,16 +194,16 @@ Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{
 \label{tab:selection}
 \end{table}
 
-\noindent\textbf{Selection of the labeled frames.} Table~\ref{tab:selection} repeats the MeshTac pipeline with two random selections of the $25$ labeled frames per object. Label quality (IoU $0.72$, $0.71$; pose error $1.8^\circ$, $1.6^\circ$) and student error are within seed variation of the evenly spaced selection, while real-only training degrades slightly on the random selections.
+\noindent\textbf{Selection of the labeled frames.} Table~\ref{tab:selection} repeats the AlignTac pipeline with two random selections of the $25$ labeled frames per object. Label quality (IoU $0.72$, $0.71$; pose error $1.8^\circ$, $1.6^\circ$) and student error are within seed variation of the evenly spaced selection, while real-only training degrades slightly on the random selections.
 
 \noindent\textbf{Where alignment fails.} Against the withheld GT of the $3{,}897$ unlabeled frames ($\Kreal=25$), the aligned pose has a mean rotation error of $1.07^\circ$ and a median of $0.47^\circ$; $3.6\%$ of the frames exceed $2^\circ$, $1.6\%$ exceed $5^\circ$ and $1.2\%$ exceed $10^\circ$ (teacher: $65\%$, $35\%$, $16\%$). The failures concentrate on the five-line object pattern\_06 ($16.5\%$ of its frames above $5^\circ$; every other object below $4\%$), whose near-symmetric ridge layout admits a second plausible alignment, and the worst $5\%$ of frames carry $53\%$ of the summed rotation error (mean $0.53^\circ$ without them). Translation error (mean $0.98\,$mm, median $0.52$) is dominated by shifts along the ridge direction: $73\%$ of the rod frames and $20$--$40\%$ of the frames of the line patterns exceed $1\,$mm, against $2$--$6\%$ for the objects with crossing ridges (pattern\_32, 33, 35, 36). Such shifts leave the depth label unchanged, which is why the label IoU is high despite them. At $\Kreal=100$ the mean rotation error is $0.68^\circ$ and $1.3\%$ of the frames exceed $5^\circ$.
 
 \subsection{Generalization Across Sessions and Sensors}
 \label{sec:cross}
 \noindent\textbf{Second session.}
-The second session tests changes in appearance and object placement without retraining (Table~\ref{tab:cross}). MeshTac reduces contact MAE relative to the budget-matched real-only models by $17\%$ at $\Kreal=25$ and $18\%$ at $\Kreal=100$, with MAE/IoU of $0.306/0.654$ and $0.288/0.707$; with synthetic frames the values are $0.310/0.660$ and $0.252/0.743$ ($-28\%$ at $\Kreal=100$). The nine-object real-only baseline ($0.315$, $0.675$) has different object coverage and serves as context rather than a matched label-efficiency comparison.
+The second session tests changes in appearance and object placement without retraining (Table~\ref{tab:cross}). AlignTac reduces contact MAE relative to the budget-matched real-only models by $17\%$ at $\Kreal=25$ and $18\%$ at $\Kreal=100$, with MAE/IoU of $0.306/0.654$ and $0.288/0.707$; with synthetic frames the values are $0.310/0.660$ and $0.252/0.743$ ($-28\%$ at $\Kreal=100$). The nine-object real-only baseline ($0.315$, $0.675$) has different object coverage and serves as context rather than a matched label-efficiency comparison.
 
-Synthetic data contributes more here than within the training session. At $K=100$, adding the renderer lowers MeshTac's contact MAE from $0.288$ to $0.252$ and raises IoU from $0.707$ to $0.743$; at $K=25$ it changes neither ($0.306$ vs.\ $0.310$). MeshTac alone still improves on self-training in MAE ($0.300$ at $K=100$) and matches its IoU. Together with the within-session ablation, this comparison supports synthetic data as a useful source of robustness under the evaluated session change.
+Synthetic data contributes more here than within the training session. At $K=100$, adding the renderer lowers AlignTac's contact MAE from $0.288$ to $0.252$ and raises IoU from $0.707$ to $0.743$; at $K=25$ it changes neither ($0.306$ vs.\ $0.310$). AlignTac alone still improves on self-training in MAE ($0.300$ at $K=100$) and matches its IoU. Together with the within-session ablation, this comparison supports synthetic data as a useful source of robustness under the evaluated session change.
 
 \noindent\textbf{Renderer baselines across sessions.} Table~\ref{tab:cross} evaluates the sensor-A models on the second capture. Dense error is $1.5$--$3\times$ the same-session value (e.g.\ contact MAE $0.315\,$mm against $0.117$ for the model trained on all session-1 training data from nine objects), although the use of re-estimated GT poses also affects the comparison between sessions. The renderer baselines improve contact reconstruction and pose for the nine-object models. With the nine-object session-1 real set, contact MAE falls from $0.315\,$mm (real only) to $0.29$ with the physical and $0.27$ with the learned renderer, IoU rises from $0.675$ to $0.69$--$0.70$ and $0.72$--$0.73$, normal error falls from $25.4^\circ$ to $24.0$--$24.9^\circ$ with the calibrated and learned renderers, and raw rotation error drops from $16.4^\circ$ to $9.7$--$11.5^\circ$; the geometry control ($28.7^\circ$) shows that the pose gain again comes from mesh coverage.
 
@@ -228,15 +228,15 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \noindent\textbf{Second sensor.}
 \label{sec:sensorb}
-\noindent\textbf{MeshTac.} On \sensorB{} ($1{,}620$ test frames) we retrain MeshTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels.
+\noindent\textbf{AlignTac.} On \sensorB{} ($1{,}620$ test frames) we retrain AlignTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels.
 
 The few-shot teacher is already more accurate on this sensor (label IoU $0.78$, $0.85$, $0.90$, $0.93$ on the unlabeled frames at $\Kreal=10$, $25$, $50$, $100$; $0.55$ at $\Kreal=25$ on sensor A), yet the aligner improves on it at every budget (IoU $0.85$, $0.91$, $0.94$, $0.95$; pose error $2.3^\circ$, $1.4^\circ$, $0.9^\circ$, $0.8^\circ$ against $6.6$--$11.4^\circ$).
 
-At $\Kreal=25$ MeshTac lowers depth MSE from $0.0179\pm0.0004$ to $0.0076\pm0.0001$ and contact MAE from $0.127\pm0.001$ to $0.082\pm0.002\,$mm over real-only training (three seeds) and raises IoU from $0.849$ to $0.912$; with synthetic frames the values are $0.0075\pm0.0001$, $0.078\pm0.0003$ and $0.903$. The gains exceed those of the compared baselines: the learned renderer trained on the $25$ pairs reaches $0.111\,$mm (IoU $0.877$) and self-training on the teacher's depth does not improve on real data ($0.135\,$mm, $0.846$).
+At $\Kreal=25$ AlignTac lowers depth MSE from $0.0179\pm0.0004$ to $0.0076\pm0.0001$ and contact MAE from $0.127\pm0.001$ to $0.082\pm0.002\,$mm over real-only training (three seeds) and raises IoU from $0.849$ to $0.912$; with synthetic frames the values are $0.0075\pm0.0001$, $0.078\pm0.0003$ and $0.903$. The gains exceed those of the compared baselines: the learned renderer trained on the $25$ pairs reaches $0.111\,$mm (IoU $0.877$) and self-training on the teacher's depth does not improve on real data ($0.135\,$mm, $0.846$).
 
-Across budgets, MeshTac lowers contact MAE from $0.180$, $0.127$, $0.083$, $0.066$ to $0.121$, $0.081$, $0.061$, $0.056\,$mm at $\Kreal=10$--$100$ ($-15$ to $-36\%$) and depth MSE by $33$--$58\%$. At $K=25$ and $50$, its contact MAE is no higher than real-only training with twice as many labels. Rotation error improves at $10$ and $25$ labels ($14.0^\circ\!\to\!9.5^\circ$, $13.4^\circ\!\to\!9.2^\circ$) but not beyond ($9^\circ$ either way). Scored against the original public labels, MeshTac keeps its advantage (contact MAE $0.137\!\to\!0.098\,$mm at $\Kreal=25$).
+Across budgets, AlignTac lowers contact MAE from $0.180$, $0.127$, $0.083$, $0.066$ to $0.121$, $0.081$, $0.061$, $0.056\,$mm at $\Kreal=10$--$100$ ($-15$ to $-36\%$) and depth MSE by $33$--$58\%$. At $K=25$ and $50$, its contact MAE is no higher than real-only training with twice as many labels. Rotation error improves at $10$ and $25$ labels ($14.0^\circ\!\to\!9.5^\circ$, $13.4^\circ\!\to\!9.2^\circ$) but not beyond ($9^\circ$ either way). Scored against the original public labels, AlignTac keeps its advantage (contact MAE $0.137\!\to\!0.098\,$mm at $\Kreal=25$).
 
-The baselines follow the sensor-A pattern (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The learned renderer trained on the $\Kreal$ pairs lowers contact MAE by $4\%$, $13\%$, $10\%$ and $5\%$ at $\Kreal=10$, $25$, $50$ and $100$ ($0.173$, $0.111$, $0.075$, $0.063\,$mm) and raises IoU by up to $0.03$ for $\Kreal\le50$, while teacher-depth self-training does not improve on real-only training at any budget ($0.202$, $0.135$, $0.084$, $0.070\,$mm). MeshTac lowers contact MAE by $33\%$, $36\%$, $26\%$ and $15\%$ at the same budgets; its advantage over the learned renderer is largest at $\Kreal\le25$ ($0.121$ vs.\ $0.173$ and $0.081$ vs.\ $0.111\,$mm) and remains at $\Kreal=100$ ($0.056$ vs.\ $0.063$). Neither baseline improves rotation at $\Kreal\ge50$.
+The baselines follow the sensor-A pattern (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The learned renderer trained on the $\Kreal$ pairs lowers contact MAE by $4\%$, $13\%$, $10\%$ and $5\%$ at $\Kreal=10$, $25$, $50$ and $100$ ($0.173$, $0.111$, $0.075$, $0.063\,$mm) and raises IoU by up to $0.03$ for $\Kreal\le50$, while teacher-depth self-training does not improve on real-only training at any budget ($0.202$, $0.135$, $0.084$, $0.070\,$mm). AlignTac lowers contact MAE by $33\%$, $36\%$, $26\%$ and $15\%$ at the same budgets; its advantage over the learned renderer is largest at $\Kreal\le25$ ($0.121$ vs.\ $0.173$ and $0.081$ vs.\ $0.111\,$mm) and remains at $\Kreal=100$ ($0.056$ vs.\ $0.063$). Neither baseline improves rotation at $\Kreal\ge50$.
 
 \begin{table}[!tbp]
 \centering
@@ -248,7 +248,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabsensorb
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Sensor B (\sensorB{}).} $1{,}620$ test frames of the same 12 objects. Top: sensor-A models applied zero-shot. Below: models trained on $\Kreal$ sensor-B real frames per object, alone, with the sensor-A PBR, with a learned renderer trained on the same $\Kreal$ sensor-B pairs, or with self-training on teacher labels (MeshTac without its alignment step, Sec.~\ref{sec:mapl}; labeler: the GAN-25 model; 50 epochs). Rotation after removing a per-object offset.}
+\caption{\textbf{Sensor B (\sensorB{}).} $1{,}620$ test frames of the same 12 objects. Top: sensor-A models applied zero-shot. Below: models trained on $\Kreal$ sensor-B real frames per object, alone, with the sensor-A PBR, with a learned renderer trained on the same $\Kreal$ sensor-B pairs, or with self-training on teacher labels (AlignTac without its alignment step, Sec.~\ref{sec:mapl}; labeler: the GAN-25 model; 50 epochs). Rotation after removing a per-object offset.}
 \label{tab:sensorb}
 \end{table}
 
@@ -264,11 +264,11 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabsbseeds
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Sensor B over three seeds} (mesh-registered labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free MeshTac at every budget.}
+\caption{\textbf{Sensor B over three seeds} (mesh-registered labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free AlignTac at every budget.}
 \label{tab:sbseeds}
 \end{table}
 
-\noindent\textbf{Seeds.} Table~\ref{tab:sbseeds} repeats the real-only and MeshTac comparison with three seeds at every budget; the standard deviations are at least an order of magnitude below the differences between the two.
+\noindent\textbf{Seeds.} Table~\ref{tab:sbseeds} repeats the real-only and AlignTac comparison with three seeds at every budget; the standard deviations are at least an order of magnitude below the differences between the two.
 
 \noindent\textbf{Renderer baselines (original labels).} Sensor B has a marker array, a different LED layout and a smaller field of view (Table~\ref{tab:sensorb}). \emph{Zero-shot}, sensor-A models recover contact only partially (IoU $0.28$ for the all-real model, $0.37$ for the simulation-only model: the model with more sensor-A real supervision transfers less well in this comparison) and rotation not at all (residual $\approx11.5^\circ$ for every model, the value a constant predictor attains on the $\pm22.5^\circ$ label range).
 
@@ -284,7 +284,7 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \toprule
 & \multicolumn{4}{c}{Held-out test (session 1)} & \multicolumn{4}{c}{Session 2} \\
 \cmidrule(lr){2-5}\cmidrule(lr){6-9}
-& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{MeshTac} \\
+& \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{AlignTac} & \multicolumn{2}{c}{Real only} & \multicolumn{2}{c}{AlignTac} \\
 $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \midrule
 \tabposeref
@@ -296,24 +296,24 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 
 \subsection{Mesh-Assisted Test-Time Pose Refinement}
 \label{sec:tta}
-We reuse the fixed $\Kreal$-shot aligner to refine test-frame poses against their known meshes (Table~\ref{tab:poseref}). On the validation split rotation error falls from $3.2$--$9.6^\circ$ to $0.4$--$2.8^\circ$ for real-only models and from $2.5$--$4.7^\circ$ to $0.4$--$2.4^\circ$ for MeshTac models; from $\Kreal=25$ on the refined error is about $1^\circ$ whichever model proposes the pose, and translation error falls by $20$--$50\%$.
+We reuse the fixed $\Kreal$-shot aligner to refine test-frame poses against their known meshes (Table~\ref{tab:poseref}). On the validation split rotation error falls from $3.2$--$9.6^\circ$ to $0.4$--$2.8^\circ$ for real-only models and from $2.5$--$4.7^\circ$ to $0.4$--$2.4^\circ$ for AlignTac models; from $\Kreal=25$ on the refined error is about $1^\circ$ whichever model proposes the pose, and translation error falls by $20$--$50\%$.
 
-On the second session rotation error falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $10$--$14^\circ$ to $5$--$7^\circ$ (MeshTac) with a median of $1.5$--$2.2^\circ$: the gap between mean and median indicates some large residual errors.
+On the second session rotation error falls from $13$--$20^\circ$ to $5$--$11^\circ$ (real only) and from $10$--$14^\circ$ to $5$--$7^\circ$ (AlignTac) with a median of $1.5$--$2.2^\circ$: the gap between mean and median indicates some large residual errors.
 
-The aligned mesh also provides a depth estimate: on the validation split it is as accurate as the MeshTac student's output (IoU $0.82$ vs.\ $0.81$ at $\Kreal=100$) and lifts a real-only model to the MeshTac level (IoU $0.656\!\to\!0.710$ at $\Kreal=25$, MeshTac $0.712$), showing that the student can approximate the reconstruction accuracy of mesh-assisted inference.
+The aligned mesh also provides a depth estimate: on the validation split it is as accurate as the AlignTac student's output (IoU $0.82$ vs.\ $0.81$ at $\Kreal=100$) and lifts a real-only model to the AlignTac level (IoU $0.656\!\to\!0.710$ at $\Kreal=25$, AlignTac $0.712$), showing that the student can approximate the reconstruction accuracy of mesh-assisted inference.
 
 We also test refinement on held-out objects: trained on the nine seen objects of the leave-object-out protocol and applied to the three held-out ones, whose real contacts were excluded from training, it lowers the rotation error of the simulation-trained models of Table~\ref{tab:loo} from $4.8$--$6.8^\circ$ to $0.6$--$1.0^\circ$.
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of three selected objects per sensor. Each example is the frame with the median MeshTac contact MAE for its object, chosen without reference to the baseline. Numbers are contact MAE (mm); depth maps share a color scale.}
+    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of three selected objects per sensor. Each example is the frame with the median AlignTac contact MAE for its object, chosen without reference to the baseline. Numbers are contact MAE (mm); depth maps share a color scale.}
     \label{fig:qual}
 \end{figure*}
 
 \subsection{Qualitative Results}
 \label{sec:qual}
-Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For each of the three displayed objects per sensor, we select the frame with the median contact-MAE improvement. This fixes selection within each object; the examples illustrate local reconstruction differences rather than the full distribution of results. Real-only models blur or break thin ridges and misplace junctions; the MeshTac student recovers their extent and position. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
+Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For each of the three displayed objects per sensor, we select the frame with the median contact-MAE improvement. This fixes selection within each object; the examples illustrate local reconstruction differences rather than the full distribution of results. Real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
 
 \begin{table}[!tbp]
 \centering

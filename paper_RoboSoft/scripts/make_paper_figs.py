@@ -32,7 +32,7 @@ STY = {
     "+ GAN-K (learned, strict)": ("#eb6834", "^", "-"),
     "+ GAN-full (leaky)": ("#1baf7a", "D", "--"),
     "+ self-training": ("#c9a227", "v", "-"),
-    "+ MeshTac (ours, strict)": ("#8a4fd3", "*", "-"),
+    "+ AlignTac (ours, strict)": ("#8a4fd3", "*", "-"),
 }
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
                      "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7,
@@ -92,10 +92,10 @@ def fig_kshot(out):
         "+ GAN-K (learned, strict)": ["T_k10_gank", "T_k25_gank", "T_k50_gank", "T_k100_gank"],
         "+ self-training": ["T_k10_semipm", "T_k25_semipm", "T_k50_semipm", "T_k100_semipm"],
         "+ GAN-full (leaky)": ["T_k10_ganfull", "T_k25_ganfull", "T_k50_ganfull", "T_k100_ganfull"],
-        "+ MeshTac (ours, strict)": ["T_k10_rf", "T_k25_rf", "T_k50_rf", "T_k100_rf"],
+        "+ AlignTac (ours, strict)": ["T_k10_rf", "T_k25_rf", "T_k50_rf", "T_k100_rf"],
     }
     names = {"+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer ($K$)", "+ self-training": "Self-training",
-             "+ GAN-full (leaky)": "Learned renderer (full)", "+ MeshTac (ours, strict)": "MeshTac (ours)"}
+             "+ GAN-full (leaky)": "Learned renderer (full)", "+ AlignTac (ours, strict)": "AlignTac (ours)"}
     from matplotlib.ticker import MaxNLocator
     fig, axes = plt.subplots(1, 6, figsize=(7.1, 1.85))         # one row: narrow, tall panels so that nearby lines separate
     panels = [("c_mae", "masked", "Contact MAE"), ("pose_rot_deg", "rot", "Rotation"), ("pose_trans", "trans", "Translation")]
@@ -118,7 +118,7 @@ def fig_kshot(out):
     # sensor B: dense metrics from the depth checkpoint (sensorB_mesh), pose from best_pose.pt (sensorB_mesh_bp); trans_l1 is summed over x,y -> /2
     sbkey = {"c_mae": ("c_mae", 1.0, "sensorB_mesh"), "pose_rot_deg": ("rot_deg", 1.0, "sensorB_mesh_bp"), "pose_trans": ("trans_l1", HALF_MM / 2, "sensorB_mesh_bp")}
     for i, (ax, (key, src, lab)) in enumerate(zip(axes[3:], panels)):          # sensor B (mesh-registered labels), 50 epochs
-        for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ MeshTac (ours, strict)", "maplnr_m")):
+        for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ AlignTac (ours, strict)", "maplnr_m")):
             c, m, ls = STY[name]
             ax.plot(Ks, [SB[f"pilot_S_k{k}_{suf}/{sbkey[key][2]}"][sbkey[key][0]] * sbkey[key][1] for k in Ks], color=c, marker=m, ls=ls, lw=LW,
                     ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5)
@@ -305,7 +305,7 @@ def fig_cross(out):
 
 
 def fig_align(out, K=25):
-    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (MeshTac label) | reference."""
+    """Qualitative: unlabeled frame | teacher depth | mesh at the teacher pose | mesh at the aligned pose (AlignTac label) | reference."""
     sys.path.insert(0, "scripts")
     import build_real_filtered_new as B
     B.VIEW = 0.017502
@@ -355,7 +355,7 @@ def _label_quality():
         te, me = g("teacher (all)"), g("mesh (kept)")
         return te[0], me[0], None, te[1], me[1], None, te[2], me[2]
     L = "outputs/pilot_logs"
-    A = {K: read(f"{L}/pseudo_k{K}_ro_al.log") for K in (10, 25, 50, 100)}             # real-only teacher + real-only aligner (the MeshTac pipeline)
+    A = {K: read(f"{L}/pseudo_k{K}_ro_al.log") for K in (10, 25, 50, 100)}             # real-only teacher + real-only aligner (the AlignTac pipeline)
     Bq = {K: read(f"{L}/pseudo_S_k{K}_m_al.log") for K in (10, 25, 50, 100)}
     return A, Bq
 
@@ -400,11 +400,11 @@ def fig_conv(out):
 
 
 def fig_poseref(out):
-    """Test-time pose refinement (replaces the pose-refinement table): paired bars pred. / +align per K for real-only and MeshTac
+    """Test-time pose refinement (replaces the pose-refinement table): paired bars pred. / +align per K for real-only and AlignTac
     (renderer-free) predictors, rotation and translation, session-1 validation and session-2 test (data: eval_pose_refine.py)."""
     PRJ = json.load(open("ablation/pilot_robosoft/pose_refine_results.json"))
     Ks = [10, 25, 50, 100]
-    meth = [("Real only", "T_k{K}_realonly_realonly", "#52514e"), ("MeshTac (ours)", "T_k{K}_rf_realonly", "#8a4fd3")]
+    meth = [("Real only", "T_k{K}_realonly_realonly", "#52514e"), ("AlignTac (ours)", "T_k{K}_rf_realonly", "#8a4fd3")]
     panels = [("rot", "Rotation [deg]", "testA", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
               ("trans", "Translation [mm]", "testA", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
     fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.0)); axes = axes.ravel()
@@ -429,8 +429,8 @@ def fig_poseref(out):
 
 
 def fig_qual(out):
-    """Held-out frames of both sensors at K=25: frame | real only | MeshTac (renderer-free) | GT.  Per object, the frame with the
-    object's median MeshTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
+    """Held-out frames of both sensors at K=25: frame | real only | AlignTac (renderer-free) | GT.  Per object, the frame with the
+    object's median AlignTac contact MAE (data: paper_RoboSoft/scripts/dump_qual_preds.py)."""
     sets = [("A", "T_k25_realonly", "T_k25_rf", ["pattern_01_2_lines_angle_2", "pattern_32", "pattern_36"], "Sensor A"),
             ("B", "S_k25_realonly_m", "S_k25_maplnr_m", ["pattern_04_3_lines_angle_1", "pattern_33", "pattern_06_5_lines_angle_1"], "Sensor B (GelSlim 4.0)")]
     fig = plt.figure(figsize=(3.45, 1.85))                      # cells square -> no gaps between the tiles of a group
@@ -438,7 +438,7 @@ def fig_qual(out):
     for g, (name, r0, r1, objs, title) in zip(outer, sets):
         d = np.load(f"outputs/robosoft_qual/qual_{name}.npz")
         inner = g.subgridspec(3, 4, wspace=0.012, hspace=0.02)
-        err = d[f"cmae_{r1}"]                                       # select by MeshTac's own error, not by its gain over the baseline
+        err = d[f"cmae_{r1}"]                                       # select by AlignTac's own error, not by its gain over the baseline
         for r, o in enumerate(objs):
             ids = [i for i, k in enumerate(d["keys"]) if f"/{o}/" in str(k)]
             i = sorted(ids, key=lambda j: err[j])[len(ids) // 2]
@@ -450,7 +450,7 @@ def fig_qual(out):
                 for sp in ax.spines.values():
                     sp.set_visible(False)
                 if r == 0:
-                    ax.set_title(["frame", "real only", "MeshTac", "GT"][c], fontsize=5.2, pad=1.5)
+                    ax.set_title(["frame", "real only", "AlignTac", "GT"][c], fontsize=5.2, pad=1.5)
                 if c in (1, 2):
                     e = float(d[f"cmae_{(r0, r1)[c - 1]}"][i])
                     import matplotlib.patheffects as pe

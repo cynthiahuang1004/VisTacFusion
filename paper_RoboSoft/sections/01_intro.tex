@@ -1,25 +1,32 @@
 \section{Introduction}
 
-Contact geometry and planar pose characterize the shape, location and in-plane orientation of an object's contact with a fingertip. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} record these contacts as images of a deforming elastomer. Recovering geometry from these images requires paired labels. A known object mesh can supply these labels, but each real contact must first be registered to the mesh.
+Tactile perception provides robots with contact feedback for dexterous manipulation and physical interaction. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} use a soft elastomer membrane to convert fine contact-induced deformations into high-resolution visual signals. Learning to recover contact geometry and pose supports perception through touch, but requires scalable, accurately labeled data. Calibration and registration must link each tactile image to physical quantities such as dense contact-depth maps. A known object mesh can supply these labels only after its contact state is registered to the image.
 
-Accurate contact geometry is particularly important for soft fingertips: a compliant pad touches an object over an area, so grasp and in-hand manipulation decisions depend on where the pad touches and at what orientation. Registering individual contacts is labor-intensive, and changes in sensor configuration or capture conditions may require re-registration, limiting the number of labeled contacts.
+In real data collection (Fig.~\ref{fig:teaser}a), repeatable pressing motions do not guarantee submillimeter image--geometry registration. Systematic kinematic errors can bias the estimated contact state, including on Franka manipulators~\cite{franzese2025mukca}, while sensor mounting and object placement introduce additional uncertainty. Registering individual contacts is labor-intensive, and changes in sensor configuration or capture conditions may require re-registration, limiting the labeled set.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_teaser.pdf}
+    \caption{\textbf{Where the labels come from.} (a) Real contacts have the right appearance, but each label requires registering the robot pose to the image. (b) Simulated contacts come with free geometry, but their appearance differs from the sensor, and fitting a renderer consumes real image--label pairs. (c) AlignTac keeps the real image and aligns the known mesh to it, so unlabeled real contacts receive geometry labels without registration or RGB synthesis.}
+    \label{fig:teaser}
+\end{figure}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.96\textwidth]{figures/fig_arch_training_inference.pdf}
-    \caption{\textbf{MeshTac training and inference.} (a) Teacher $f_0$ initializes mesh alignment to generate pseudo-labels for student $f_1$. Both use a frozen SITR encoder, DPT decoder and Pose MLP. (b) Standard inference needs the tactile image and object identity but no mesh; optional refinement reuses aligner $\mathcal{A}$ with the real image and mesh. Thumbnails: a real $K=25$ example.}
+    \caption{\textbf{AlignTac training and inference.} (a) Teacher $f_0$ initializes the contact state; aligner $\mathcal{A}$ corrects it from the fixed real image and mesh-projected depth. The aligned geometry supplies depth, normal and planar-pose pseudo-labels for student $f_1$. The same $K$ registered contacts per object train $f_0$ and $\mathcal{A}$. (b) Standard inference uses the tactile image and object identity without a mesh; optional refinement reuses $\mathcal{A}$ with the same image and known mesh. Thumbnails: a real $K=25$ example.}
     \label{fig:mapl}
 \end{figure*}
 
-Simulation and self-training offer two ways to use a small labeled set. Simulation generates labeled contacts from known geometry~\cite{wang2022tacto,si2022taxim,chen2023tacchi}. A renderer fitted on real image--geometry pairs can adapt their appearance to the target sensor, but those pairs consume part of the label budget. Self-training instead uses a predictor's outputs to label the remaining real images and can propagate its errors~\cite{arazo2020pseudo}.
+Simulation and self-training offer two ways to use a small labeled set. Simulation generates labeled contacts from known geometry~\cite{wang2022tacto,si2022taxim,chen2023tacchi} (Fig.~\ref{fig:teaser}b), but reproducing marker-free appearance across the tactile surface is challenging: illumination, surface reflectance and contact-induced deformation jointly determine the image~\cite{si2022taxim,agarwal2021simulation}. A renderer fitted on real image--geometry pairs can adapt to the sensor, but those pairs consume the label budget. Self-training instead uses a predictor's outputs to label remaining real images and can propagate its errors~\cite{arazo2020pseudo}.
 
-For known objects, unlabeled real images provide a complementary source of supervision. Their appearance already matches the sensor; the unknown is the contact state---in-plane rotation, translation and indentation. A teacher trained on the registered set can estimate this state. However, even an exact mesh produces incorrect dense labels if its placement is wrong. Improving the state estimate is therefore necessary before using the mesh as supervision.
+We instead use real tactile images for appearance and simulated contact geometry for supervision. For a known object, its mesh specifies the geometry, but dense labels depend on a low-dimensional contact state: in-plane rotation, translation and indentation. Accurate state estimation makes the mesh projections useful as labels for the real image. The key is therefore to learn geometric alignment rather than reproduce tactile appearance; simply placing the mesh at an imperfect teacher prediction is insufficient.
 
-MeshTac learns this correction from the registered contacts (Fig.~\ref{fig:mapl}). We perturb their states and train a residual aligner to recover them from the real image and candidate mesh depth. Applied to the teacher's estimates, the aligner places the mesh before generating depth, normal and pose pseudo-labels. A student learns from these labels and predicts without mesh rendering.
+AlignTac learns this alignment from a small registered set (Figs.~\ref{fig:teaser}c and~\ref{fig:mapl}). We perturb each contact's mesh state while keeping its real image fixed, and train a residual aligner to recover the registered state. For additional real contacts, a teacher provides the initial state, the aligner corrects it using the observed image, and the aligned geometry supplies depth, normal and planar-pose pseudo-labels. A student learns from these labels and predicts without mesh rendering.
 
-We evaluate mesh-aligned supervision against self-training and synthetic augmentation under limited real-label budgets on two tactile sensors. Our contributions are:
+We evaluate AlignTac against self-training and synthetic augmentation under limited real-label budgets on two tactile sensors. Our contributions are:
 \begin{itemize}
-    \item A geometry-constrained pseudo-labeling strategy that turns a small set of registered contacts into dense depth, normal and planar-pose supervision for additional real tactile images, without synthetic tactile RGB generation.
-    \item Evidence that accurate contact-state alignment, not access to the mesh alone, is critical for pseudo-label quality and student accuracy, with label efficiency shown on two sensors and robustness on a second session.
-    \item A matched-budget renderer study showing where simulation is complementary: geometric coverage for held-out objects and session changes, with gains that must be weighed against the real labels used to fit the renderer.
+    \item A real-image--geometry alignment framework that learns state corrections from perturbations of a small registered set and generates dense geometry and pose supervision for unlabeled real images without synthetic tactile RGB.
+    \item Evidence that accurate contact-state alignment, not access to geometry alone, improves pseudo-labels and student accuracy, with label efficiency on two sensors and robustness on a second session.
+    \item A matched-budget renderer study identifying complementary benefits of tactile RGB simulation for held-out-object pose coverage and session changes, while accounting for the real labels used to fit the renderer.
 \end{itemize}

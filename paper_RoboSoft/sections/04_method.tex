@@ -1,27 +1,75 @@
-\section{Method: Mesh-Aligned Pseudo-Labeling}
+\section{Method: Real-Image--Geometry Alignment}
 \label{sec:mapl}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.86\columnwidth]{figures/fig_align.pdf}
-    \caption{\textbf{Mesh alignment for pseudo-label generation} ($K=25$, sensor A). Columns: real image, teacher depth, mesh depth before and after alignment, and GT. Each example has the median aligned-label IoU for its object.}
+    \includegraphics[width=\columnwidth]{figures/fig_align.pdf}
+    \caption{\textbf{Aligning simulated geometry with real tactile images} ($K=25$, sensor A). Columns: fixed real image, teacher depth, mesh depth before and after alignment, and GT. Each example has the median aligned-label IoU for its object.}
     \label{fig:align}
 \end{figure}
 
-MeshTac uses a known mesh and object identity to label additional real contacts (Fig.~\ref{fig:mapl}). A teacher $f_0$, trained on $K$ registered contacts per object, estimates their contact states. Aligner $\mathcal{A}$ corrects these estimates using the real images and projected mesh depth. The aligned mesh then supplies targets for student $f_1$.
+\subsection{Problem Formulation}
+\label{sec:formulation}
+We study label-efficient prediction of contact geometry and planar pose from real tactile images of known objects. Let $\mathcal{I}\in\mathbb{R}^{H\times W\times3}$ denote a tactile RGB image and $o$ its known object identity, with mesh $\mathcal{M}_o$. Our goal is to learn a predictor
+\begin{equation}
+    f(\mathcal{I},o)=(\hat d,\hat n,\hat p),
+    \label{eq:prediction_task}
+\end{equation}
+where $\hat d$ is a contact-depth map, $\hat n$ a surface-normal map, and $\hat p=(\hat\theta,\hat x,\hat y)$ the planar pose: in-plane rotation and translation. Standard inference uses the image and object identity, without requiring the mesh.
 
-\noindent\textbf{Contact geometry.} We represent a contact by $q=(\theta,x,y,z)$: in-plane rotation, translation and indentation. Let $d(\mathcal{M},q)$ denote the depth projection of mesh $\mathcal{M}$ at this state. The projection gives depth and surface-normal labels; $(\theta,x,y)$ gives the planar-pose label. Alignment updates $q$ while keeping the mesh fixed. Indentation determines the dense labels but is not a student pose output.
+\noindent\textbf{Contact state and geometric targets.} A contact is represented by $q=(\theta,x,y,z)$, where $z$ is indentation. A known mesh and contact state jointly determine the geometric targets,
+\begin{equation}
+    \mathcal{G}(\mathcal{M}_o,q)
+    =\big(d(\mathcal{M}_o,q),n(\mathcal{M}_o,q),p(q)\big),
+    \label{eq:geometric_targets}
+\end{equation}
+where $d$ and $n$ are mesh-projected depth and surface normals, and $p(q)=(\theta,x,y)$. Thus, $q$ is the state used for alignment, whereas $p$ is the predictor's pose output: indentation affects the dense targets but is not a separate pose output. Throughout, \emph{simulated geometry} means mesh-projected object geometry, not simulated membrane deformation.
 
-\noindent\textbf{Learning the aligner.} For a labeled image $\mathcal{I}$ with registered state $q^\ast$, we perturb the state by $\delta$ and project the mesh. The tactile image is kept fixed while the candidate mesh state is perturbed. An ImageNet-initialized ResNet-18, with its first-layer depth filters initialized as the mean of the RGB filters, receives the concatenated tactile RGB and candidate depth as four channels and predicts the correction:
+\noindent\textbf{Available supervision.} The training data comprise
+\begin{equation}
+    \begin{aligned}
+        \mathcal{D}_{L}&=\{(\mathcal{I}_i,o_i,q_i^\ast)\}_{i\in L},\\
+        \mathcal{D}_{U}&=\{(\mathcal{I}_j,o_j)\}_{j\in U},
+    \end{aligned}
+    \label{eq:training_sets}
+\end{equation}
+with $K$ registered contacts per object in $\mathcal{D}_{L}$. Object identities and meshes are known for both sets, but reference contact states are available only in $\mathcal{D}_{L}$, giving registered targets $y_i^\ast=\mathcal{G}(\mathcal{M}_{o_i},q_i^\ast)$. Contact states in $\mathcal{D}_{U}$ are unknown during training.
+
+Our goal is to use $\mathcal{D}_{U}$ to improve prediction without increasing the registered-contact budget. Since a single state couples depth, normals and planar pose, AlignTac generates their supervision by aligning known geometry with each real image rather than synthesizing tactile RGB. Fig.~\ref{fig:mapl} summarizes the workflow: learn a teacher and an aligner from $\mathcal{D}_{L}$, generate aligned-geometry targets for $\mathcal{D}_{U}$, and train a student on both sets. Below, $\mathcal{M}$ denotes the current image's object mesh.
+
+\subsection{Learning Image--Geometry Alignment}
+\label{sec:learn_alignment}
+A teacher $f_0$ is trained on $\mathcal{D}_{L}$ using its registered targets. Its predictions will initialize contact states for unlabeled images (Sec.~\ref{sec:unlabeled_alignment}). To correct these initial estimates, we learn a residual aligner $\mathcal{A}$ from the \emph{same} registered contacts; no additional registrations are required.
+
+For a registered pair $(\mathcal{I},q^\ast)$, we sample a state perturbation $\delta$ and project the mesh at $q^\ast+\delta$. The real image and mesh geometry remain fixed; only the candidate contact state changes. The aligner receives the real image and candidate depth and learns the known correction,
 \begin{equation}
     \mathcal{A}\big(\mathcal{I},d(\mathcal{M},q^\ast+\delta)\big)\approx-\delta.
+    \label{eq:aligner_training}
 \end{equation}
-Sampling perturbations creates training pairs from the same $K$ contacts without additional real labels or synthetic RGB images. We normalize each residual dimension and train with smooth-L1 loss. Sec.~\ref{sec:setup} gives the perturbation ranges and training settings.
+Sampling perturbations yields multiple alignment-training pairs from each registered contact without collecting new real labels or synthesizing tactile RGB.
 
-\noindent\textbf{Generating pseudo-labels.} The teacher's planar-pose prediction and maximum predicted depth initialize the state of an unlabeled image. We refine it over six iterations,
+We implement $\mathcal{A}$ with an ImageNet-initialized ResNet-18. The tactile RGB and candidate depth are concatenated as four input channels; first-layer filters for the depth channel are initialized as the mean of the RGB filters. We normalize each residual dimension for the smooth-L1 training loss. Eqs.~\ref{eq:aligner_training} and~\ref{eq:alignment_updates} express corrections in contact-state coordinates. Perturbation ranges and training settings are given in Sec.~\ref{sec:setup}.
+
+\subsection{Aligning Unlabeled Real Contacts}
+\label{sec:unlabeled_alignment}
+For each $(\mathcal{I},o)\in\mathcal{D}_{U}$, let $(\hat d_0,\hat n_0,\hat p_0)=f_0(\mathcal{I},o)$, with $\hat p_0=(\hat\theta_0,\hat x_0,\hat y_0)$. The teacher initializes the contact state as
 \begin{equation}
-    q_{t+1}=q_t+\mathcal{A}\big(\mathcal{I},d(\mathcal{M},q_t)\big),
+    q_0=\big(\hat\theta_0,\hat x_0,\hat y_0,\max_u\hat d_0(u)\big),
+    \label{eq:teacher_initialization}
 \end{equation}
-with indentation clipped to $[0.3,1.6]\,$mm. The final state supplies the planar-pose target and determines the projected depth and normals (Fig.~\ref{fig:align}). We retain all pseudo-labeled training frames in the main configuration.
+where $u$ indexes image pixels. Starting from $q_0$, we apply six residual updates,
+\begin{equation}
+    q_{t+1}=q_t+\mathcal{A}\big(\mathcal{I},d(\mathcal{M},q_t)\big),\quad t=0,\ldots,5,
+    \label{eq:alignment_updates}
+\end{equation}
+clipping indentation to $[0.3,1.6]\,$mm after each update. The real image and mesh geometry remain fixed, and the candidate depth is reprojected at the updated state for the next iteration.
 
-\noindent\textbf{Student training and inference.} Teacher and student have the same architecture but are trained separately. The student learns from real images with registered or mesh-derived labels. Its objective combines depth and normal MSE, cosine rotation loss and L1 translation loss, with uncertainty-based learned weights~\cite{kendall2018multi} within the dense and pose groups; registered and pseudo-labeled frames are pooled and sampled uniformly, with equal per-sample loss weights. The main method uses no synthetic tactile RGB images; renderer augmentation is a separate variant. At inference, the student uses the tactile image and known object identity, with optional mesh-assisted pose refinement by the fixed aligner (Sec.~\ref{sec:tta}).
+The final state supplies $\tilde y=\mathcal{G}(\mathcal{M},q_6)$: depth, normal and planar-pose pseudo-labels for the real image (Fig.~\ref{fig:align}). The teacher therefore supplies the \emph{initialization}, whereas the aligned geometry supplies the \emph{supervision}. These targets are estimates, not new ground-truth measurements. We retain all pseudo-labeled training frames in the main configuration.
+
+\subsection{Student Training and Inference}
+\label{sec:student_training}
+Teacher $f_0$ and student $f_1$ share the same architecture but are trained separately. Both use a frozen SITR encoder, a DPT decoder for depth and normals, and a planar-pose MLP; object identity conditions only the pose head (Sec.~\ref{sec:setup}). The student is trained on real images from $\mathcal{D}_{L}$ with registered targets $y^\ast$ and from $\mathcal{D}_{U}$ with aligned-geometry targets $\tilde y$. We pool both sets and sample frames uniformly, assigning equal loss weight to each sample.
+
+The prediction objective combines depth and normal MSE, cosine rotation loss and L1 translation loss, with uncertainty-based learned weights~\cite{kendall2018multi} within the dense and pose groups. Thus, the supervision source changes between registered and unlabeled frames, but the prediction task and loss components do not. The main AlignTac pipeline uses no synthetic tactile RGB; renderer augmentation is a separate variant.
+
+At standard inference, $f_1(\mathcal{I},o)$ directly predicts depth, normals and planar pose without the mesh or aligner. When a known mesh is available, the same fixed aligner can optionally refine pose: initialize the state from the student's pose and maximum depth, then apply the six updates above without retraining (Sec.~\ref{sec:tta}). This optional branch does not change the mesh-free prediction path.

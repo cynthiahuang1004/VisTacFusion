@@ -12,20 +12,21 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
 
-\newcommand{\sensor}{\ifdefined\MeshTacAuthorVersion GelSlim~5.0\else sensor~A\fi}
+\newcommand{\sensor}{\ifdefined\AlignTacAuthorVersion GelSlim~5.0\else sensor~A\fi}
 \newcommand{\sensorB}{GelSlim~4.0}
 \newcommand{\tableformat}{\small\setlength{\tabcolsep}{3.0pt}\renewcommand{\arraystretch}{0.97}}
 \newcommand{\metrichead}[2]{\shortstack[c]{\strut#1\\\strut#2\,$\downarrow$}}
 \newcommand{\Kreal}{K}
 \newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+\input{table_style}
 \input{data/tables}
 
-\title{\LARGE\bf MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient\\
-Contact Geometry and Pose Estimation}
+\title{\LARGE\bf AlignTac: Aligning Real Tactile Images with\\
+ Simulated Geometry for Label-Efficient Contact Learning}
 
 % Anonymous by default for RoboSoft double-anonymous review.
-% Compile with \def\MeshTacAuthorVersion{1}\input{main.tex} for an author copy.
-\ifdefined\MeshTacAuthorVersion
+% Compile with \def\AlignTacAuthorVersion{1}\input{main.tex} for an author copy.
+\ifdefined\AlignTacAuthorVersion
 \author{I-Hsuan Huang$^{*}$, Xiaohao Xu$^{*}$, Xiangdong Wang, Xiaonan Huang, and Nima Fazeli%
 \thanks{$^{*}$Equal contribution. All authors are with the University of Michigan, Ann Arbor, MI, USA.
 Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
@@ -33,7 +34,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \else
 \author{Anonymous submission}
 \fi
-\hypersetup{pdfauthor={},pdftitle={MeshTac: Mesh-Aligned Pseudo-Labeling for Label-Efficient Contact Geometry and Pose Estimation},pdfsubject={},pdfkeywords={}}
+\hypersetup{pdfauthor={},pdftitle={AlignTac: Aligning Real Tactile Images with Simulated Geometry for Label-Efficient Learning},pdfsubject={},pdfkeywords={}}
 
 \begin{document}
 \maketitle
@@ -41,7 +42,7 @@ Correspondence: \texttt{\{ihsuan, xiaohaox\}@umich.edu}.}%
 \pagestyle{empty}\raggedbottom
 
 \begin{abstract}
-Known object meshes can provide contact geometry labels for vision-based tactile sensors, but using them to label real tactile images requires an accurate contact state for each image. We propose MeshTac, which learns from a small registered set to generate pseudo-labels for additional real images. A teacher estimates the contact state, and a residual aligner corrects it using the tactile image and projected mesh depth. The aligner is trained from perturbations of the same registered contacts, without additional real labels. The aligned mesh supplies depth, normal and planar-pose targets for a student that predicts without mesh rendering. The same aligner can optionally refine pose at inference. Our evaluation shows that, with 25 labeled contacts per object and no synthetic tactile RGB images, MeshTac reduces contact-region depth MAE by $20\%$ and $36\%$ on two tactile sensors relative to real-only training. On contact metrics, it matches real-only models trained with twice as many labels. Synthetic augmentation provides little further improvement within the training session but helps on a second session at the larger budget. A renderer fitted on all real training pairs reduces depth MSE by $17$--$23\%$ relative to real-only training, compared with $2$--$3\%$ under matched budgets. These results show that accurate contact-state alignment is critical for converting known meshes into effective supervision, while fair renderer comparisons must account for the real image--label pairs used to train them.
+Vision-based tactile learning supports dexterous manipulation and physical interaction, but collecting accurately registered training data remains a bottleneck. We introduce AlignTac, which aligns real tactile images with simulated contact geometry to learn from few registered contacts. Our key insight is that real images already capture the sensor's appearance, while a known object mesh supplies dense geometry once its low-dimensional contact state is aligned. A teacher initializes this state, and a residual aligner corrects it using the real image and mesh-projected depth. We train the aligner by perturbing the mesh states of the same registered contacts while keeping their images fixed, without additional real labels or synthetic tactile RGB images. The aligned geometry supplies depth, normal and planar-pose pseudo-labels for a student whose standard inference requires no mesh; the same aligner optionally refines pose at inference. With 25 labeled contacts per object, AlignTac reduces contact-region depth MAE by $20\%$ and $36\%$ on two tactile sensors relative to real-only training, matching real-only contact accuracy with twice as many training labels. Under the same teacher initialization, alignment raises pseudo-label IoU from $0.47$ to $0.72$, showing that known geometry alone is insufficient. Synthetic augmentation is complementary under the tested session shift at the larger label budget, but renderer comparisons must account for the real image--label pairs used to fit them. Our code will be released to foster future research.
 \end{abstract}
 
 \input{sections/01_intro}
