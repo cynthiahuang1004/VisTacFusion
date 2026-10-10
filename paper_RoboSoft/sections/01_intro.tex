@@ -2,13 +2,11 @@
 
 \begin{figure}[!t]
     \centering
-    \includegraphics[width=\columnwidth]{figures/intro_figure/AlignTac_Figure1_Updated.pdf}
-    \caption{\textbf{From labeling bottlenecks to aligned geometric supervision.}
-    (a) Real-contact collection pairs a tactile image with mesh geometry at a registered pose ($q^*$), requiring registration for each labeled press.
-    (b) Simulation provides geometric targets, while tactile appearance requires sensor-specific calibration or a learned renderer; PBR and learned renderings illustrate the appearance gap.
-    (c) AlignTac uses a small registered set to align known geometry with unlabeled real images and produce geometric pseudo-labels.
-    The initial and aligned depth maps show the same contact as in (a,b); the bottom row shows RGB--aligned-depth pairs for additional objects.
-    Solid arrows show data flow; the \FinalLine{dashed purple arrow indicates training support.}}
+    \includegraphics[width=\columnwidth]{figures/intro_figure/AlignTac_Fig1.png}
+    \caption{\textbf{From registered labels to aligned geometric supervision.}
+    (a) A real contact is labeled by projecting the object mesh at the contact state $q^\ast$ obtained from the robot pose; this needs calibration and verification, repeated after the object is re-placed (right; outlines mark the mesh contact region).
+    (b) In simulation the state and depth are given, but tactile images need sensor-specific modeling: a physically based renderer (PBR) or a learned renderer fitted on registered real pairs.
+    (c) AlignTac learns from a few registered contacts to align the known mesh with an unlabeled real image, turning the initial estimate into a pseudo-label; the bottom row shows pseudo-labeled contacts of other objects.}
     \label{fig:aligntac_teaser}
 \end{figure}
 
