@@ -76,7 +76,7 @@ text("(b) Simulate contacts", 0.15, 6.17, 4.2, "bedge", TITLE, bold=True, align=
 text("Synthetic RGB needs sensor-response modeling", 8.45, 6.17, 4.6, "bedge", TINY, italic=True, align="r")
 for p, x in ((f"{T}/sim_contact.png", 0.78), (f"{T}/gt.png", 2.55), (f"{T}/pbr.png", 4.55), (f"{T}/gan.png", 5.95), (f"{T}/real.png", 7.75)):
     img(p, x, 5.3, 1.1)
-arrow(0.78 + th, 5.3, 2.55 - th, 5.3); arrow(2.55 + th, 5.3, 4.55 - th, 5.3); text("render", 3.55, 5.46, 1.0)
+arrow(0.78 + th, 5.3, 2.55 - th, 5.3); arrow(2.55 + th, 5.3, 4.55 - th, 5.3); text("render RGB", 3.55, 5.46, 1.0)
 text("≠", 6.85, 5.3, 0.5, "gray", 26)
 text("Simulated contact", 0.78, 4.6, 1.6); text("GT label (free)", 2.55, 4.6, 1.5, "bedge", bold=True); text("PBR", 4.55, 4.6, 1.0)
 text("Learned\n(fitted on real pairs)", 5.95, 4.52, 1.9, h=0.42); text("Real image", 7.75, 4.6, 1.3)

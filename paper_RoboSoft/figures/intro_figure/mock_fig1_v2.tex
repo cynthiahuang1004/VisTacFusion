@@ -47,7 +47,7 @@
 \node[th] (b2) at (4.55,5.3) {\im{\T/pbr.png}};
 \node[th] (b3) at (5.95,5.3) {\im{\T/gan.png}};
 \node[th] (b4) at (7.75,5.3) {\im{\T/real.png}};
-\draw[arrow] (b0.east) -- (b1.west); \draw[arrow] (b1.east) -- node[lab,above] {render} (b2.west);
+\draw[arrow] (b0.east) -- (b1.west); \draw[arrow] (b1.east) -- node[lab,above] {render RGB} (b2.west);
 \node[font=\scriptsize,text=black!60] at (6.85,5.3) {$\neq$};
 \node[lab,anchor=north] at (b0.south) {Simulated contact}; \node[lab,anchor=north,text=bedge] at (b1.south) {\textbf{GT label} (free)};
 \node[lab,anchor=north] at (b2.south) {PBR}; \node[lab,anchor=north] at (b3.south) {Learned\\[-1.5pt](fitted on real pairs)}; \node[lab,anchor=north] at (b4.south) {Real image};

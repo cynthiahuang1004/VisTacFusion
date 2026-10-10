@@ -1,0 +1,6 @@
+% Caption for the revised Fig. 1 (AlignTac_Figure1_v2.pptx / mock_fig1_v2). Paste into sections/01_intro.tex once the figure PDF is replaced.
+\caption{\textbf{From registered labels to aligned geometric supervision.}
+(a) A real contact is labeled by projecting the mesh at the state $q^\ast$ read from the robot, which requires calibration and verification and must be redone after re-placing the object (right).
+(b) Simulation gives labels without registration, but the tactile RGB needs a sensor-response model: PBR renders the simulated scene, and a learned renderer maps the depth label to RGB after fitting on registered real pairs.
+(c) AlignTac keeps the real image and aligns the known mesh to it with an aligner trained on $K$ registered contacts, yielding pseudo-labels for the remaining real images.
+Outlines mark the mesh contact region.}
