@@ -69,6 +69,8 @@ def main():
     ap.add_argument("--train-cfg", default=TRAIN)
     ap.add_argument("--pose", action="store_true",
                     help="also write pseudo _pose.json (predicted planar pose) so the root can train the downstream model")
+    ap.add_argument("--unlabeled-only", action="store_true",
+                    help="every frame of --real-root is unlabeled (no K-shot frames, no validation links); session metadata is linked")
     ap.add_argument("--link-val", action="store_true",
                     help="symlink val frames (true labels, validation only), rgb/, calibration/, id_map.json, session.json "
                          "into the root so it can serve as real.root of a downstream run")
@@ -87,7 +89,7 @@ def main():
                                     shared_obj_map=val_ds._obj_to_id)
     crop = float(cfg.real.get("fixed_crop", cfg.get("fixed_crop", 0.816)))
     rp = RealPairs(root=cfg.real.root, split="train", per_object=args.k)
-    labeled = {tac for _, tac in rp.items}
+    labeled = set() if args.unlabeled_only else {tac for _, tac in rp.items}
     print(f"labeler={args.prefix}{args.run}  frames={len(ds)}  labeled(K={args.k})={len(labeled)}  crop={crop}", flush=True)
 
     n = len(ds) if not args.limit else min(args.limit, len(ds))
@@ -135,7 +137,7 @@ def main():
                 dst_img = osp.join(out_unit, "samples", f"{sidx:04d}.png")
                 dst_dep = osp.join(out_unit, "raw_data", f"{sidx:04d}_gt.npy")
                 dst_pose = osp.join(out_unit, "raw_data", f"{sidx:04d}_pose.json")
-                if args.link_val:
+                if args.link_val or args.unlabeled_only:
                     for name in ("rgb", "calibration", "id_map.json"):
                         if osp.exists(osp.join(unit, name)) and not osp.lexists(osp.join(out_unit, name)):
                             os.symlink(osp.join(unit, name), osp.join(out_unit, name))

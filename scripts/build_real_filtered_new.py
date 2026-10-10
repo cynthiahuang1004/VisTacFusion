@@ -108,8 +108,11 @@ def main():
                     help="pose_calibration_new.json from calibrate_new_real_poses.py (per-run dtheta/dx/dy/dz)")
     ap.add_argument("--min-iou", type=float, default=0.0,
                     help="skip runs whose calibrated IoU is below this")
+    ap.add_argument("--keep-presses", default=None,
+                    help="json {real_name/run: [iteration, ...]}: only frames of these presses are written (press-level split)")
     args = ap.parse_args()
     calib = json.load(open(args.calib)) if args.calib else {}
+    keep_presses = json.load(open(args.keep_presses)) if args.keep_presses else None
     bg_sel = json.load(open(f"{T}/validation/bg_selection.json"))
     bg_out = "/media/hdd2/ihsuan/VisTacFusion/outputs/session_bg/real_new"
     os.makedirs(bg_out, exist_ok=True)
@@ -138,6 +141,8 @@ def main():
                 os.makedirs(f"{unit}/{sub}", exist_ok=True)
             kept = []; cells = []; k_in_press = 0; prev_contact = False
             for f in tm["frames"]:
+                if keep_presses is not None and f["iteration"] not in keep_presses.get(f"{real_name}/{run}", ()):
+                    prev_contact = False; continue
                 if abs(f["pose_ros_timestamp_sec"] - f["image_ros_timestamp_sec"]) > args.max_lag:
                     continue
                 ee = f["robot_pose_xyz_xyzw"]
