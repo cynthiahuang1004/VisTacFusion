@@ -30,23 +30,23 @@
 
 % ---------- (a) photo: robot presses the sensor on the object; q* comes from the robot pose ----------
 \node[thumb,anchor=north west] (pa) at (0.2,4.55) {\thumbimg[1.95cm]{real_contact_crop.png}};
-\node[font=\scriptsize,text=rededge,anchor=west,align=left] at (2.35,4.2) {contact state $q^\ast$ is read\\[0.5pt]from the robot pose};
-\node[tiny,anchor=west,align=left] at (2.35,3.35) {kinematic, mounting and\\[0.5pt]placement errors bias $q^\ast$;\\[0.5pt]redo for each session or sensor};
+\node[font=\scriptsize,text=rededge,anchor=west,align=left] at (2.35,4.2) {each label needs its own\\[0.5pt]registered press ($q^\ast$)};
+\node[tiny,anchor=west,align=left] at (2.35,3.3) {labels grow only as fast as\\[0.5pt]registration; repeated for\\[0.5pt]every object and sensor};
 \node[thumb] (a1) at (1.0,1.55) {\thumbimg[1.1cm]{real.png}};
 \node[thumb] (a2) at (3.3,1.55) {\thumbimg[1.1cm]{gt.png}};
 \draw[arrow] (a1.east) -- (a2.west); \node[tiny,anchor=south] at (2.15,2.15) {project mesh at $q^\ast$};
-\node[tiny,anchor=north] at (a1.south) {real image}; \node[tiny,anchor=north] at (a2.south) {registered label};
+\node[tiny,anchor=north] at (a1.south) {real image}; \node[tiny,anchor=north,text=rededge] at (a2.south) {\textbf{GT label} (mesh at $q^\ast$)};
 \node[cost,anchor=west,align=left] at (4.0,1.55) {cost: one\\[0.5pt]registered\\[0.5pt]pose per\\[0.5pt]label};
 
 % ---------- (b) render: Blender scene of the sensor on the mesh; calibrated or fitted ----------
 \node[thumb,anchor=north west] (pb) at (5.95,4.55) {\thumbimg[1.95cm]{sim_contact.png}};
-\node[font=\scriptsize,text=blueedge,anchor=west,align=left] at (8.1,4.2) {mesh gives free geometry;\\[0.5pt]appearance must be rendered};
-\node[tiny,anchor=west,align=left] at (8.1,3.3) {camera, LEDs, gel and contact\\[0.5pt]model calibrated per sensor, or\\[0.5pt]a renderer fitted on real pairs};
+\node[font=\scriptsize,text=blueedge,anchor=west,align=left] at (8.1,4.2) {geometry is free, but the\\[0.5pt]appearance must be rendered};
+\node[tiny,anchor=west,align=left] at (8.1,3.3) {LED colors, gel optics and\\[0.5pt]color response fitted per sensor,\\[0.5pt]or a renderer trained on real\\[0.5pt]image--label pairs; a gap remains};
 \node[thumb] (b1) at (6.65,1.55) {\thumbimg[1.0cm]{sim_depth.png}};
 \node[thumb] (b2) at (8.1,1.55) {\thumbimg[1.0cm]{pbr.png}};
 \node[thumb] (b3) at (9.25,1.55) {\thumbimg[1.0cm]{gan.png}};
-\draw[arrow] (b1.east) -- (b2.west); \node[tiny,anchor=south] at (7.375,2.1) {render};
-\node[tiny,anchor=north] at (b1.south) {sim depth (label)}; \node[tiny,anchor=north] at (b2.south) {PBR}; \node[tiny,anchor=north] at (b3.south) {learned};
+\draw[arrow] (b1.east) -- (b2.west); \node[tiny,anchor=south] at (7.375,2.1) {render};\node[tiny,anchor=south,text=black!55] at (8.675,2.1) {same contact as (a)};
+\node[tiny,anchor=north,text=blueedge] at (b1.south) {\textbf{GT label} (free)}; \node[tiny,anchor=north] at (b2.south) {PBR}; \node[tiny,anchor=north] at (b3.south) {learned};
 \node[cost,anchor=west,align=left] at (9.9,1.55) {cost: calibration\\[0.5pt]or real pairs;\\[0.5pt]appearance\\[0.5pt]gap remains};
 
 % ---------- (c) fixed real image; the aligner moves the mesh state ----------
@@ -64,7 +64,7 @@
 \node[thumb] (c2) at (14.8,1.3) {\thumbimg[1.1cm]{mesh_aligned.png}};
 \draw[purpleedge,line width=.9pt] ($(c2.south west)+(-0.03,-0.03)$) rectangle ($(c2.north east)+(0.03,0.03)$);
 \draw[arrow,draw=purpleedge] (c1.east) -- (c2.west); \node[tiny,text=purpleedge,anchor=south] at (13.65,1.9) {align};
-\node[tiny,anchor=north] at (c1.south) {mesh at teacher pose}; \node[tiny,anchor=north] at (c2.south) {aligned mesh = label};
-\node[cost,anchor=west,align=left] at (15.5,1.3) {cost: $K$\\[0.5pt]registered\\[0.5pt]contacts;\\[0.5pt]the rest\\[0.5pt]unlabeled};
+\node[tiny,anchor=north] at (c1.south) {mesh at teacher pose}; \node[tiny,anchor=north,text=purpleedge] at (c2.south) {\textbf{pseudo-label} (mesh at aligned $q$)};
+\node[cost,anchor=west,align=left] at (15.5,1.3) {cost: $K$ GT\\[0.5pt]labels; the\\[0.5pt]rest get\\[0.5pt]pseudo-\\[0.5pt]labels};
 \end{tikzpicture}
 \end{document}
