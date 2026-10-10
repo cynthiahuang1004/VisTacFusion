@@ -549,3 +549,12 @@ IoU$\uparrow$, AlignTac (ours) & \rankfirst{0.856} & \rankfirst{0.911} & \rankfi
    & \textit{GAN-full (full real set)} & \textit{0.0274} & \textit{0.205} & \textit{0.777} & \textit{19.9} & \textit{4.4} & \textit{1.01} \\ % pilot150_B_k100_ganfull (150 ep)
 }
 
+
+% ---- s2adapt: session-2 unlabeled pool (held-out half of session 2, 464 frames; hand-added 2026-10-10, see PAPER_NOTES) ----
+\newcommand{\tabstwoadapt}{%
+Real only & 0.356 & \rankthird{0.625} & \rankthird{1.78} & 0.365 & 0.658 & \rankthird{1.64} \\
+Self-training & 0.347 & 0.603 & 1.96 & \rankthird{0.336} & \rankthird{0.679} & 1.85 \\
+\quad + session-2 images & \rankthird{0.340} & 0.592 & 1.98 & 0.347 & 0.668 & 1.84 \\
+\textbf{AlignTac (ours)} & \ranksecond{0.304} & \rankfirst{0.663} & \ranksecond{1.49} & \ranksecond{0.294} & \rankfirst{0.710} & \ranksecond{1.54} \\
+\quad + session-2 images & \rankfirst{0.288} & \ranksecond{0.652} & \rankfirst{1.32} & \rankfirst{0.269} & \ranksecond{0.707} & \rankfirst{1.35} \\
+}

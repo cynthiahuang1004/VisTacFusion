@@ -81,11 +81,11 @@ Under the tested renderer, image similarity can favor an incorrect geometric sta
 \centering
 \tableformat\scriptsize
 \setlength{\tabcolsep}{2.6pt}
-\caption{\textbf{Robustness across capture sessions and GelSlim~4.0 variants.} Top: marker-free (A) models on session 2 without retraining. Bottom: dot-marker (B) test results after variant-specific training. MAE and translation are in mm. Top-block colors rank methods per metric and budget; bottom-block green marks the better result within each metric pair and budget. \FinalLine{Tied values share the same highlight color per cell.}}
+\caption{\textbf{Second-session results} (marker-free sensor A). Top: session-1 models tested on session 2 without retraining. Bottom: half of the session-2 presses, with poses discarded, are added as unlabeled images labeled by the session-1 teacher or aligner; tests use the other half. MAE and translation in mm. Highlights mark \ranklegend{} per column and block.}
 \label{tab:general}
 \begin{tabularx}{\columnwidth}{Xrrrrrr}
 \toprule
-\multicolumn{7}{l}{\textbf{Marker-free sensor A: session-2 test ($854$ frames)}} \\
+\multicolumn{7}{l}{\textbf{No retraining: session-2 test ($854$ frames)}} \\
 & \multicolumn{3}{c}{$K=25$} & \multicolumn{3}{c}{$K=100$} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ \\
@@ -94,12 +94,14 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 \bottomrule
 \end{tabularx}
 \par\vspace{5pt}
-\begin{tabularx}{\columnwidth}{Xrrrr}
+\begin{tabularx}{\columnwidth}{Xrrrrrr}
 \toprule
-\multicolumn{5}{l}{\textbf{Dot-marker sensor B: test set ($1{,}620$ frames)}} \\
-& $K=10$ & $K=25$ & $K=50$ & $K=100$ \\
+\multicolumn{7}{l}{\textbf{Unregistered session-2 images in training: other half ($464$ frames)}} \\
+& \multicolumn{3}{c}{$K=25$} & \multicolumn{3}{c}{$K=100$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ \\
 \midrule
-\tabsbT
+\tabstwoadapt
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -114,13 +116,15 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Trans.$\downarrow$ & MAE$\downarrow$ 
 
 \subsection{Robustness Across Sessions and Sensor Variants}
 \label{sec:general}
-We evaluate robustness across capture sessions and GelSlim~4.0 variants. First, we test models trained on the marker-free variant (A) on another day's contacts after object re-placement, without retraining (Table~\ref{tab:general}). Second, we retrain each method on the dot-marker variant (B) with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f), evaluating the procedure's applicability across the two variants through separate training.
+We evaluate robustness across capture sessions and GelSlim~4.0 variants. First, we test models trained on the marker-free variant (A) on another day's contacts after object re-placement, without retraining and then with unregistered second-session images (Table~\ref{tab:general}). Second, we retrain each method on the dot-marker variant (B) with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f).
 
-\noindent\textbf{Cross-session robustness.} On sensor A's second session, AlignTac lowers contact MAE by $15$--$20\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.248\,$mm at $K=100$, a $31\%$ reduction from real-only training. Translation error rises to $1.7$--$2.1\,$mm for all methods, well above within-session levels, so better contact reconstruction only partly \FinalLine{compensates for the placement change.}
+\noindent\textbf{Cross-session robustness.} On sensor A's second session, AlignTac lowers contact MAE by $15$--$20\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.248\,$mm at $K=100$, a $31\%$ reduction from real-only training. Translation error rises to $1.7$--$2.1\,$mm for all methods, well above within-session levels.
 
-\noindent\textbf{Cross-variant applicability.} On \sensorB{} (sensor B; Table~\ref{tab:general}, bottom), AlignTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are \FinalLine{less consistent at larger budgets (Fig.~\ref{fig:kshot}).}
+\noindent\textbf{Using a new session without re-registration.} Re-placement invalidates the session-1 calibration (Sec.~\ref{sec:setup}), so new images come without usable poses. We take half of the session-2 presses ($1{,}066$ images), discard their poses, label them with the session-1 teacher and aligner, and add them to student training. On the other half (Table~\ref{tab:general}, bottom), contact MAE falls by a further $5\%$ ($K=25$) and $8\%$ ($K=100$), and rotation error from $10.2^\circ$ to $7.8^\circ$ and from $9.4^\circ$ to $7.3^\circ$; IoU is unchanged, and teacher labels for the same images give no gain. A new session can thus be used without registering its contacts.
 
-Fig.~\ref{fig:qual} illustrates differences in ridge continuity and junction placement; improvements vary across individual contacts, while the aggregate metrics consistently favor AlignTac. Aligning simulated geometry with real images thus provides effective supervision within a session, while tactile RGB augmentation adds robustness under the tested session shift at $K=100$, where more registered \FinalLine{contacts are available to fit the renderer.}
+\noindent\textbf{Cross-variant applicability.} On \sensorB{} (sensor B; Fig.~\ref{fig:kshot}d), AlignTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are \FinalLine{less consistent at larger budgets (Fig.~\ref{fig:kshot}).}
+
+Fig.~\ref{fig:qual} illustrates differences in ridge continuity and junction placement; improvements vary across individual contacts, while the aggregate metrics consistently favor AlignTac.
 
 \begin{figure}[!htb]
     \centering
@@ -132,13 +136,6 @@ Fig.~\ref{fig:qual} illustrates differences in ridge continuity and junction pla
 \subsection{Reusing Alignment for Test-Time Pose Refinement}
 \label{sec:tta}
 On the marker-free variant (A), the aligner learned for supervision generation also supports optional pose refinement at inference. Standard AlignTac prediction uses the tactile image and object identity. With a known mesh, we reuse the aligner to refine poses predicted by both real-only and AlignTac models. We apply six updates without retraining on session-1 test and session-2 images (Fig.~\ref{fig:poseref}). At $K\ge25$, both predictors reach $0.4$--$1.1^\circ$ mean rotation error within session 1, with translation error reduced by $30$--$55\%$. On session 2, mean rotation error remains $4$--$7^\circ$ despite a median of $1.4$--$1.9^\circ$, indicating a few contacts that stay poorly aligned and \FinalLine{motivating confidence estimates for refinement.}
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.9\columnwidth]{figures/fig_renders.pdf}
-    \caption{\textbf{Tactile appearance at the recorded contact state} (marker-free sensor A). Each row shows one real image, its GT depth, and PBR and learned-renderer outputs. The budget-matched learned renderer uses $K=25$ registered contacts per object. The gray $\dagger$ column uses the full real training set, matching the \FinalLine{additional-supervision reference in Table~\ref{tab:kshot}.}}
-    \label{fig:renders}
-\end{figure}
 
 \begin{table}[t]
 \centering
@@ -158,6 +155,6 @@ Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{\s
 
 \subsection{Complementary RGB Simulation and Label Budgets}
 \label{sec:study}
-We evaluate tactile RGB augmentation on \sensor{} (sensor A), separately from AlignTac's real-image--geometry alignment. Figure~\ref{fig:renders} compares real and rendered appearance at recorded contact states. For the held-out-object test, we remove three objects' real contacts while retaining their meshes for simulation (Table~\ref{tab:loo}); a control also removes the meshes, and a background-conditioned renderer additionally receives a no-contact image from the session. Simulated contacts reduce held-out-object rotation error from $64.7^\circ$ to $5$--$7^\circ$, whereas excluding the meshes leaves $50.6^\circ$; matched depth-MSE gains stay at most $13\%$. Only renderers with the held-out meshes train those objects' identity embeddings (the real-only reference and mesh control never update them), so the pose gap includes the benefit of mesh-enabled object-specific supervision. Tactile RGB simulation provides pose coverage, while \FinalLine{contact reconstruction remains a challenge.}
+We evaluate tactile RGB augmentation on \sensor{} (sensor A), separately from AlignTac's real-image--geometry alignment. Fig.~\ref{fig:aligntac_teaser}b shows rendered and real appearance at one recorded contact state. For the held-out-object test, we remove three objects' real contacts while retaining their meshes for simulation (Table~\ref{tab:loo}); a control also removes the meshes, and a background-conditioned renderer additionally receives a no-contact image from the session. Simulated contacts reduce held-out-object rotation error from $64.7^\circ$ to $5$--$7^\circ$, whereas excluding the meshes leaves $50.6^\circ$; matched depth-MSE gains stay at most $13\%$. Only renderers with the held-out meshes train those objects' identity embeddings (the real-only reference and mesh control never update them), so the pose gap includes the benefit of mesh-enabled object-specific supervision. Tactile RGB simulation provides pose coverage, while \FinalLine{contact reconstruction remains a challenge.}
 
 Under matched budgets at $K=10$--$25$, the budget-matched renderer lowers depth MSE by only $2$--$3\%$, against $17$--$23\%$ for the full-set renderer (Table~\ref{tab:kshot}), which uses additional pairs exclusively from the training split. The full-set results therefore reflect the combined effects of renderer augmentation and additional real supervision.
