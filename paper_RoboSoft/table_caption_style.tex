@@ -1,0 +1,25 @@
+% Sentence-case table captions with normal paragraph justification.
+% Caption text starts at the table's left edge and wraps naturally.
+% This affects only table captions; figure captions retain ieeeconf formatting.
+% Each \caption remains above its table, and float placement remains [t].
+\makeatletter
+\let\AlignTacOriginalMakeCaption\@makecaption
+\long\def\@makecaption#1#2{%
+  \ifx\@captype\@IEEEtablestring
+    \begingroup
+      \normalfont\small\upshape
+      \parindent\z@
+      \leftskip\z@
+      \rightskip\z@
+      \parfillskip\z@ plus 1fil
+      % Table captions use natural line breaking, without final-phrase boxing.
+      % The paragraph-ending control elsewhere in the paper is unchanged.
+      \let\FinalLine\@firstofone
+      \noindent#1:\enspace#2\par
+    \endgroup
+    \vskip6pt
+  \else
+    \AlignTacOriginalMakeCaption{#1}{#2}%
+  \fi
+}
+\makeatother

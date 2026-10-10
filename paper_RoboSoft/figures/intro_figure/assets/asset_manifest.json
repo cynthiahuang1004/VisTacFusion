@@ -1,0 +1,259 @@
+{
+  "figure": "AlignTac_Figure1_Updated",
+  "latest_footer": "Many pseudo-labeled contacts for supervision",
+  "canvas_mm": [
+    85,
+    115
+  ],
+  "revision": "Few registered touches and Many pseudo-labeled contacts for supervision are each on one line; original fonts, point sizes, canvas and all other artwork preserved.",
+  "image_objects": [
+    {
+      "object_name": "Original acquisition photograph | inherited unmodified crop",
+      "asset": "assets/images/acquisition_photo_crop.png",
+      "sha256": "5fdda225c1fb3bbff8c3f65d4a0bc41d3e2ec151a6492f2433f1f93ba729ae39",
+      "pixel_size": [
+        369,
+        553
+      ],
+      "position_mm": {
+        "left": 2.0,
+        "top": 7.5,
+        "width": 14.6,
+        "height": 21.880194
+      }
+    },
+    {
+      "object_name": "Experimental real RGB | fig_align row 1",
+      "asset": "assets/images/contact_01_rgb.png",
+      "sha256": "ed65bcd0eae1ce20dfc772f1fca1d97aad7c73aa54928c5f6b08284515095547",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 17.6,
+        "top": 8.6,
+        "width": 17.4,
+        "height": 17.4
+      }
+    },
+    {
+      "object_name": "Experimental real RGB | fig_align row 3",
+      "asset": "assets/images/contact_03_rgb.png",
+      "sha256": "b3f9ae6a261e6f09788d19f63878a02ccd5c6c3f47767b0634b272b5c9ac6e43",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 16.4,
+        "top": 9.8,
+        "width": 17.4,
+        "height": 17.4
+      }
+    },
+    {
+      "object_name": "Experimental real RGB | fig_align row 2",
+      "asset": "assets/images/contact_02_rgb.png",
+      "sha256": "b33116fae40e9e8e9f22c274524958d608bada1bd4b0c6e8da2991f930cde572",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 15.2,
+        "top": 11.0,
+        "width": 17.4,
+        "height": 17.4
+      }
+    },
+    {
+      "object_name": "Actual STL render | unchanged pixels; uniform resize only",
+      "asset": "assets/images/known_geometry_stl_render.png",
+      "sha256": "4afc940304632483368b135a2043c12bbcd5aa93e840439825647bcd27614d07",
+      "pixel_size": [
+        1280,
+        1235
+      ],
+      "position_mm": {
+        "left": 57.56275,
+        "top": 7.7,
+        "width": 24.874472,
+        "height": 24.0
+      }
+    },
+    {
+      "object_name": "Unlabeled image | same unchanged RGB used in both evidence views",
+      "asset": "assets/images/contact_02_rgb.png",
+      "sha256": "b33116fae40e9e8e9f22c274524958d608bada1bd4b0c6e8da2991f930cde572",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 35.7,
+        "top": 35.6,
+        "width": 13.6,
+        "height": 13.6
+      }
+    },
+    {
+      "object_name": "Experimental evidence | Initial | identical real RGB",
+      "asset": "assets/images/contact_02_rgb.png",
+      "sha256": "b33116fae40e9e8e9f22c274524958d608bada1bd4b0c6e8da2991f930cde572",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 2.0,
+        "top": 49.0,
+        "width": 25.0,
+        "height": 25.0
+      }
+    },
+    {
+      "object_name": "Experimental evidence | Aligned | identical real RGB",
+      "asset": "assets/images/contact_02_rgb.png",
+      "sha256": "b33116fae40e9e8e9f22c274524958d608bada1bd4b0c6e8da2991f930cde572",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 58.0,
+        "top": 49.0,
+        "width": 25.0,
+        "height": 25.0
+      }
+    },
+    {
+      "object_name": "Registered-set illustration | unchanged seed RGB",
+      "asset": "assets/images/registered_pair_rgb.png",
+      "sha256": "dce8c4cfa8dd69ee4244a1482181cc65b933eae7f187c68fc418fe094dc6612f",
+      "pixel_size": [
+        224,
+        224
+      ],
+      "position_mm": {
+        "left": 35.4,
+        "top": 70.5,
+        "width": 6.9,
+        "height": 6.9
+      }
+    },
+    {
+      "object_name": "Registered-set illustration | unchanged seed geometry",
+      "asset": "assets/images/registered_pair_geometry.png",
+      "sha256": "47ccf03bff0e555edc13bf44a628787b857a9b3ad07e2423794aae79b3975e90",
+      "pixel_size": [
+        224,
+        224
+      ],
+      "position_mm": {
+        "left": 42.7,
+        "top": 70.5,
+        "width": 6.9,
+        "height": 6.9
+      }
+    },
+    {
+      "object_name": "Output 1 | unchanged real RGB",
+      "asset": "assets/images/contact_01_rgb.png",
+      "sha256": "ed65bcd0eae1ce20dfc772f1fca1d97aad7c73aa54928c5f6b08284515095547",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 2.8,
+        "top": 92.3,
+        "width": 10.8,
+        "height": 10.8
+      }
+    },
+    {
+      "object_name": "Output 1 | unchanged aligned depth; not GT",
+      "asset": "assets/images/contact_01_aligned_depth.png",
+      "sha256": "6adf5bc50c0a8785f4ee6f99716dfc5348eaa736b8ddc074f8c9a60d0d9c160e",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 15.4,
+        "top": 92.3,
+        "width": 10.8,
+        "height": 10.8
+      }
+    },
+    {
+      "object_name": "Output 2 | unchanged real RGB",
+      "asset": "assets/images/contact_02_rgb.png",
+      "sha256": "b33116fae40e9e8e9f22c274524958d608bada1bd4b0c6e8da2991f930cde572",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 30.8,
+        "top": 92.3,
+        "width": 10.8,
+        "height": 10.8
+      }
+    },
+    {
+      "object_name": "Output 2 | unchanged aligned depth; not GT",
+      "asset": "assets/images/contact_02_aligned_depth.png",
+      "sha256": "9a963f5217d39e84a2e45afdaa53241b6ec1ff976b6cf56d0e6f3b7245dabcc8",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 43.4,
+        "top": 92.3,
+        "width": 10.8,
+        "height": 10.8
+      }
+    },
+    {
+      "object_name": "Output 3 | unchanged real RGB",
+      "asset": "assets/images/contact_03_rgb.png",
+      "sha256": "b3f9ae6a261e6f09788d19f63878a02ccd5c6c3f47767b0634b272b5c9ac6e43",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 58.8,
+        "top": 92.3,
+        "width": 10.8,
+        "height": 10.8
+      }
+    },
+    {
+      "object_name": "Output 3 | unchanged aligned depth; not GT",
+      "asset": "assets/images/contact_03_aligned_depth.png",
+      "sha256": "d2007ced12d7881c5c54e55e96cd45e5db684a875c950c0eeda32acb196f6584",
+      "pixel_size": [
+        178,
+        178
+      ],
+      "position_mm": {
+        "left": 71.4,
+        "top": 92.3,
+        "width": 10.8,
+        "height": 10.8
+      }
+    }
+  ],
+  "unique_image_assets": 10,
+  "stl": {
+    "path": "assets/geometry/pattern_06_5_lines_angle_1.stl",
+    "sha256": "621228a36db4fa7d29329c17f4b062371b09424c88105ca63040970a1f119dc0"
+  },
+  "contour_definition_asset": "assets/editable_vectors/mesh_support_contours.json",
+  "contour_paths_unchanged": true,
+  "experimental_image_bytes_unchanged": true
+}

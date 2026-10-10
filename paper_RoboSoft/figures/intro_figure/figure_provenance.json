@@ -1,0 +1,108 @@
+{
+  "source_archive": "_draft__RoboSoft2027(2).zip",
+  "baseline_archive": "AlignTac_normal_table_captions_LaTeX.zip",
+  "purpose": "Registration and simulated-appearance motivation integrated with the approved AlignTac concept figure",
+  "source_same_contact_checks": {
+    "real.png equals real2.png pixel-for-pixel": true,
+    "gt.png equals sim_depth.png pixel-for-pixel": true
+  },
+  "assets": [
+    {
+      "local": "motivation_assets/contact_01_aligned_depth.png",
+      "source": "accepted revised Figure 1: assets/images/contact_01_aligned_depth.png",
+      "sha256": "6adf5bc50c0a8785f4ee6f99716dfc5348eaa736b8ddc074f8c9a60d0d9c160e"
+    },
+    {
+      "local": "motivation_assets/contact_01_rgb.png",
+      "source": "accepted revised Figure 1: assets/images/contact_01_rgb.png",
+      "sha256": "ed65bcd0eae1ce20dfc772f1fca1d97aad7c73aa54928c5f6b08284515095547"
+    },
+    {
+      "local": "motivation_assets/contact_02_aligned_depth.png",
+      "source": "accepted revised Figure 1: assets/images/contact_02_aligned_depth.png",
+      "sha256": "9a963f5217d39e84a2e45afdaa53241b6ec1ff976b6cf56d0e6f3b7245dabcc8"
+    },
+    {
+      "local": "motivation_assets/contact_02_rgb.png",
+      "source": "accepted revised Figure 1: assets/images/contact_02_rgb.png",
+      "sha256": "b33116fae40e9e8e9f22c274524958d608bada1bd4b0c6e8da2991f930cde572"
+    },
+    {
+      "local": "motivation_assets/contact_03_aligned_depth.png",
+      "source": "accepted revised Figure 1: assets/images/contact_03_aligned_depth.png",
+      "sha256": "d2007ced12d7881c5c54e55e96cd45e5db684a875c950c0eeda32acb196f6584"
+    },
+    {
+      "local": "motivation_assets/contact_03_rgb.png",
+      "source": "accepted revised Figure 1: assets/images/contact_03_rgb.png",
+      "sha256": "b3f9ae6a261e6f09788d19f63878a02ccd5c6c3f47767b0634b272b5c9ac6e43"
+    },
+    {
+      "local": "motivation_assets/gan.png",
+      "source": "figures/teaser/gan.png",
+      "sha256": "57ea1fb730a2f24c5f9525489c192534bc9c441721b6a458f29170479809bd4c"
+    },
+    {
+      "local": "motivation_assets/gt.png",
+      "source": "figures/teaser/gt.png",
+      "sha256": "8284848d34265d196b6c1e52ffa21e6f9f46cf23ad82e3bdf7c4377af0f0a829"
+    },
+    {
+      "local": "motivation_assets/known_geometry_stl_render.png",
+      "source": "accepted revised Figure 1: assets/images/known_geometry_stl_render.png",
+      "sha256": "4afc940304632483368b135a2043c12bbcd5aa93e840439825647bcd27614d07"
+    },
+    {
+      "local": "motivation_assets/mesh_aligned.png",
+      "source": "figures/teaser/mesh_aligned.png",
+      "sha256": "50e446ba48796853528ec8df89800fa18149ac9c7b72f34b40125af107615463"
+    },
+    {
+      "local": "motivation_assets/mesh_teacher.png",
+      "source": "figures/teaser/mesh_teacher.png",
+      "sha256": "5dd95fc37603b4f9dd302d297eb3fe9b9f305dd935cb689e374c30bacafba5a6"
+    },
+    {
+      "local": "motivation_assets/pbr.png",
+      "source": "figures/teaser/pbr.png",
+      "sha256": "1e62d46d62bf36066df136fe69f02842e9ae9001b9a1d87df40595f66ce19314"
+    },
+    {
+      "local": "motivation_assets/real.png",
+      "source": "figures/teaser/real.png",
+      "sha256": "4daa7ca2dcf77e4087f09e80d591e46d70c6de09ac520d1b4d9cba81a05b5fe3"
+    },
+    {
+      "local": "motivation_assets/real_contact_crop.png",
+      "source": "figures/teaser/real_contact_crop.png",
+      "sha256": "814bc7c2804390e132bcd979c22ab93e56d745bd4ca2fae7fdc0422e7dee1c62"
+    },
+    {
+      "local": "motivation_assets/registered_pair_geometry.png",
+      "source": "accepted revised Figure 1: assets/images/registered_pair_geometry.png",
+      "sha256": "47ccf03bff0e555edc13bf44a628787b857a9b3ad07e2423794aae79b3975e90"
+    },
+    {
+      "local": "motivation_assets/registered_pair_rgb.png",
+      "source": "accepted revised Figure 1: assets/images/registered_pair_rgb.png",
+      "sha256": "dce8c4cfa8dd69ee4244a1482181cc65b933eae7f187c68fc418fe094dc6612f"
+    },
+    {
+      "local": "motivation_assets/sim_contact.png",
+      "source": "figures/teaser/sim_contact.png",
+      "sha256": "0b29f7191474d6f5bf2bb877527843c207149752d7910d3740c0f6774b73df87"
+    },
+    {
+      "local": "motivation_assets/sim_depth.png",
+      "source": "figures/teaser/sim_depth.png",
+      "sha256": "8284848d34265d196b6c1e52ffa21e6f9f46cf23ad82e3bdf7c4377af0f0a829"
+    }
+  ],
+  "notes": [
+    "PBR and Learned are alternative supplied renderers.",
+    "Registered depth and mesh-aligned depth remain different target sources.",
+    "The first three routes use the supplied same-contact RGB/depth/rendering example.",
+    "The bottom pairs show additional objects and are retained from the accepted figure.",
+    "Shapes/arrows are schematic; no new experiments or generated evidence."
+  ]
+}

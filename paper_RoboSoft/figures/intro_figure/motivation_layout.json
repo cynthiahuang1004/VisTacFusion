@@ -1,0 +1,835 @@
+{
+  "width": 520,
+  "height": 615,
+  "colors": {
+    "ink": "242831",
+    "muted": "626B76",
+    "line": "BDC3CC",
+    "a": "9B6254",
+    "afill": "FCF8F6",
+    "aline": "D8BEB5",
+    "b": "3F6C91",
+    "bfill": "F4F8FC",
+    "bline": "C1D4E2",
+    "purple": "7852BF",
+    "pfill": "F6F2FC",
+    "pline": "C6B1E6",
+    "orange": "DF5C12",
+    "ofill": "FFF1E7",
+    "oline": "ECB48D",
+    "white": "FFFFFF"
+  },
+  "elements": [
+    {
+      "type": "rect",
+      "name": "a registration route",
+      "x": 0,
+      "y": 0,
+      "w": 520,
+      "h": 126,
+      "fill": "FCF8F6",
+      "stroke": "D8BEB5",
+      "lw": 0.75,
+      "r": 4
+    },
+    {
+      "type": "rect",
+      "name": "b appearance-rendering route",
+      "x": 0,
+      "y": 136,
+      "w": 520,
+      "h": 126,
+      "fill": "F4F8FC",
+      "stroke": "C1D4E2",
+      "lw": 0.75,
+      "r": 4
+    },
+    {
+      "type": "rect",
+      "name": "c AlignTac route",
+      "x": 0,
+      "y": 276,
+      "w": 520,
+      "h": 339,
+      "fill": "F6F2FC",
+      "stroke": "C6B1E6",
+      "lw": 0.9,
+      "r": 4
+    },
+    {
+      "type": "text",
+      "name": "a title",
+      "x": 14,
+      "y": 9,
+      "w": 280,
+      "h": 22,
+      "text": "(a) Register real contacts",
+      "size": 17,
+      "color": "9B6254",
+      "bold": true,
+      "align": "left",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "a bottleneck",
+      "x": 298,
+      "y": 10,
+      "w": 207,
+      "h": 21,
+      "text": "One registered pose per label",
+      "size": 13.6,
+      "color": "9B6254",
+      "bold": false,
+      "align": "right",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "image",
+      "name": "real acquisition photograph",
+      "x": 24.753424657534246,
+      "y": 37.0,
+      "w": 64.4931506849315,
+      "h": 66.0,
+      "file": "real_contact_crop.png"
+    },
+    {
+      "type": "wire",
+      "name": "registration produces a labeled pair",
+      "pts": [
+        [
+          101,
+          70
+        ],
+        [
+          163,
+          70
+        ]
+      ],
+      "color": "9B6254",
+      "lw": 0.9,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "text",
+      "name": "registered state on acquisition arrow",
+      "x": 111,
+      "y": 46,
+      "w": 40,
+      "h": 18,
+      "text": "$q^\\ast$",
+      "size": 14,
+      "color": "9B6254",
+      "bold": false,
+      "align": "center",
+      "math": true,
+      "italic": false
+    },
+    {
+      "type": "image",
+      "name": "a same-contact real image",
+      "x": 187.0,
+      "y": 36.0,
+      "w": 68.0,
+      "h": 68.0,
+      "file": "real.png"
+    },
+    {
+      "type": "image",
+      "name": "a registered geometric depth",
+      "x": 395.0,
+      "y": 36.0,
+      "w": 68.0,
+      "h": 68.0,
+      "file": "gt.png"
+    },
+    {
+      "type": "text",
+      "name": "pair plus",
+      "x": 296,
+      "y": 55,
+      "w": 30,
+      "h": 26,
+      "text": "+",
+      "size": 21,
+      "color": "626B76",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "a photo caption",
+      "x": 5,
+      "y": 108,
+      "w": 111,
+      "h": 16,
+      "text": "Registered press",
+      "size": 13,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "a image caption",
+      "x": 174,
+      "y": 108,
+      "w": 96,
+      "h": 16,
+      "text": "Real image",
+      "size": 13,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "a geometry caption",
+      "x": 359,
+      "y": 108,
+      "w": 141,
+      "h": 16,
+      "text": "Registered depth",
+      "size": 13,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "b title",
+      "x": 14,
+      "y": 145,
+      "w": 245,
+      "h": 22,
+      "text": "(b) Simulate contacts",
+      "size": 17,
+      "color": "3F6C91",
+      "bold": true,
+      "align": "left",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "b bottleneck",
+      "x": 259,
+      "y": 147,
+      "w": 246,
+      "h": 20,
+      "text": "Renderer fitting + appearance gap",
+      "size": 13.4,
+      "color": "3F6C91",
+      "bold": false,
+      "align": "right",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "image",
+      "name": "simulated sensor-contact scene",
+      "x": 24.0,
+      "y": 173.0,
+      "w": 66.0,
+      "h": 66.0,
+      "file": "sim_contact.png"
+    },
+    {
+      "type": "image",
+      "name": "b same-contact simulated depth",
+      "x": 145.0,
+      "y": 175.0,
+      "w": 64.0,
+      "h": 64.0,
+      "file": "sim_depth.png"
+    },
+    {
+      "type": "rect",
+      "name": "b alternative rendered appearances",
+      "x": 276,
+      "y": 169,
+      "w": 216,
+      "h": 91,
+      "fill": "FFFFFF",
+      "stroke": "C1D4E2",
+      "lw": 0.55,
+      "r": 2
+    },
+    {
+      "type": "image",
+      "name": "b PBR tactile rendering",
+      "x": 284.0,
+      "y": 175.0,
+      "w": 64.0,
+      "h": 64.0,
+      "file": "pbr.png"
+    },
+    {
+      "type": "image",
+      "name": "b learned tactile rendering",
+      "x": 410.0,
+      "y": 175.0,
+      "w": 64.0,
+      "h": 64.0,
+      "file": "gan.png"
+    },
+    {
+      "type": "wire",
+      "name": "simulation to geometric target",
+      "pts": [
+        [
+          100,
+          207
+        ],
+        [
+          135,
+          207
+        ]
+      ],
+      "color": "3F6C91",
+      "lw": 0.9,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "wire",
+      "name": "geometry to rendered appearance",
+      "pts": [
+        [
+          219,
+          207
+        ],
+        [
+          274,
+          207
+        ]
+      ],
+      "color": "3F6C91",
+      "lw": 0.9,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "text",
+      "name": "render operation",
+      "x": 219,
+      "y": 183,
+      "w": 55,
+      "h": 17,
+      "text": "render",
+      "size": 12.5,
+      "color": "3F6C91",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "b scene caption",
+      "x": 7,
+      "y": 242,
+      "w": 101,
+      "h": 16,
+      "text": "Simulated contact",
+      "size": 12.8,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "b depth caption",
+      "x": 136,
+      "y": 242,
+      "w": 82,
+      "h": 16,
+      "text": "Depth target",
+      "size": 13,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "b pbr caption",
+      "x": 284,
+      "y": 242,
+      "w": 64,
+      "h": 16,
+      "text": "PBR",
+      "size": 13,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "b learned caption",
+      "x": 400,
+      "y": 242,
+      "w": 84,
+      "h": 16,
+      "text": "Learned",
+      "size": 13,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "c title",
+      "x": 14,
+      "y": 287,
+      "w": 492,
+      "h": 23,
+      "text": "(c) AlignTac: real appearance + aligned geometry",
+      "size": 16.6,
+      "color": "7852BF",
+      "bold": true,
+      "align": "left",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "real input label",
+      "x": 80,
+      "y": 315,
+      "w": 195,
+      "h": 18,
+      "text": "Unlabeled real image",
+      "size": 14,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "geometry input label",
+      "x": 281,
+      "y": 315,
+      "w": 225,
+      "h": 18,
+      "text": "Known simulated geometry",
+      "size": 14,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "image",
+      "name": "c same-contact real image",
+      "x": 148.0,
+      "y": 339.0,
+      "w": 58.00000000000001,
+      "h": 58.00000000000001,
+      "file": "real.png"
+    },
+    {
+      "type": "image",
+      "name": "c known object mesh rendering",
+      "x": 360.0,
+      "y": 337.107421875,
+      "w": 63.0,
+      "h": 60.78515625,
+      "file": "known_geometry_stl_render.png"
+    },
+    {
+      "type": "text",
+      "name": "initial-depth label",
+      "x": 10,
+      "y": 403,
+      "w": 126,
+      "h": 17,
+      "text": "Initial geometry",
+      "size": 13.8,
+      "color": "242831",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "text",
+      "name": "aligned-depth label",
+      "x": 382,
+      "y": 403,
+      "w": 134,
+      "h": 17,
+      "text": "Aligned geometry",
+      "size": 13.8,
+      "color": "DF5C12",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "image",
+      "name": "mesh at teacher-estimated pose",
+      "x": 33.0,
+      "y": 425.0,
+      "w": 78.0,
+      "h": 78.0,
+      "file": "mesh_teacher.png"
+    },
+    {
+      "type": "image",
+      "name": "mesh at aligned contact state",
+      "x": 409.0,
+      "y": 425.0,
+      "w": 78.0,
+      "h": 78.0,
+      "file": "mesh_aligned.png"
+    },
+    {
+      "type": "rect",
+      "name": "AlignTac operation",
+      "x": 207,
+      "y": 446,
+      "w": 106,
+      "h": 36,
+      "fill": "FFFFFF",
+      "stroke": "7852BF",
+      "lw": 1.1,
+      "r": 2
+    },
+    {
+      "type": "text",
+      "name": "AlignTac method name",
+      "x": 211,
+      "y": 452,
+      "w": 98,
+      "h": 25,
+      "text": "AlignTac",
+      "size": 19,
+      "color": "7852BF",
+      "bold": true,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "wire",
+      "name": "initial geometry is corrected",
+      "pts": [
+        [
+          115,
+          464
+        ],
+        [
+          203,
+          464
+        ]
+      ],
+      "color": "7852BF",
+      "lw": 1.1,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "wire",
+      "name": "aligned geometry becomes the pseudo-label",
+      "pts": [
+        [
+          317,
+          464
+        ],
+        [
+          405,
+          464
+        ]
+      ],
+      "color": "DF5C12",
+      "lw": 1.1,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "wire",
+      "name": "real appearance input",
+      "pts": [
+        [
+          177,
+          401
+        ],
+        [
+          177,
+          428
+        ],
+        [
+          241,
+          428
+        ],
+        [
+          241,
+          443
+        ]
+      ],
+      "color": "7852BF",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "wire",
+      "name": "known geometric input",
+      "pts": [
+        [
+          391.5,
+          402
+        ],
+        [
+          391.5,
+          428
+        ],
+        [
+          279,
+          428
+        ],
+        [
+          279,
+          443
+        ]
+      ],
+      "color": "626B76",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "image",
+      "name": "registered real tactile training example",
+      "x": 231.0,
+      "y": 494.0,
+      "w": 28.0,
+      "h": 28.0,
+      "file": "registered_pair_rgb.png"
+    },
+    {
+      "type": "image",
+      "name": "registered geometric training example",
+      "x": 263.0,
+      "y": 494.0,
+      "w": 28.0,
+      "h": 28.0,
+      "file": "registered_pair_geometry.png"
+    },
+    {
+      "type": "wire",
+      "name": "registered examples train the alignment",
+      "pts": [
+        [
+          261,
+          491
+        ],
+        [
+          261,
+          485
+        ]
+      ],
+      "color": "7852BF",
+      "lw": 0.95,
+      "dash": true,
+      "arrow": true
+    },
+    {
+      "type": "text",
+      "name": "few registered touches label",
+      "x": 138,
+      "y": 526,
+      "w": 245,
+      "h": 18,
+      "text": "Few registered touches",
+      "size": 14,
+      "color": "7852BF",
+      "bold": false,
+      "align": "center",
+      "math": false,
+      "italic": false
+    },
+    {
+      "type": "wire",
+      "name": "aligned pseudo-label route to more real contacts",
+      "pts": [
+        [
+          448,
+          507
+        ],
+        [
+          448,
+          550
+        ]
+      ],
+      "color": "DF5C12",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "wire",
+      "name": "pseudo-label collection branch",
+      "pts": [
+        [
+          82,
+          550
+        ],
+        [
+          448,
+          550
+        ]
+      ],
+      "color": "DF5C12",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": false
+    },
+    {
+      "type": "wire",
+      "name": "additional labeled pair branch 1",
+      "pts": [
+        [
+          81,
+          550
+        ],
+        [
+          81,
+          560
+        ]
+      ],
+      "color": "DF5C12",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "image",
+      "name": "additional contact 1 real image",
+      "x": 48.0,
+      "y": 563.0,
+      "w": 31.0,
+      "h": 31.0,
+      "file": "contact_01_rgb.png"
+    },
+    {
+      "type": "image",
+      "name": "additional contact 1 aligned depth",
+      "x": 83.0,
+      "y": 563.0,
+      "w": 31.0,
+      "h": 31.0,
+      "file": "contact_01_aligned_depth.png"
+    },
+    {
+      "type": "wire",
+      "name": "additional labeled pair branch 2",
+      "pts": [
+        [
+          257,
+          550
+        ],
+        [
+          257,
+          560
+        ]
+      ],
+      "color": "DF5C12",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "image",
+      "name": "additional contact 2 real image",
+      "x": 224.0,
+      "y": 563.0,
+      "w": 31.0,
+      "h": 31.0,
+      "file": "contact_02_rgb.png"
+    },
+    {
+      "type": "image",
+      "name": "additional contact 2 aligned depth",
+      "x": 259.0,
+      "y": 563.0,
+      "w": 31.0,
+      "h": 31.0,
+      "file": "contact_02_aligned_depth.png"
+    },
+    {
+      "type": "wire",
+      "name": "additional labeled pair branch 3",
+      "pts": [
+        [
+          433,
+          550
+        ],
+        [
+          433,
+          560
+        ]
+      ],
+      "color": "DF5C12",
+      "lw": 0.85,
+      "dash": false,
+      "arrow": true
+    },
+    {
+      "type": "image",
+      "name": "additional contact 3 real image",
+      "x": 400.0,
+      "y": 563.0,
+      "w": 31.0,
+      "h": 31.0,
+      "file": "contact_03_rgb.png"
+    },
+    {
+      "type": "image",
+      "name": "additional contact 3 aligned depth",
+      "x": 435.0,
+      "y": 563.0,
+      "w": 31.0,
+      "h": 31.0,
+      "file": "contact_03_aligned_depth.png"
+    },
+    {
+      "type": "text",
+      "name": "many pseudo labeled contacts label",
+      "x": 12,
+      "y": 596,
+      "w": 496,
+      "h": 18,
+      "text": "Many pseudo-labeled contacts for supervision",
+      "size": 14.6,
+      "color": "DF5C12",
+      "bold": true,
+      "align": "center",
+      "math": false,
+      "italic": false
+    }
+  ]
+}
