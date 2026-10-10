@@ -4,13 +4,6 @@ Tactile perception provides robots with contact feedback for dexterous manipulat
 
 In real data collection (Fig.~\ref{fig:teaser}a), repeatable pressing motions do not guarantee submillimeter image--geometry registration. Systematic kinematic errors can bias the estimated contact state, including on Franka manipulators~\cite{franzese2025mukca}, while sensor mounting and object placement introduce additional uncertainty. Registering individual contacts is labor-intensive, and changes in sensor configuration or capture conditions may require re-registration, limiting the labeled set.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/fig_teaser.pdf}
-    \caption{\textbf{Three ways to label real tactile contacts.} (a) Registering real contacts gives correct appearance, but every label needs a contact state read from the robot, which carries kinematic, mounting and placement errors and must be redone per session. (b) Simulation gives free geometry, but the rendered appearance must be calibrated per sensor or fitted on real image--label pairs. (c) AlignTac keeps the real image fixed and lets a learned aligner move the mesh state, so unlabeled real contacts receive geometry labels from $K$ registered contacts, without further registration or RGB synthesis.}
-    \label{fig:teaser}
-\end{figure}
-
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.96\textwidth]{figures/fig_arch_training_inference.pdf}
