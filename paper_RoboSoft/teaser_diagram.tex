@@ -15,39 +15,39 @@
  wire/.style={draw=black!65,line width=.6pt},
  arrow/.style={wire,-{Stealth[length=3.6pt,width=2.8pt]}},
  lab/.style={font=\scriptsize,align=center,text=black!80},
- tiny/.style={font=\tiny,align=center,text=black!65},
+ tiny/.style={font=\tiny,align=center,text=black!65,inner sep=1pt},
  thumb/.style={inner sep=0pt},
  cost/.style={font=\tiny\itshape,align=center,text=black!70},
 }
 \newcommand{\thumbimg}[2][1.0cm]{\includegraphics[width=#1]{figures/teaser/#2}}
 \begin{document}
 \begin{tikzpicture}[x=1cm,y=1cm]
-\newcommand{\panel}[5]{\filldraw[panel,fill=#2,draw=#3] (#1,0) rectangle (#1+5.5,5.05);
+\newcommand{\panel}[5]{\filldraw[panel,fill=#2,draw=#3] (#1,0.28) rectangle (#1+5.5,5.05);
  \node[font=\footnotesize\bfseries,text=#5,anchor=west] at (#1+0.18,4.78) {#4};}
 \panel{0}{redfill!45}{rededge!55}{(a) Register real contacts}{rededge}
 \panel{5.75}{bluefill!45}{blueedge!55}{(b) Simulate contacts}{blueedge}
-\panel{11.5}{purplefill!45}{purpleedge!60}{(c) AlignTac (ours): align the mesh to the real image}{purpleedge}
+\panel{11.5}{purplefill!45}{purpleedge!60}{(c) AlignTac: align the mesh to the real image}{purpleedge}
 
 % ---------- (a) photo: robot presses the sensor on the object; q* comes from the robot pose ----------
 \node[thumb,anchor=north west] (pa) at (0.2,4.55) {\thumbimg[1.95cm]{real_contact_crop.png}};
-\node[font=\scriptsize,text=rededge,anchor=west,align=left] at (2.35,4.2) {contact state $q^\ast$ is read\\[-2pt]from the robot pose};
-\node[tiny,anchor=west,align=left] at (2.35,3.35) {kinematic, mounting and\\[-2pt]placement errors bias $q^\ast$;\\[-2pt]redo for each session or sensor};
+\node[font=\scriptsize,text=rededge,anchor=west,align=left] at (2.35,4.2) {contact state $q^\ast$ is read\\[0.5pt]from the robot pose};
+\node[tiny,anchor=west,align=left] at (2.35,3.35) {kinematic, mounting and\\[0.5pt]placement errors bias $q^\ast$;\\[0.5pt]redo for each session or sensor};
 \node[thumb] (a1) at (1.0,1.55) {\thumbimg[1.1cm]{real.png}};
 \node[thumb] (a2) at (3.3,1.55) {\thumbimg[1.1cm]{gt.png}};
 \draw[arrow] (a1.east) -- (a2.west); \node[tiny,anchor=south] at (2.15,2.15) {project mesh at $q^\ast$};
 \node[tiny,anchor=north] at (a1.south) {real image}; \node[tiny,anchor=north] at (a2.south) {registered label};
-\node[cost,anchor=west,align=left] at (4.0,1.55) {cost: one\\[-2pt]registered\\[-2pt]pose per\\[-2pt]label};
+\node[cost,anchor=west,align=left] at (4.0,1.55) {cost: one\\[0.5pt]registered\\[0.5pt]pose per\\[0.5pt]label};
 
 % ---------- (b) render: Blender scene of the sensor on the mesh; calibrated or fitted ----------
 \node[thumb,anchor=north west] (pb) at (5.95,4.55) {\thumbimg[1.95cm]{sim_contact.png}};
-\node[font=\scriptsize,text=blueedge,anchor=west,align=left] at (8.1,4.2) {mesh gives free geometry;\\[-2pt]appearance must be rendered};
-\node[tiny,anchor=west,align=left] at (8.1,3.3) {camera, LEDs, gel and contact\\[-2pt]model calibrated per sensor, or\\[-2pt]a renderer fitted on real pairs};
+\node[font=\scriptsize,text=blueedge,anchor=west,align=left] at (8.1,4.2) {mesh gives free geometry;\\[0.5pt]appearance must be rendered};
+\node[tiny,anchor=west,align=left] at (8.1,3.3) {camera, LEDs, gel and contact\\[0.5pt]model calibrated per sensor, or\\[0.5pt]a renderer fitted on real pairs};
 \node[thumb] (b1) at (6.65,1.55) {\thumbimg[1.0cm]{sim_depth.png}};
 \node[thumb] (b2) at (8.1,1.55) {\thumbimg[1.0cm]{pbr.png}};
 \node[thumb] (b3) at (9.25,1.55) {\thumbimg[1.0cm]{gan.png}};
 \draw[arrow] (b1.east) -- (b2.west); \node[tiny,anchor=south] at (7.375,2.1) {render};
 \node[tiny,anchor=north] at (b1.south) {sim depth (label)}; \node[tiny,anchor=north] at (b2.south) {PBR}; \node[tiny,anchor=north] at (b3.south) {learned};
-\node[cost,anchor=west,align=left] at (9.9,1.55) {cost: calibration\\[-2pt]or real pairs;\\[-2pt]appearance\\[-2pt]gap remains};
+\node[cost,anchor=west,align=left] at (9.9,1.55) {cost: calibration\\[0.5pt]or real pairs;\\[0.5pt]appearance\\[0.5pt]gap remains};
 
 % ---------- (c) fixed real image; the aligner moves the mesh state ----------
 \node[thumb,anchor=north west] (cr) at (11.7,4.5) {\thumbimg[1.6cm]{real2.png}};
@@ -57,14 +57,14 @@
  \draw[purpleedge,line width=.65pt] (0.1,0.8) -- (1.3,0.8) -- (1.5,1.4) -- (0.3,1.4) -- cycle;
  \draw[arrow,draw=purpleedge,line width=.65pt] (1.75,0.35) to[bend left=40] (1.3,0.15);
  \draw[arrow,draw=purpleedge,line width=.65pt] (2.15,0.85) -- (1.75,0.85);
- \node[tiny,text=purpleedge,anchor=north,align=center] at (1.1,0.02) {aligner $\mathcal{A}$ moves\\[-2pt]the mesh state $q$};
- \node[tiny,anchor=south,align=center] at (1.3,1.5) {learned from the $K$ registered contacts\\[-2pt]by perturbing their $q^\ast$};
+ \node[tiny,text=purpleedge,anchor=north,align=center] at (1.1,0.02) {aligner $\mathcal{A}$ moves\\[0.5pt]the mesh state $q$};
+ \node[tiny,anchor=south,align=center] at (1.3,1.5) {learned from the $K$ registered contacts\\[0.5pt]by perturbing their $q^\ast$};
 \end{scope}
 \node[thumb] (c1) at (12.5,1.3) {\thumbimg[1.1cm]{mesh_teacher.png}};
 \node[thumb] (c2) at (14.8,1.3) {\thumbimg[1.1cm]{mesh_aligned.png}};
 \draw[purpleedge,line width=.9pt] ($(c2.south west)+(-0.03,-0.03)$) rectangle ($(c2.north east)+(0.03,0.03)$);
 \draw[arrow,draw=purpleedge] (c1.east) -- (c2.west); \node[tiny,text=purpleedge,anchor=south] at (13.65,1.9) {align};
 \node[tiny,anchor=north] at (c1.south) {mesh at teacher pose}; \node[tiny,anchor=north] at (c2.south) {aligned mesh = label};
-\node[cost,anchor=west,align=left] at (15.5,1.3) {cost: $K$\\[-2pt]registered\\[-2pt]contacts;\\[-2pt]the rest\\[-2pt]unlabeled};
+\node[cost,anchor=west,align=left] at (15.5,1.3) {cost: $K$\\[0.5pt]registered\\[0.5pt]contacts;\\[0.5pt]the rest\\[0.5pt]unlabeled};
 \end{tikzpicture}
 \end{document}

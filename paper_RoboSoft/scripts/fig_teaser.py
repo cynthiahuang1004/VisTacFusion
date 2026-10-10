@@ -24,8 +24,21 @@ sc = sorted(x for x in sc if x[1] > 0.7); t = sc[-1][2]; f = fits[t]   # a frame
 real = np.array(Image.open(t).convert("RGB"))
 gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
 tp = f["tp"]; m0 = B.gt_depth_mm(OBJ, tp[0], tp[1], tp[2], f["p"]); m1 = B.gt_depth_mm(OBJ, *f["pose"], f["p"])
-sim_d = np.load(f"{SIM}/raw_data/0000_gt.npy") * 1000
-pbr = np.array(Image.open(f"{SIM}/samples/0000.png").convert("RGB")); gan = np.array(Image.open(f"{SIM}/samples_gT/0000.png").convert("RGB"))
+# simulated contact of the same object whose depth map is closest to the real frame's registered label (same contact, approximately)
+import glob
+best = None
+for p in glob.glob(f"{G}/renders_v3/{OBJ}/session_*/sensor_0000/raw_data/*_gt.npy"):
+    d = np.load(p) * 1000
+    if d.shape != gt.shape:
+        continue
+    a_, b_ = d > 0.05, gt > 0.05; iou = (a_ & b_).sum() / max(1, (a_ | b_).sum()); err = np.abs(d - gt).mean()
+    sc_ = iou - err
+    if best is None or sc_ > best[0]:
+        best = (sc_, p, iou, err)
+_, p, iou_s, err_s = best; SIMU = p.split("/raw_data/")[0]; sidx = os.path.basename(p)[:4]
+print("closest simulated contact:", p, f"IoU={iou_s:.2f} mean|dd|={err_s:.3f}mm")
+sim_d = np.load(p) * 1000
+pbr = np.array(Image.open(f"{SIMU}/samples/{sidx}.png").convert("RGB")); gan = np.array(Image.open(f"{SIMU}/samples_gT/{sidx}.png").convert("RGB"))
 
 W, H = 3.45, 1.70
 fig = plt.figure(figsize=(W, H))
