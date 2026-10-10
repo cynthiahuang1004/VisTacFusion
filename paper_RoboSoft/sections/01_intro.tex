@@ -30,7 +30,7 @@ AlignTac learns this alignment from a small registered set (Fig.~\ref{fig:mapl})
 We evaluate AlignTac against self-training and synthetic augmentation on two GelSlim~4.0 variants: marker-free (sensor A) and dot-marker (sensor B). Experiments use limited real-label budgets. Our contributions are:
 \begin{itemize}
     \item A real-image--geometry alignment framework that learns state corrections from perturbations of a small registered set and generates dense geometry and pose \FinalLine{supervision using real tactile images.}
-    \item An alignment ablation showing gains in pseudo-label quality and student accuracy, with label efficiency on both sensor variants.
-    \item A second-session study in which images captured after object re-placement are labeled by the same aligner, without re-registration.
+    \item An alignment ablation showing gains in pseudo-label quality and student accuracy, with label efficiency on both sensor variants and zero-shot transfer to a second session.
+    \item Label-free adaptation to that session: images captured after re-placement are labeled by the same aligner.
     \item A matched-budget renderer study identifying complementary benefits of tactile RGB simulation for held-out-object pose coverage and session changes, while accounting for the real labels used to fit the renderer.
 \end{itemize}
