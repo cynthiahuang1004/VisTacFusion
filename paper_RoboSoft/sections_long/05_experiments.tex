@@ -42,7 +42,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabrcablii
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Pseudo-label source ablation under the clean protocol} ($\Kreal=25$, 50 epochs, students renderer-free; three-seed means for rows 1, 4 and 5). Left: pseudo-label quality against withheld training GT; right: student accuracy on the $530$ held-out test frames.}
+\caption{\textbf{Pseudo-label source ablation under the clean protocol} ($\Kreal=25$, 50 epochs, students renderer-free; student metrics are three-seed means). Left: pseudo-label quality against withheld training GT; right: student accuracy on the $530$ held-out test frames.}
 \label{tab:rcablT}
 \end{table}
 
@@ -76,7 +76,9 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 
 \subsection{Label Efficiency}
 \label{sec:kshot}
-Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} compare, under the same training-label budget, real-only training, co-training with either renderer, self-training on the teacher's own predictions (Sec.~\ref{sec:ablation}) and AlignTac. Each AlignTac run uses the $2{,}997$--$4{,}077$ training frames outside the $\Kreal$ budget without their labels.
+\noindent\textbf{Clean protocol.} Table~\ref{tab:kshotT} and Fig.~\ref{fig:kshot} give the headline comparison on the $530$ held-out test frames. AlignTac has lower contact MAE and normal error, and higher IoU, than the budget-matched baselines at every budget. At $K=25$, it reduces depth MSE by $22\%$ and contact MAE by $20\%$ relative to real-only training, while matching or exceeding real-only contact accuracy at $K=50$; it also lowers pose error. At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE without consistently improving contact MAE or IoU. At $K=5$, outside the main budgets, self-training no longer helps contact reconstruction (IoU $0.54$ vs.\ $0.60$ for real-only training), whereas AlignTac still does (IoU $0.64$; contact MAE $0.313$ vs.\ $0.348\,$mm; rotation $6.3^\circ$ vs.\ $14.0^\circ$). The gain is smaller than at $K\ge10$, likely because the teacher's rotation error (mean $13.8^\circ$) often exceeds the range the aligner corrects reliably.
+
+\noindent\textbf{Legacy protocol, additional variants.} Tables~\ref{tab:kshot} and \ref{tab:kshotmore} compare, under the same training-label budget, real-only training, co-training with either renderer, self-training on the teacher's own predictions (Sec.~\ref{sec:ablation}) and AlignTac. Each AlignTac run uses the $2{,}997$--$4{,}077$ training frames outside the $\Kreal$ budget without their labels.
 
 \noindent\textbf{Simulation alone.} Neither paired-renderer baseline improves both contact MAE and IoU for $\Kreal\le25$; the learned renderer helps from $\Kreal=50$ (depth MSE $-10\%$, $-16\%$ at $\Kreal=100$), PBR by at most $5\%$. Both lower rotation error at $\Kreal=10$ ($9.6^\circ\!\to\!5$--$6^\circ$) and raise it at $\Kreal=100$.
 
@@ -113,7 +115,7 @@ $\Kreal$ & Method & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llrrrrrrr@{}}
 \toprule
-\multicolumn{2}{c}{Labels of $U$} & \multicolumn{3}{c}{Pseudo-label quality} & \multicolumn{4}{c}{Downstream} \\
+\multicolumn{2}{c}{Labels of $\mathcal{D}_U$} & \multicolumn{3}{c}{Pseudo-label quality} & \multicolumn{4}{c}{Downstream} \\
 \cmidrule(lr){1-2}\cmidrule(lr){3-5}\cmidrule(lr){6-9}
 Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.}{MAE} & \metrichead{Rot.}{(deg)} & \metrichead{Depth}{MSE} & \metrichead{Cont.}{MAE} & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Rot.}{(deg)} \\
 \midrule
@@ -152,19 +154,19 @@ We use the same unlabeled images to compare teacher predictions, render-and-comp
 
 \noindent\textbf{Synthetic student data.} Student depth MSE is unchanged whether its synthetic frames come from the renderer retrained on aligned pairs or on teacher-labeled pairs (depth MSE $0.0447$ in both cases), and within-session depth gains also persist without synthetic data (last row: $0.0433\pm0.0004$ over three seeds with a real-only teacher and no synthetic frame, against $0.0447\pm0.0009$ with the renderer).
 
-\noindent\textbf{Unlabeled data and filtering.} Alignment improves labels even on the frames rejected by the render-error gate (IoU $0.66$ vs.\ $0.55$ for the teacher), supporting their inclusion in training. A quarter of the unlabeled frames already gives most of the depth-MSE gain (depth MSE $0.0453$, $0.0452$ and $0.0447$ with $25\%$, $50\%$ and $100\%$ of $U$), while IoU keeps growing with their number ($0.710$, $0.725$, $0.729$).
+\noindent\textbf{Unlabeled data and filtering.} Alignment improves labels even on the frames rejected by the render-error gate (IoU $0.66$ vs.\ $0.55$ for the teacher), supporting their inclusion in training. A quarter of the unlabeled frames already gives most of the depth-MSE gain (depth MSE $0.0453$, $0.0452$ and $0.0447$ with $25\%$, $50\%$ and $100\%$ of $\mathcal{D}_U$), while IoU keeps growing with their number ($0.710$, $0.725$, $0.729$).
 
 \noindent\textbf{Repeated alignment.} A second round, with the student as the new teacher, offers little further improvement: although the student proposes poses $1.5^\circ$ closer than the original teacher, the aligned labels (IoU $0.65$, $0.71$ at $\Kreal=10$, $25$) and the retrained student (depth MSE $0.0570$, $0.0445$; IoU $0.674$, $0.717$) are within seed variation of the first round.
 
 An unpaired sim-to-real refiner of the physical render, which uses the unlabeled frames without any pose, does not improve on its input (contact MAE $0.349$ vs.\ $0.346$ on unseen objects).
 
-\noindent\textbf{Self-trained renderer.} Following self-training~\cite{lee2013pseudo,xie2020noisy}, the $\Kreal$-shot downstream model pseudo-labels $U$ (depth predicted on five windows and stitched back to the full frame; frames kept when the predicted contact overlaps the image's black-hat ridge mask, IoU $\ge0.2$: $3{,}260$ frames at $\Kreal=25$, $2{,}677$ at $\Kreal=100$), and GAN-$\Kreal$ is retrained on the $\Kreal$ true plus the pseudo pairs. The pseudo labels are as accurate as the labeler ($0.32$ and $0.24\,$mm contact MAE against the withheld GT labels), and the renderer's fidelity improves by $5\%$ at both budgets ($0.108\!\to\!0.102$, $0.077\!\to\!0.073$), while downstream depth MSE improves by about $1\%$: depth MSE $0.0544\!\to\!0.0538$ at $\Kreal=25$ and $0.0311\!\to\!0.0308$ at $\Kreal=100$ (contact MAE $0.207$, lower than the paired-renderer baseline at $\Kreal=100$). With teacher labels the renderer thus gains little from more real images.
+\noindent\textbf{Self-trained renderer.} Following self-training~\cite{lee2013pseudo,xie2020noisy}, the $\Kreal$-shot downstream model pseudo-labels $\mathcal{D}_U$ (depth predicted on five windows and stitched back to the full frame; frames kept when the predicted contact overlaps the image's black-hat ridge mask, IoU $\ge0.2$: $3{,}260$ frames at $\Kreal=25$, $2{,}677$ at $\Kreal=100$), and GAN-$\Kreal$ is retrained on the $\Kreal$ true plus the pseudo pairs. The pseudo labels are as accurate as the labeler ($0.32$ and $0.24\,$mm contact MAE against the withheld GT labels), and the renderer's fidelity improves by $5\%$ at both budgets ($0.108\!\to\!0.102$, $0.077\!\to\!0.073$), while downstream depth MSE improves by about $1\%$: depth MSE $0.0544\!\to\!0.0538$ at $\Kreal=25$ and $0.0311\!\to\!0.0308$ at $\Kreal=100$ (contact MAE $0.207$, lower than the paired-renderer baseline at $\Kreal=100$). With teacher labels the renderer thus gains little from more real images.
 
 Aligned pairs improve renderer fidelity further: contact-region error falls by $13$--$19\%$ at every budget ($0.121\!\to\!0.105$ at $\Kreal=10$, $0.108\!\to\!0.090$ at 25, $0.095\!\to\!0.077$ at 50, $0.077\!\to\!0.065$ at 100; all-pairs $0.057$), the lowest contact-region errors among the budget-matched renderers. Replacing the teacher-pair renderer with this aligned-pair renderer nevertheless leaves the student's depth MSE unchanged (Table~\ref{tab:rcabl}). In this within-session comparison, improved synthetic appearance adds little once the real frames carry aligned labels.
 
-\noindent\textbf{Window stitching.} Without alignment the label is the teacher depth, and labeling $U$ on the center window alone leaves the pseudo depth empty outside the $0.816$ crop (pseudo-label contact MAE $0.41\,$mm over the full frame instead of $0.32$). The self-trained model then has the same depth MSE ($0.0518$ vs.\ $0.0517$, model only, $\Kreal=25$; Table~\ref{tab:kshot}) but a worse contact MAE ($0.328$ vs.\ $0.300$) and a $30\%$ larger peak-depth error, and the gap persists across sessions (contact MAE $0.358$ vs.\ $0.318$): the rotation augmentation brings the frame border into the training crop, where unstitched labels are wrong.
+\noindent\textbf{Window stitching.} Without alignment the label is the teacher depth, and labeling $\mathcal{D}_U$ on the center window alone leaves the pseudo depth empty outside the $0.816$ crop (pseudo-label contact MAE $0.41\,$mm over the full frame instead of $0.32$). The self-trained model then has the same depth MSE ($0.0518$ vs.\ $0.0517$, model only, $\Kreal=25$; Table~\ref{tab:kshot}) but a worse contact MAE ($0.328$ vs.\ $0.300$) and a $30\%$ larger peak-depth error, and the gap persists across sessions (contact MAE $0.358$ vs.\ $0.318$): the rotation augmentation brings the frame border into the training crop, where unstitched labels are wrong.
 
-\noindent\textbf{Rounds.} Without alignment, relabeling $U$ with $f_1$ and repeating the renderer and model steps improves the pseudo labels at $\Kreal=25$ (label IoU $0.56\!\to\!0.60$, contact MAE $0.32\!\to\!0.31\,$mm, $3{,}516$ frames kept instead of $3{,}260$) but not at $\Kreal=100$ ($0.66\!\to\!0.65$), and the downstream change is small in both directions: depth MSE $0.0508\!\to\!0.0500$ and IoU $0.628\!\to\!0.642$ at $\Kreal=25$, $0.0285\!\to\!0.0295$ and $0.750\!\to\!0.736$ at $\Kreal=100$, rotation unchanged ($6.2^\circ$, $4.9^\circ$). Additional self-training rounds have limited benefit in these runs. A second AlignTac round likewise yields little further improvement, as reported above.
+\noindent\textbf{Rounds.} Without alignment, relabeling $\mathcal{D}_U$ with $\Student$ and repeating the renderer and model steps improves the pseudo labels at $\Kreal=25$ (label IoU $0.56\!\to\!0.60$, contact MAE $0.32\!\to\!0.31\,$mm, $3{,}516$ frames kept instead of $3{,}260$) but not at $\Kreal=100$ ($0.66\!\to\!0.65$), and the downstream change is small in both directions: depth MSE $0.0508\!\to\!0.0500$ and IoU $0.628\!\to\!0.642$ at $\Kreal=25$, $0.0285\!\to\!0.0295$ and $0.750\!\to\!0.736$ at $\Kreal=100$, rotation unchanged ($6.2^\circ$, $4.9^\circ$). Additional self-training rounds have limited benefit in these runs. A second AlignTac round likewise yields little further improvement, as reported above.
 
 \begin{table}[!tbp]
 \centering
@@ -200,7 +202,40 @@ Training & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \shortstack[c]{
 
 \subsection{Generalization Across Sessions and Sensors}
 \label{sec:cross}
-\noindent\textbf{Second session.}
+\begin{table}[!tbp]
+\centering
+\tableformat\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabularx}{\columnwidth}{Xrrrrrrrr}
+\toprule
+\multicolumn{9}{l}{\textbf{Zero-shot cross-session transfer} (test: $854$ session-2 frames)} \\
+& \multicolumn{4}{c}{$K=25$} & \multicolumn{4}{c}{$K=100$} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$ & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$ \\
+\midrule
+\tabcrossT
+\bottomrule
+\end{tabularx}
+\par\vspace{5pt}
+\begin{tabularx}{\columnwidth}{Xrrrrrrrr}
+\toprule
+\multicolumn{9}{l}{\textbf{Label-free cross-session adaptation} (test: held-out $464$ frames)} \\
+& \multicolumn{4}{c}{$K=25$} & \multicolumn{4}{c}{$K=100$} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$ & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$ \\
+\midrule
+\tabstwoadapt
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Second-session results under the clean protocol} (sensor A). Top: trained on session 1 only. Bottom: rows ``+ session 2'' also train on images from half of the session-2 presses, with poses discarded and labels from the session-1 teacher or aligner; tests use the other half. MAE and translation in mm, rotation in degrees. Highlights mark \ranklegend{} per column and block.}
+\label{tab:general}
+\end{table}
+
+\noindent\textbf{Zero-shot cross-session transfer.} On sensor A's second session (Table~\ref{tab:general}, top), AlignTac lowers contact MAE by $15$--$20\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.248\,$mm at $K=100$, a $31\%$ reduction from real-only training. Pose error rises for all methods (rotation $10$--$19^\circ$, translation $1.7$--$2.1\,$mm), well above within-session levels.
+
+\noindent\textbf{Label-free cross-session adaptation.} Re-placement invalidates the session-1 calibration (Sec.~\ref{sec:setup}), so new images come without usable poses. We take every contact frame from half of the session-2 presses ($1{,}066$ images), discard their poses, pseudo-label them with the session-1 teacher and aligner, and add them to student training. On the other half (Table~\ref{tab:general}, bottom), contact MAE falls by a further $5\%$ ($K=25$) and $8\%$ ($K=100$), and rotation error from $10.2^\circ$ to $7.8^\circ$ and from $9.4^\circ$ to $7.3^\circ$; IoU does not improve, and teacher labels for the same images give no consistent gain. On the $162$ pool frames that also have a reviewed label, alignment raises pseudo-label IoU from $0.51$ to $0.58$ at $K=25$ and from $0.57$ to $0.63$ at $K=100$, and lowers the median rotation error from $15.3^\circ$ to $2.7^\circ$ and from $18.6^\circ$ to $2.0^\circ$. A new session can thus be used without labeling its contacts.
+
+\noindent\textbf{Second session (legacy models).}
 The second session tests changes in appearance and object placement without retraining (Table~\ref{tab:cross}). AlignTac reduces contact MAE relative to the budget-matched real-only models by $17\%$ at $\Kreal=25$ and $18\%$ at $\Kreal=100$, with MAE/IoU of $0.306/0.654$ and $0.288/0.707$; with synthetic frames the values are $0.310/0.660$ and $0.252/0.743$ ($-28\%$ at $\Kreal=100$). The nine-object real-only baseline ($0.315$, $0.675$) has different object coverage and serves as context rather than a matched label-efficiency comparison.
 
 Synthetic data contributes more here than within the training session. At $K=100$, adding the renderer lowers AlignTac's contact MAE from $0.288$ to $0.252$ and raises IoU from $0.707$ to $0.743$; at $K=25$ it changes neither ($0.306$ vs.\ $0.310$). AlignTac alone still improves on self-training in MAE ($0.300$ at $K=100$) and matches its IoU. Together with the within-session ablation, this comparison supports synthetic data as a useful source of robustness under the evaluated session change.
@@ -222,13 +257,13 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \tabsbmapl
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Second sensor (\sensorB{}) with mesh-registered labels}; $1{,}620$ test frames, 50 epochs. ``+ learned synth.'': learned renderer trained on the $K$ pairs added to aligner, teacher and student. Self-training uses the teacher's own depth as label.}
+\caption{\textbf{Second sensor (\sensorB{}) with mesh-fitted labels}; $1{,}620$ test frames, 50 epochs. ``+ learned synth.'': learned renderer trained on the $K$ pairs added to aligner, teacher and student. Self-training uses the teacher's own depth as label.}
 \label{tab:sbmapl}
 \end{table}
 
 \noindent\textbf{Second sensor.}
 \label{sec:sensorb}
-\noindent\textbf{AlignTac.} On \sensorB{} ($1{,}620$ test frames) we retrain AlignTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The public depth labels of this dataset are not mesh projections, so we re-registered them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-registered labels.
+\noindent\textbf{AlignTac.} On \sensorB{} ($1{,}620$ test frames) we retrain AlignTac with the same aligner settings (Table~\ref{tab:sbmapl}, Fig.~\ref{fig:kshot}d--f). The public depth labels of this dataset are not mesh projections, so we re-fitted them: the mesh pose that best explains each label was fitted ($0.018\,$mm mean residual) and canonicalized against the object's rotational symmetry, and every method was retrained and tested on these mesh-fitted labels.
 
 The few-shot teacher is already more accurate on this sensor (label IoU $0.78$, $0.85$, $0.90$, $0.93$ on the unlabeled frames at $\Kreal=10$, $25$, $50$, $100$; $0.55$ at $\Kreal=25$ on sensor A), yet the aligner improves on it at every budget (IoU $0.85$, $0.91$, $0.94$, $0.95$; pose error $2.3^\circ$, $1.4^\circ$, $0.9^\circ$, $0.8^\circ$ against $6.6$--$11.4^\circ$).
 
@@ -264,7 +299,7 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 \tabsbseeds
 \bottomrule
 \end{tabularx}
-\caption{\textbf{Sensor B over three seeds} (mesh-registered labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free AlignTac at every budget.}
+\caption{\textbf{Sensor B over three seeds} (mesh-fitted labels, 50 epochs): mean $\pm$ standard deviation of real-only training and renderer-free AlignTac at every budget.}
 \label{tab:sbseeds}
 \end{table}
 
@@ -274,7 +309,7 @@ $\Kreal$ & Training data & Depth MSE & Cont.\ MAE & IoU & Rot. \\
 
 \emph{With sensor-B real pairs}, the $\Kreal$-shot picture of Sec.~\ref{sec:kshot} reappears: a learned renderer trained on the sensor's own $\Kreal=25$ pairs lowers contact MAE from $0.139$ to $0.100\,$mm ($-29\%$), normal error from $17.2^\circ$ to $14.6^\circ$ and raises IoU from $0.82$ to $0.85$; at $\Kreal=10$ the gain is $6\%$, at $\Kreal=100$, synthetic data brings little additional dense improvement. The sensor-A PBR, calibrated to a different sensor, still helps at $\Kreal=25$ ($0.125$) but less; the domain-randomized renderer matches it ($0.126$) without using any real data from either sensor. At $\Kreal=100$ real data alone is already at $0.058\,$mm and simulation neither helps nor hurts dense error; the domain-randomized renderer ($0.062$) is close. Rotation is not improved by either renderer and is degraded at $\Kreal=100$ ($7.5^\circ\!\to\!9$--$10^\circ$), as on sensor A. The transition is earlier on sensor B ($\Kreal\approx25$ vs.\ $50$), plausibly because its uniform $1\,$mm indentation and larger contact regions make the depth-to-image mapping easier to learn from few pairs.
 
-\noindent\textbf{Self-training (original labels).} With the original labels and the GAN-25 model as labeler, teacher-label self-training lowers depth MSE from $0.0152$ (real only) to $0.0098$ and contact MAE from $0.140$ to $0.100\,$mm at $\Kreal=25$ without synthetic data, i.e.\ it approaches the labeler's depth MSE ($0.0107$) and matches its contact MAE ($0.100$); with the mesh-registered labels and a real-only teacher it does not improve on real data at any budget (Table~\ref{tab:sbmapl}). In both protocols the student inherits the localization of its labeler, which is what alignment corrects.
+\noindent\textbf{Self-training (original labels).} With the original labels and the GAN-25 model as labeler, teacher-label self-training lowers depth MSE from $0.0152$ (real only) to $0.0098$ and contact MAE from $0.140$ to $0.100\,$mm at $\Kreal=25$ without synthetic data, i.e.\ it approaches the labeler's depth MSE ($0.0107$) and matches its contact MAE ($0.100$); with the mesh-fitted labels and a real-only teacher it does not improve on real data at any budget (Table~\ref{tab:sbmapl}). In both protocols the student inherits the localization of its labeler, which is what alignment corrects.
 
 \begin{table}[!tbp]
 \centering
@@ -397,6 +432,6 @@ Table~\ref{tab:variants} examines physical conditioning, illumination, training 
 
 \noindent\textbf{Unpaired refiner (0 labels).} The contact-preserving refiner of Sec.~\ref{sec:refiner} translates the physical render using only unlabeled frames. On unseen objects (Table~\ref{tab:loo}) it does not improve on the calibrated render (contact MAE $0.349$ vs.\ $0.346$; on the domain-randomized render $0.353$), and its self-regularized variant is slightly worse ($0.360$): one possible explanation is that adversarial training rewards plausible shading without sufficiently constraining the geometry needed for downstream prediction.
 
-In the $\Kreal$-shot protocol, refining with the same $\Kreal=25$ frames used as unlabeled images improves over the paired-renderer baselines at that budget (contact MAE $0.297$, IoU $0.672$, normal $27.1^\circ$; Table~\ref{tab:kshot}), a $5\%$ contact-MAE gain where no paired renderer helps, while using all of $U$ ($0.309$) or $\Kreal=100$ ($0.224$ vs.\ real-only $0.235$, GAN-100 $0.210$) adds little. The refiner's contact-region L1 ($0.156$--$0.159$, against the $\pm3\,$px-warped physics render whose identity score is $0.179$) is not comparable to the paired renderers' and is excluded from Fig.~\ref{fig:fidelity}.
+In the $\Kreal$-shot protocol, refining with the same $\Kreal=25$ frames used as unlabeled images improves over the paired-renderer baselines at that budget (contact MAE $0.297$, IoU $0.672$, normal $27.1^\circ$; Table~\ref{tab:kshot}), a $5\%$ contact-MAE gain where no paired renderer helps, while using all of $\mathcal{D}_U$ ($0.309$) or $\Kreal=100$ ($0.224$ vs.\ real-only $0.235$, GAN-100 $0.210$) adds little. The refiner's contact-region L1 ($0.156$--$0.159$, against the $\pm3\,$px-warped physics render whose identity score is $0.179$) is not comparable to the paired renderers' and is excluded from Fig.~\ref{fig:fidelity}.
 
 \noindent\textbf{Mixing the two renderers.} Alternating physical and learned frames (Blender$\,\oplus\,$GAN) yields the average of the two on dense error and the better of the two on pose ($5.6^\circ$ on unseen objects, equal to GAN-LOO; $9.8^\circ$ across sessions, the lowest of all renderers except background normalization). This suggests a task-dependent effect of mixing, rather than a consistent gain across outputs.
