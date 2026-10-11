@@ -1,4 +1,4 @@
-"""Editable PowerPoint proposal for the pipeline figure (Fig. 2): three numbered training steps + inference.
+"""Editable PowerPoint proposal for the pipeline figure (Fig. 2): three numbered training steps + inference (2x2 layout).
 usage: <python with python-pptx> paper_RoboSoft/scripts/fig2_pptx.py   (cwd = VisTacFusion; assets from fig2_assets.py)
 Every element is a native shape, text box or picture, so it can be moved and re-worded in PowerPoint.
 Slide is 16 in wide; at \\textwidth (7.16 in) an 18 pt label prints at about 8 pt."""
@@ -12,7 +12,7 @@ from pptx.util import Inches, Pt
 
 FIG = "paper_RoboSoft/figures"; A = f"{FIG}/intro_figure/fig2_assets"; PA = f"{FIG}/pipeline_assets"
 OUT = f"{FIG}/intro_figure/AlignTac_Fig2_proposal.pptx"
-W, H = 16.0, 7.3
+W, H = 16.0, 7.4
 INK, GRAY, LIGHT = RGBColor(0x22, 0x22, 0x22), RGBColor(0x6B, 0x6B, 0x6B), RGBColor(0xB5, 0xB5, 0xB5)
 RED, GREEN, ORANGE = RGBColor(0xD6, 0x36, 0x2B), RGBColor(0x1E, 0x8E, 0x4E), RGBColor(0xD9, 0x7A, 0x0B)
 TEACHER = (RGBColor(0xEE, 0xF1, 0xF5), RGBColor(0x4A, 0x55, 0x68))     # one colour per network, wherever it appears
@@ -21,8 +21,46 @@ STUDENT = (RGBColor(0xE3, 0xF0, 0xFB), RGBColor(0x2B, 0x6C, 0xB0))
 PANEL = RGBColor(0xF6, 0xF6, 0xF8)
 SERIF, MATH = "Times New Roman", "Cambria Math"
 
+HEX = lambda c: "%02X%02X%02X" % (c[0], c[1], c[2])
+COL = lambda c, t: r"\textcolor[HTML]{%s}{%s}" % (HEX(c), t)
+PURPLE_ = RGBColor(0x6B, 0x46, 0xC1)
+LABELS = {                                                             # key: LaTeX (macros from notation.tex)
+    "ft": r"$\Teacher$", "fs": r"$\Student$", "A": r"$\Aligner$",
+    "dq": r"$\Delta q$", "mdelta": r"$-\delta$",
+    "gt_state": COL(GREEN, r"GT state $q^\ast$"),
+    "k_labeled": r"$K$ \textbf{labeled}",
+    "perturbed": r"image + " + COL(ORANGE, r"mesh at $q^\ast+\delta$"),
+    "q0": COL(RED, r"initial state $q_0$"), "qT": COL(GREEN, r"aligned state $q_T$"),
+    "mesh": COL(GRAY, r"mesh $\Mesh$"),
+    "pseudo_def": COL(PURPLE_, r"\textbf{Pseudo-label}") + r" = mesh $\Mesh$ projected at $q_T$",
+    "optional": COL(GRAY, r"\textit{optional, with mesh} $\Mesh$"),
+}
+DPI = 1200
+
+
+def build_labels():
+    """Typeset LABELS with pdflatex (10 pt, one cropped page each) and rasterise to transparent PNGs."""
+    import subprocess, tempfile
+    from PIL import Image
+    out = os.path.abspath(f"{A}/math"); os.makedirs(out, exist_ok=True); note = os.path.abspath("paper_RoboSoft/notation.tex")
+    body = "\n".join(r"\begin{lbl}\strut %s\end{lbl}" % t for t in LABELS.values())
+    tex = (r"\documentclass[multi=lbl,border=0.6pt]{standalone}" "\n" r"\usepackage{fix-cm}\usepackage{amsmath,amssymb,xcolor}" "\n"
+           r"\renewcommand{\rmdefault}{ptm}" "\n" r"\input{%s}" "\n" r"\newenvironment{lbl}{}{}" "\n" r"\begin{document}" "\n%s\n" r"\end{document}" "\n") % (note, body)
+    with tempfile.TemporaryDirectory() as d:
+        open(f"{d}/labels.tex", "w").write(tex)
+        r = subprocess.run(["pdflatex", "-interaction=nonstopmode", "labels.tex"], cwd=d, capture_output=True, text=True)
+        if r.returncode: raise SystemExit(r.stdout[-2000:])
+        subprocess.run(["pdftocairo", "-png", "-transp", "-r", str(DPI), "labels.pdf", "pg"], cwd=d, check=True)
+        pages = sorted(f for f in os.listdir(d) if f.startswith("pg-")); assert len(pages) == len(LABELS), pages
+        res = {}
+        for key, f in zip(LABELS, pages):
+            im = Image.open(f"{d}/{f}"); im.save(f"{out}/{key}.png"); res[key] = (f"{out}/{key}.png", im.size[0] / DPI, im.size[1] / DPI)
+    return res
+
+
 prs = Presentation(); prs.slide_width, prs.slide_height = Inches(W), Inches(H)
 sl = prs.slides.add_slide(prs.slide_layouts[6]); sh = sl.shapes
+LAB = build_labels()
 
 
 def text(x, y, w, h, segs, size=16, align="c", anchor="m", color=INK, name=None):
@@ -50,7 +88,20 @@ def fill_text(tf, segs, size, align, color):
         if "sub" in fl: r._r.get_or_add_rPr().set("baseline", "-25000")
 
 
+def mlabel(key, x, y, pt=16, align="c", name=None):
+    """Place a LaTeX label; (x, y) is its centre (align c), or its left / right edge at mid-height (l / r)."""
+    path, w10, h10 = LAB[key]; w, h = w10 * pt / 10, h10 * pt / 10
+    left = x - w / 2 if align == "c" else x if align == "l" else x - w
+    p = sh.add_picture(path, Inches(left), Inches(y - h / 2 + 0.02), Inches(w), Inches(h)); p.name = name or f"{key} [LaTeX]"   # +0.02: match text-box baselines
+    return p
+
+
+MODEL = lambda word, key: ("MODEL", word, key)                         # box label: editable bold word + LaTeX symbol underneath
+
+
 def box(x, y, w, h, segs, style, size=18, name=None, dash=False):
+    model = segs if isinstance(segs, tuple) and segs[0] == "MODEL" else None
+    if model: segs = [(model[1], "b"), "\n", (" ", "")]
     s = sh.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h)); s.adjustments[0] = 0.12
     s.fill.solid(); s.fill.fore_color.rgb = style[0]; s.line.color.rgb = style[1]; s.line.width = Pt(1.75); s.shadow.inherit = False
     if dash: s.line.dash_style = 4
@@ -58,6 +109,7 @@ def box(x, y, w, h, segs, style, size=18, name=None, dash=False):
     for m in ("margin_left", "margin_right", "margin_top", "margin_bottom"): setattr(tf, m, Inches(0.03))
     fill_text(tf, segs, size, "c", INK)
     if name: s.name = name
+    if model: mlabel(model[2], x + w / 2, y + h / 2 + 0.16, size, name=f"{name} / symbol [LaTeX]")
     return s
 
 
@@ -72,12 +124,13 @@ def panel(x, y, w, h, name, fill=PANEL, line=None, dash=False):
     return s
 
 
-def arrow(x0, y0, x1, y1, color=INK, width=1.75, head=True, dash=False, name=None):
+def arrow(x0, y0, x1, y1, color=INK, width=1.75, head=True, dash=False, name=None, both=False):
     c = sh.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x0), Inches(y0), Inches(x1), Inches(y1))
     c.line.color.rgb = color; c.line.width = Pt(width)
     if dash: c.line.dash_style = 4
     if head:
         ln = c.line._get_or_add_ln(); e = ln.makeelement(qn("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}); ln.append(e)
+        if both: ln.insert(list(ln).index(e), ln.makeelement(qn("a:headEnd"), {"type": "triangle", "w": "med", "len": "med"}))
     if name: c.name = name
     return c
 
@@ -114,118 +167,150 @@ def fmath(sym, mark, kind="sup"):                                    # f^t, q_0 
     return [(sym, "i"), (mark, f"i {kind}")]
 A_SYM = ("\U0001D49C", "math")                                       # script A
 CAP = 16
+WHITE = RGBColor(0xFF, 0xFF, 0xFF); PURPLE = ALIGNER[1]
+Q_STAR = lambda c: [("q", ("i", c)), ("*", ("i sup", c))]
+Q_SUB = lambda m, c: [("q", ("i", c)), (m, ("i sub", c))]
+MESH = lambda c: ("ℳ", ("math", c))
+PRED = ["depth", "\n", "normals", "\n", "pose"]
+
+
+def loss_link(x0, x1, y, name):
+    arrow(x0 + 0.04, y, x1 - 0.04, y, GRAY, 1.5, dash=True, both=True, name=f"{name} / link")
+    text(x0 - 0.05, y - 0.31, x1 - x0 + 0.1, 0.26, [("loss", ("i", GRAY))], 14, name=f"{name} / label")
 
 
 # ───────────────────────── (a) Training ─────────────────────────
 text(0.2, 0.06, 4, 0.5, [("(a) Training", "b")], 22, "l", name="Panel a heading")
-Y0, PH = 0.62, 4.36
-P1, P2, P3 = (0.2, 4.2), (4.62, 7.5), (12.34, 3.46)
-for i, (px, pw) in enumerate((P1, P2, P3), 1): panel(px, Y0, pw, PH, f"Step {i} panel")
+Y0, PH = 0.62, 4.12
+P1, P2 = (0.2, 6.3), (6.72, 9.08)
+Y1, PH2 = Y0 + PH + 0.2, 2.3
+P3, PB = (0.2, 7.6), (8.0, 7.8)
+panel(P1[0], Y0, P1[1], PH, "Step 1 panel"); panel(P2[0], Y0, P2[1], PH, "Step 2 panel"); panel(P3[0], Y1, P3[1], PH2, "Step 3 panel")
 arrow(P1[0] + P1[1] + 0.02, Y0 + 0.36, P2[0] - 0.02, Y0 + 0.36, GRAY, 2.25, name="Step 1 to step 2")
-arrow(P2[0] + P2[1] + 0.02, Y0 + 0.36, P3[0] - 0.02, Y0 + 0.36, GRAY, 2.25, name="Step 2 to step 3")
+bh = 0.8
 
-# ① teacher and aligner from the K registered contacts
+# ① K labeled real images -> teacher (image only) and aligner (image + mesh at the perturbed GT state)
 step(P1[0], Y0, 1, "Train teacher and aligner", "", P1[1])
-text(P1[0] + 0.2, Y0 + 0.62, P1[1] - 0.4, 0.3, [("on ", ("", GRAY)), ("K", ("i", GRAY)), (" GT-labeled contacts per object", ("", GRAY))], CAP, "l", name="Step 1 data note")
-ts, bw, bh = 1.02, 1.18, 0.8
-xa = P1[0] + 0.24; xb = xa + ts + 0.4; xc = xb + bw + 0.4
-ya = 1.64                                                             # teacher row
-pic(f"{A}/reg_real.png", xa, ya, ts, "Registered real image")
-text(xa - 0.2, ya + ts + 0.03, ts + 0.4, 0.3, [("image ", ""), ("\U0001D4D8" if False else "I", "i")], CAP, name="Registered image caption")
-arrow(xa + ts + 0.04, ya + ts / 2, xb - 0.04, ya + ts / 2, name="Registered image to teacher")
-box(xb, ya + (ts - bh) / 2, bw, bh, [("Teacher", "b"), "\n"] + fmath("f", "t"), TEACHER, name="Teacher (training)")
-arrow(xb + bw + 0.04, ya + ts / 2, xc - 0.04, ya + ts / 2, name="Teacher to registered label")
-pic(f"{A}/reg_depth.png", xc, ya + 0.1, ts - 0.2, "Registered label (mesh at q*)", border=GREEN)
-text(xc - 0.45, ya + ts + 0.03, ts + 0.5, 0.3, [("GT label at ", ("", GREEN)), ("q", ("i", GREEN)), ("*", ("i sup", GREEN))], CAP, name="Registered label caption")
-yb = 3.4                                                             # aligner row
-pic(f"{A}/reg_overlay_perturbed.png", xa, yb, ts, "Registered image with mesh outline at q*+delta")
-text(xa - 0.2, yb + ts + 0.03, ts + 0.5, 0.3, [("mesh at ", ("", ORANGE)), ("q", ("i", ORANGE)), ("*", ("i sup", ORANGE)), (" + δ", ("i", ORANGE))], CAP, name="Perturbed state caption")
-arrow(xa + ts + 0.04, yb + ts / 2, xb - 0.04, yb + ts / 2, name="Perturbed pair to aligner")
-box(xb, yb + (ts - bh) / 2, bw, bh, [("Aligner", "b"), "\n", A_SYM], ALIGNER, name="Aligner (training)")
-arrow(xb + bw + 0.04, yb + ts / 2, xc - 0.04, yb + ts / 2, name="Aligner to correction target")
-t = box(xc, yb + (ts - 0.62) / 2, ts - 0.2, 0.62, [("−δ", "i")], (RGBColor(0xFF, 0xFF, 0xFF), ORANGE), 22, name="Correction target")
-text(xc - 0.25, yb + ts + 0.03, ts + 0.3, 0.3, [("correction", ("", GRAY))], CAP, name="Correction target caption")
-text(xa, yb - 0.36, P1[1] - 0.4, 0.3, [("same image, mesh moved by a known ", ("i", GRAY)), ("δ", ("i", GRAY)), (":", ("i", GRAY))], 15, "l", name="Aligner training note")
+ya, yb = 2.02, 3.68                                                    # row centres: teacher, aligner
+src = 1.1; xs = P1[0] + 0.2; ysrc = (ya + yb) / 2 - src / 2
+pic(f"{A}/reg_overlay_gt.png", xs, ysrc, src, "Labeled real image with mesh outline at the GT state", stack=2)
+mlabel("gt_state", xs + src / 2 + 0.07, ysrc - 0.32, CAP, name="GT state caption [LaTeX]")
+mlabel("k_labeled", xs + src / 2, ysrc + src + 0.18, CAP, name="Labeled data caption / 1 [LaTeX]")
+text(xs - 0.15, ysrc + src + 0.32, src + 0.3, 0.28, [("real images", "b")], CAP, name="Labeled data caption / 2")
+xj = xs + src + 0.34
+arrow(xs + src + 0.18, (ya + yb) / 2, xj, (ya + yb) / 2, head=False, name="Labeled data / stem")
+arrow(xj, ya, xj, yb, head=False, name="Labeled data / split")
+ov = 0.92; xo = xj + 0.24; bw = 1.05; xb = xo + ov + 0.22; tp = 0.78; xp = xb + bw + 0.22; tt = 0.66; xt = xp + tp + 0.42
+# teacher row
+arrow(xj, ya, xb - 0.04, ya, name="Image to teacher")
+text(xj + 0.05, ya - 0.33, xb - xj - 0.1, 0.28, [("image", ("i", GRAY))], 14, name="Teacher input note")
+box(xb, ya - bh / 2, bw, bh, MODEL("Teacher", "ft"), TEACHER, name="Teacher (training)")
+arrow(xb + bw + 0.04, ya, xp - 0.04, ya, name="Teacher to prediction")
+box(xp, ya - 0.43, tp, 0.86, PRED, (WHITE, TEACHER[1]), 14, name="Teacher prediction")
+text(xp - 0.15, ya + 0.46, tp + 0.3, 0.3, [("prediction", ("", GRAY))], 15, name="Teacher prediction caption")
+loss_link(xp + tp, xt, ya, "Teacher loss")
+pic(f"{A}/reg_depth.png", xt, ya - tt / 2, tt, "GT label (mesh projected at q*)", border=GREEN)
+text(xt - 0.2, ya + 0.46, tt + 0.4, 0.3, [("GT label", ("", GREEN))], 15, name="GT label caption")
+# aligner row
+arrow(xj, yb, xo - 0.04, yb, name="Labeled data to perturbed pair")
+text(xj + 0.1, yb - ov / 2 - 0.34, 1.6, 0.28, [("perturb GT state", ("i", GRAY))], 14, "l", name="Perturbation note")
+pic(f"{A}/reg_overlay_perturbed.png", xo, yb - ov / 2, ov, "Same image with mesh outline at q*+delta")
+mlabel("perturbed", xo + ov / 2, yb + ov / 2 + 0.18, 15, name="Perturbed pair caption [LaTeX]")
+arrow(xo + ov + 0.04, yb, xb - 0.04, yb, name="Perturbed pair to aligner")
+box(xb, yb - bh / 2, bw, bh, MODEL("Aligner", "A"), ALIGNER, name="Aligner (training)")
+arrow(xb + bw + 0.04, yb, xp - 0.04, yb, name="Aligner to prediction")
+box(xp, yb - 0.3, tp, 0.6, " ", (WHITE, PURPLE), 20, name="Aligner prediction"); mlabel("dq", xp + tp / 2, yb, 20, name="Aligner prediction / symbol [LaTeX]")
+text(xp - 0.15, yb + 0.33, tp + 0.3, 0.3, [("prediction", ("", GRAY))], 15, name="Aligner prediction caption")
+loss_link(xp + tp, xt, yb, "Aligner loss")
+box(xt, yb - 0.3, tt, 0.6, " ", (WHITE, ORANGE), 20, name="Correction target"); mlabel("mdelta", xt + tt / 2, yb, 20, name="Correction target / symbol [LaTeX]")
+text(xt - 0.2, yb + 0.33, tt + 0.4, 0.3, [("target", ("", ORANGE))], 15, name="Correction target caption")
 
-# ② pseudo-label every other real image
-step(P2[0], Y0, 2, "Align the mesh to each unlabeled image", "", P2[1])
-ts2, bw2 = 1.2, 1.12; g = 0.3
-x = P2[0] + 0.2; y2 = 1.95; cy = y2 + ts2 / 2
-x_img = x; x_t = x_img + ts2 + g; x_q0 = x_t + bw2 + g; x_a = x_q0 + ts2 + g; x_qt = x_a + bw2 + g
+# ② unlabeled real images -> teacher estimate q0 -> aligner (6 updates) -> qT -> mesh projection = pseudo-label
+step(P2[0], Y0, 2, "Pseudo-label the unlabeled real images", "", P2[1])
+ts2, bw2 = 1.2, 1.08; g = 0.73; cy = 2.45; y2 = cy - ts2 / 2
+x_img = P2[0] + 0.2; x_t = x_img + ts2 + g; x_q0 = x_t + bw2 + g; x_a = x_q0 + ts2 + g; x_qt = x_a + bw2 + g
 pic(f"{A}/unl_real.png", x_img, y2, ts2, "Unlabeled real image", stack=2)
-text(x_img - 0.2, y2 + ts2 + 0.03, ts2 + 0.5, 0.3, "unlabeled image", CAP, name="Unlabeled image caption")
-arrow(x_img + ts2 + 0.04, cy, x_t - 0.04, cy, name="Unlabeled image to teacher")
-box(x_t, cy - bh / 2, bw2, bh, [("Teacher", "b"), "\n"] + fmath("f", "t"), TEACHER, name="Teacher (labeling)")
+text(x_img - 0.05, y2 + ts2 + 0.03, ts2 + 1.0, 0.3, [("unlabeled real images", "b")], CAP, "l", name="Unlabeled data caption")
+arrow(x_img + ts2 + 0.18, cy, x_t - 0.04, cy, name="Unlabeled image to teacher")
+box(x_t, cy - bh / 2, bw2, bh, MODEL("Teacher", "ft"), TEACHER, name="Teacher (labeling)")
 arrow(x_t + bw2 + 0.04, cy, x_q0 - 0.04, cy, name="Teacher to initial state")
+text(x_t + bw2, cy - 0.33, g, 0.28, [("predict", ("i", GRAY))], 14, name="Teacher output note")
 pic(f"{A}/unl_overlay_teacher.png", x_q0, y2, ts2, "Mesh outline at the teacher state q0")
-text(x_q0 - 0.2, y2 + ts2 + 0.03, ts2 + 0.4, 0.3, [("initial state ", ("", RED))] + [(a, (b, RED)) for a, b in fmath("q", "0", "sub")], CAP, name="Initial state caption")
+mlabel("q0", x_q0 + ts2 / 2, y2 + ts2 + 0.18, CAP, name="Initial state caption [LaTeX]")
 arrow(x_q0 + ts2 + 0.04, cy, x_a - 0.04, cy, name="Initial state to aligner")
-box(x_a, cy - bh / 2, bw2, bh, [("Aligner", "b"), "\n", A_SYM], ALIGNER, name="Aligner (labeling)")
-text(x_a - 0.2, cy + bh / 2 + 0.04, bw2 + 0.4, 0.3, [("↻ 6 updates", ("", ALIGNER[1]))], CAP, name="Iteration note")
-pic(f"{PA}/asset_02.png", x_a + bw2 / 2 - 0.3, 1.24, 0.6, "Object mesh")
-text(x_a + bw2 / 2 + 0.36, 1.34, 1.2, 0.4, [("mesh ", ("", GRAY)), ("ℳ", ("math", GRAY))], CAP, "l", name="Mesh caption")
-arrow(x_a + bw2 / 2, 1.86, x_a + bw2 / 2, cy - bh / 2 - 0.03, GRAY, 1.5, name="Mesh to aligner")
+box(x_a, cy - bh / 2, bw2, bh, MODEL("Aligner", "A"), ALIGNER, name="Aligner (labeling)")
+text(x_a - 0.3, cy + bh / 2 + 0.04, bw2 + 0.6, 0.3, [("↻ 6 updates", ("", PURPLE))], CAP, name="Iteration note")
+pic(f"{PA}/asset_02.png", x_a + bw2 / 2 - 0.29, 1.22, 0.58, "Object mesh")
+mlabel("mesh", x_a + bw2 / 2 + 0.36, 1.51, CAP, "l", name="Mesh caption [LaTeX]")
+arrow(x_a + bw2 / 2, 1.82, x_a + bw2 / 2, cy - bh / 2 - 0.03, GRAY, 1.5, name="Mesh to aligner")
 arrow(x_a + bw2 + 0.04, cy, x_qt - 0.04, cy, name="Aligner to aligned state")
 pic(f"{A}/unl_overlay_aligned.png", x_qt, y2, ts2, "Mesh outline at the aligned state qT")
-text(x_qt - 0.25, y2 + ts2 + 0.03, ts2 + 0.4, 0.3, [("aligned state ", ("", GREEN))] + [(a, (b, GREEN)) for a, b in fmath("q", "T", "sub")], CAP, name="Aligned state caption")
-# pseudo-label row: the mesh projected at qT
-tl = 0.74; yl = 3.86; xl = x_qt + ts2 - (3 * tl + 0.2)
-arrow(x_qt + ts2 / 2, y2 + ts2 + 0.36, x_qt + ts2 / 2, yl - 0.04, name="Aligned state to pseudo-label")
-pic(f"{A}/unl_depth.png", xl, yl, tl, "Pseudo-label depth", border=GREEN)
-pic(f"{A}/unl_normal.png", xl + tl + 0.1, yl, tl, "Pseudo-label normals", border=GREEN)
+mlabel("qT", x_qt + ts2 / 2, y2 + ts2 + 0.18, CAP, name="Aligned state caption [LaTeX]")
+# pseudo-label row (right to left): the mesh projected at qT
+tl = 0.74; yl = 3.6; xl = x_img; yc = yl + tl / 2; xg1 = xl + 3 * tl + 0.2
+panel(xl - 0.08, yl - 0.08, 3 * tl + 0.36, tl + 0.42, "Pseudo-label group", fill=WHITE, line=PURPLE)
+pic(f"{A}/unl_depth.png", xl, yl, tl, "Pseudo-label depth")
+pic(f"{A}/unl_normal.png", xl + tl + 0.1, yl, tl, "Pseudo-label normals")
 pose_glyph(xl + 2 * (tl + 0.1), yl, tl, "Pseudo-label pose", GREEN)
 for k, nm in enumerate(("depth", "normals", "pose")):
     text(xl + k * (tl + 0.1) - 0.1, yl + tl + 0.01, tl + 0.2, 0.28, nm, 15, name=f"Pseudo-label {nm} caption")
-text(xl - 3.3, yl + 0.02, 3.15, 0.36, [("Pseudo-label", "b")], 18, "r", name="Pseudo-label heading")
-text(xl - 3.6, yl + 0.38, 3.45, 0.3, [("= mesh projected at ", ("", GRAY))] + [(a, (b, GRAY)) for a, b in fmath("q", "T", "sub")], CAP, "r", name="Pseudo-label definition")
-text(P2[0] + 0.2, Y0 + PH - 0.4, 3.6, 0.3, [("outlines: mesh contact region at the state", ("i", GRAY))], 14, "l", name="Outline legend")
+xv = x_qt + ts2 / 2
+arrow(xv, y2 + ts2 + 0.37, xv, yc, head=False, name="Aligned state to pseudo-label / 1")
+arrow(xv, yc, xg1 + 0.14, yc, name="Aligned state to pseudo-label / 2")
+xm = (xg1 + xv) / 2
+mlabel("pseudo_def", xm, yc - 0.23, 17, name="Pseudo-label definition [LaTeX]")
+text(xm - 2.6, yc + 0.08, 5.2, 0.3, [("outlines: mesh contact region at each state", ("i", GRAY))], 14, name="Outline legend")
 
-# ③ student on all real images
-step(P3[0], Y0, 3, "Train student", "", P3[1])
-text(P3[0] + 0.2, Y0 + 0.62, P3[1] - 0.3, 0.3, [("on all real images", ("", GRAY))], CAP, "l", name="Step 3 data note")
-tg = 0.74; xg = P3[0] + 0.22; yg1 = 2.12; yg2 = yl
-text(xg - 0.05, yg1 - 0.4, 2 * tg + 0.3, 0.3, [("K", "i b"), (" GT-labeled", "b")], CAP, "l", name="Registered group caption")
-pic(f"{A}/reg_real.png", xg, yg1, tg, "Registered image (student data)")
-pic(f"{A}/reg_depth.png", xg + tg + 0.08, yg1, tg, "Registered label (student data)", border=GREEN)
-text(xg - 0.05, yg2 - 0.44, 2 * tg + 0.6, 0.3, [("pseudo-labeled", "b")], CAP, "l", name="Pseudo-labeled group caption")
-pic(f"{A}/unl_real.png", xg, yg2, tg, "Pseudo-labeled image (student data)", stack=2)
-pic(f"{A}/unl_depth.png", xg + tg + 0.08, yg2, tg, "Pseudo-label (student data)", border=GREEN)
-arrow(xl + 3 * tl + 0.24, yl + tl / 2, xg - 0.04, yl + tl / 2, name="Pseudo-labels to student data")
-sw, sx = 1.12, P3[0] + P3[1] - 1.12 - 0.16; sy = (yg1 + tg / 2 + yg2 + tg / 2) / 2 - bh / 2
-box(sx, sy, sw, bh, [("Student", "b"), "\n"] + fmath("f", "s"), STUDENT, name="Student (training)")
-xr = xg + 2 * tg + 0.12
-arrow(xr, yg1 + tg / 2, sx + sw / 2, yg1 + tg / 2, head=False, name="Registered data to student / 1")
-arrow(sx + sw / 2, yg1 + tg / 2, sx + sw / 2, sy - 0.03, name="Registered data to student / 2")
-arrow(xr, yg2 + tg / 2, sx + sw / 2, yg2 + tg / 2, head=False, name="Pseudo-labeled data to student / 1")
-arrow(sx + sw / 2, yg2 + tg / 2, sx + sw / 2, sy + bh + 0.03, name="Pseudo-labeled data to student / 2")
+# ③ student on all real images; GT labels for the K labeled, pseudo-labels for the rest
+step(P3[0], Y1, 3, "Train student", "", P3[1])
+y3 = Y1 + 1.17; tg = 0.85
+xk = P3[0] + 0.28; xu = xk + tg + 0.42
+pic(f"{A}/reg_real.png", xk, y3 - tg / 2, tg, "Labeled real images (student input)", stack=1)
+pic(f"{A}/unl_real.png", xu, y3 - tg / 2, tg, "Pseudo-labeled real images (student input)", stack=2)
+text(xk + tg + 0.07, y3 - 0.2, 0.3, 0.4, "+", 18, name="Student inputs plus")
+mlabel("k_labeled", xk + tg / 2, y3 + tg / 2 + 0.18, 15, name="Student labeled caption [LaTeX]")
+text(xu - 0.3, y3 + tg / 2 + 0.03, tg + 0.6, 0.3, [("pseudo-labeled", "b")], 15, name="Student pseudo-labeled caption")
+sw = 1.15; xst = xu + tg + 0.45
+arrow(xu + tg + 0.18, y3, xst - 0.04, y3, name="Real images to student")
+box(xst, y3 - bh / 2, sw, bh, MODEL("Student", "fs"), STUDENT, name="Student (training)")
+xsp = xst + sw + 0.25
+arrow(xst + sw + 0.04, y3, xsp - 0.04, y3, name="Student to prediction")
+box(xsp, y3 - 0.43, tp, 0.86, PRED, (WHITE, STUDENT[1]), 14, name="Student prediction")
+text(xsp - 0.15, y3 + 0.46, tp + 0.3, 0.3, [("prediction", ("", GRAY))], 15, name="Student prediction caption")
+tt3 = 0.72; xpl = P3[0] + P3[1] - 0.22 - tt3; xgt = xpl - 0.4 - tt3
+panel(xgt - 0.1, y3 - tt3 / 2 - 0.1, xpl + tt3 + 0.1 - (xgt - 0.1), tt3 + 0.2, "Student targets group", fill=WHITE, line=LIGHT)
+loss_link(xsp + tp, xgt - 0.1, y3, "Student loss")
+pic(f"{A}/reg_depth.png", xgt, y3 - tt3 / 2, tt3, "GT label (student target)", border=GREEN)
+pic(f"{A}/unl_depth.png", xpl, y3 - tt3 / 2, tt3, "Pseudo-label (student target)", border=PURPLE)
+text(xgt - 0.2, y3 + tt3 / 2 + 0.13, tt3 + 0.4, 0.3, [("GT label", ("", GREEN))], 14, name="Student GT label caption")
+text(xpl - 0.3, y3 + tt3 / 2 + 0.13, tt3 + 0.6, 0.3, [("pseudo-label", ("", PURPLE))], 14, name="Student pseudo-label caption")
+arrow(xpl + tt3 / 2, yl + tl + 0.36, xpl + tt3 / 2, y3 - tt3 / 2 - 0.14, PURPLE, 1.75, name="Pseudo-labels to student targets")
 
 # ───────────────────────── (b) Inference ─────────────────────────
-YB = Y0 + PH + 0.16
-text(0.2, YB, 4, 0.5, [("(b) Inference", "b")], 22, "l", name="Panel b heading")
-ti = 0.95; yi = YB + 0.62; ci = yi + ti / 2; xi = 0.42
-pic(f"{PA}/asset_01.png", xi, yi, ti, "Inference real image")
-text(xi, yi + ti + 0.02, ti + 1.5, 0.3, [("image ", ""), ("I", "i"), (" + object ID ", ""), ("o", "i")], CAP, "l", name="Inference input caption")
-xs = xi + ti + 0.75
-arrow(xi + ti + 0.04, ci, xs - 0.04, ci, name="Inference input to student")
-box(xs, ci - bh / 2, 1.25, bh, [("Student", "b"), "\n"] + fmath("f", "s"), STUDENT, name="Student (inference)")
-xo = xs + 1.25 + 0.5
-arrow(xs + 1.29, ci, xo - 0.04, ci, name="Student to predictions")
-pic(f"{PA}/asset_03.png", xo, yi, ti, "Predicted depth"); pic(f"{PA}/asset_04.png", xo + ti + 0.12, yi, ti, "Predicted normals")
-pose_glyph(xo + 2 * (ti + 0.12), yi, ti, "Predicted pose")
+panel(PB[0], Y1, PB[1], PH2, "Inference panel", fill=WHITE, line=LIGHT)
+text(PB[0] + 0.2, Y1 + 0.1, 4, 0.5, [("(b) Inference", "b")], 22, "l", name="Panel b heading")
+ti = 0.85; xi = PB[0] + 0.25
+pic(f"{PA}/asset_01.png", xi, y3 - ti / 2, ti, "New real image")
+text(xi - 0.25, y3 + ti / 2 + 0.03, ti + 0.5, 0.56, ["real image", "\n", "+ object ID"], 15, name="Inference input caption")
+xs2 = xi + ti + 0.32
+arrow(xi + ti + 0.04, y3, xs2 - 0.04, y3, name="Inference input to student")
+box(xs2, y3 - bh / 2, 1.1, bh, MODEL("Student", "fs"), STUDENT, name="Student (inference)")
+to = 0.7; xo2 = xs2 + 1.1 + 0.28
+arrow(xs2 + 1.14, y3, xo2 - 0.04, y3, name="Student to predictions")
+pic(f"{PA}/asset_03.png", xo2, y3 - to / 2, to, "Predicted depth"); pic(f"{PA}/asset_04.png", xo2 + to + 0.1, y3 - to / 2, to, "Predicted normals")
+pose_glyph(xo2 + 2 * (to + 0.1), y3 - to / 2, to, "Predicted pose")
 for k, nm in enumerate(("depth", "normals", "pose")):
-    text(xo + k * (ti + 0.12), yi + ti + 0.02, ti, 0.3, nm, CAP, name=f"Predicted {nm} caption")
-xopt = xo + 3 * ti + 0.24 + 0.75; wopt = W - 0.2 - xopt
-panel(xopt, YB + 0.12, wopt, H - YB - 0.24, "Optional refinement boundary", fill=None, line=LIGHT, dash=True)
-text(xopt + 0.2, YB + 0.18, wopt - 0.4, 0.34, [("Optional: pose refinement when the mesh is available", ("i", GRAY))], CAP, "l", name="Optional refinement heading")
-xal = xopt + 2.3
-arrow(xo + 3 * ti + 0.28, ci, xal - 0.04, ci, name="Predicted pose to aligner")
-text(xopt + 0.25, ci - 0.4, 1.9, 0.3, [("pose as ", ("", GRAY))] + [(a, (b, GRAY)) for a, b in fmath("q", "0", "sub")], CAP, "l", name="Refinement initial state")
-text(xopt + 0.25, ci + 0.1, 2.0, 0.3, [("+ image ", ("", GRAY)), ("I", ("i", GRAY)), (", mesh ", ("", GRAY)), ("\u2133", ("math", GRAY))], CAP, "l", name="Refinement extra inputs")
-box(xal, ci - bh / 2, 1.25, bh, [("Aligner", "b"), "\n", A_SYM], ALIGNER, name="Aligner (inference)")
-xrp = xal + 1.25 + 0.5
-arrow(xal + 1.29, ci, xrp - 0.04, ci, name="Aligner to refined pose")
-pose_glyph(xrp, yi, ti, "Refined pose", GREEN, rot=-20)
-text(xrp + ti + 0.12, ci - 0.2, 1.4, 0.4, "refined pose", CAP, "l", name="Refined pose caption")
+    text(xo2 + k * (to + 0.1) - 0.1, y3 + to / 2 + 0.02, to + 0.2, 0.3, nm, 15, name=f"Predicted {nm} caption")
+xe = xo2 + 3 * to + 0.2; xopt = xe + 0.2; wopt = PB[0] + PB[1] - 0.12 - xopt
+panel(xopt, Y1 + 0.3, wopt, PH2 - 0.42, "Optional refinement boundary", fill=None, line=LIGHT, dash=True)
+mlabel("optional", xopt + wopt / 2, Y1 + 0.49, 14, name="Optional refinement heading [LaTeX]")
+xal = xopt + 0.24; wal = 1.0
+arrow(xe + 0.04, y3, xal - 0.04, y3, name="Predicted pose to aligner")
+box(xal, y3 - bh / 2, wal, bh, MODEL("Aligner", "A"), ALIGNER, name="Aligner (inference)")
+xrp = xal + wal + 0.26
+arrow(xal + wal + 0.04, y3, xrp - 0.04, y3, name="Aligner to refined pose")
+pose_glyph(xrp, y3 - to / 2, to, "Refined pose", GREEN, rot=-20)
+text(xrp - 0.25, y3 + to / 2 + 0.02, to + 0.5, 0.3, "refined pose", 14, name="Refined pose caption")
 
 for s_ in sh:
     st = s_._element.find(qn("p:style"))
