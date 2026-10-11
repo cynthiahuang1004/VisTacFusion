@@ -232,7 +232,7 @@ self-training 0.300/0.707, MeshTac 0.252/0.743 (no renderer 0.288/0.707).
 2. Needs the mesh and the identity of the object in every unlabeled frame; test-time alignment needs
    them at test time too. Scope: known objects (industrial parts, calibration objects).
 3. No downstream robot task.
-4. Sensor-B GT is our re-registration of public labels (see §5); seeds on sensor B only at K = 25.
+4. Sensor-B GT is our re-registration of public labels (see §5); three seeds on sensor B at every budget (real-only and AlignTac).
 5. GT is a geometric projection, not a measured membrane deformation (both sensors).
 6. RoboSoft audience: keep the first paragraph of the introduction readable for non-ML reviewers; avoid
    unexplained ML jargon.

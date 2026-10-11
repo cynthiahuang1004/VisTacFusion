@@ -33,7 +33,7 @@ where $d$ and $n$ are mesh-projected depth and surface normals, and $p(q)=(\thet
     \end{aligned}
     \label{eq:training_sets}
 \end{equation}
-with $K$ labeled contacts per object in $\mathcal{D}_{L}$. Both sets have known object identities and meshes. Only $\mathcal{D}_{L}$ provides GT contact states, with targets $y_i^\ast=\Targets(\Mesh_{o_i},q_i^\ast)$. Contact states in $\mathcal{D}_{U}$ remain unknown during training.
+with $K$ labeled contacts per object in $\mathcal{D}_{L}$. Both sets have known object identities and meshes. Only $\mathcal{D}_{L}$ provides ground-truth (GT) contact states, with targets $y_i^\ast=\Targets(\Mesh_{o_i},q_i^\ast)$. Contact states in $\mathcal{D}_{U}$ remain unknown during training.
 
 Our goal is to use $\mathcal{D}_{U}$ to improve prediction at a fixed label budget. A single contact state couples depth, normals and planar pose, allowing AlignTac to generate their supervision by aligning known geometry with each real image. Fig.~\ref{fig:mapl} summarizes the workflow: learn teacher $\Teacher$ and aligner $\Aligner$ from $\mathcal{D}_{L}$, generate aligned-geometry targets for $\mathcal{D}_{U}$, and train student $\Student$ on both sets. For each image, we use its corresponding object mesh \FinalLine{$\Mesh$ in the alignment procedure below.}
 

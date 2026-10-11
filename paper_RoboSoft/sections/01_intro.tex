@@ -4,7 +4,7 @@
     \centering
     \includegraphics[width=\columnwidth]{figures/intro_figure/AlignTac_Fig1.png}
     \caption{\textbf{From few labels to aligned geometric supervision.}
-    (a) A real contact is labeled by projecting the object mesh at the contact state $q^\ast$ obtained from the robot pose; this needs calibration and verification, repeated after the object is re-placed (right; outlines mark the mesh contact region).
+    (a) A real contact is labeled by projecting the object mesh at the ground-truth (GT) contact state $q^\ast$ obtained from the robot pose; this needs calibration and verification, repeated after the object is re-placed (right; outlines mark the mesh contact region).
     (b) In simulation the state and depth are given, but tactile images need sensor-specific modeling: a physically based renderer (PBR) or a learned renderer fitted on labeled real pairs.
     (c) AlignTac learns from a few labeled contacts to align the known mesh with an unlabeled real image, turning the initial estimate into a pseudo-label; the bottom row shows pseudo-labeled contacts of other objects.}
     \label{fig:aligntac_teaser}
