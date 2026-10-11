@@ -16,8 +16,8 @@ As shown in Fig.~\ref{fig:aligntac_teaser}a, real data collection requires each 
 
 \begin{figure*}[t]
     \centering
-    \resizebox{\textwidth}{!}{\input{figures/pipeline.tex}}
-    \caption{\textbf{AlignTac training and inference.} (a) Labeled contacts train teacher $\Teacher$ and aligner $\Aligner$. The upper branch trains $\Aligner$ from the real image and mesh depth at $q^\ast+\delta$, using correction target $-\delta$. The lower branch refines teacher-initialized states of unlabeled contacts. The aligned state $q_T$ and mesh $\Mesh$ yield depth, normal and planar-pose targets through $\Targets(\Mesh,q_T)$. Student $\Student$ learns from labeled and pseudo-labeled real images. (b) Standard prediction uses the image and object identity; mesh-assisted pose refinement is \FinalLine{optional. Thumbnails show a real contact; pose and perturbation glyphs are schematic.}}
+    \includegraphics[width=\textwidth]{figures/intro_figure/AlignTac_Fig2.png}
+    \caption{\textbf{AlignTac training and inference.} (a) Step~1: $K$ labeled real images per object train teacher $\Teacher$ and aligner $\Aligner$; the aligner receives each image with the mesh moved from its GT state $q^\ast$ to $q^\ast+\delta$ and learns the correction $-\delta$. Step~2: for each unlabeled image, $\Teacher$ predicts an initial state $q_0$, $\Aligner$ refines it to $q_T$ in six updates, and the mesh $\Mesh$ projected at $q_T$ gives the depth, normal and planar-pose pseudo-label. Step~3: student $\Student$ trains on the labeled and pseudo-labeled images. (b) Standard prediction uses the image and object identity; mesh-assisted pose refinement is optional. Outlines mark the mesh contact region at each state; pose glyphs are schematic.}
     \label{fig:mapl}
 \end{figure*}
 

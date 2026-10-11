@@ -33,13 +33,13 @@ where $d$ and $n$ are mesh-projected depth and surface normals, and $p(q)=(\thet
     \end{aligned}
     \label{eq:training_sets}
 \end{equation}
-with $K$ labeled contacts per object in $\mathcal{D}_{L}$. Both sets have known object identities and meshes. Only $\mathcal{D}_{L}$ provides reference contact states, with targets $y_i^\ast=\Targets(\Mesh_{o_i},q_i^\ast)$. Contact states in $\mathcal{D}_{U}$ remain unknown during training.
+with $K$ labeled contacts per object in $\mathcal{D}_{L}$. Both sets have known object identities and meshes. Only $\mathcal{D}_{L}$ provides GT contact states, with targets $y_i^\ast=\Targets(\Mesh_{o_i},q_i^\ast)$. Contact states in $\mathcal{D}_{U}$ remain unknown during training.
 
 Our goal is to use $\mathcal{D}_{U}$ to improve prediction at a fixed label budget. A single contact state couples depth, normals and planar pose, allowing AlignTac to generate their supervision by aligning known geometry with each real image. Fig.~\ref{fig:mapl} summarizes the workflow: learn teacher $\Teacher$ and aligner $\Aligner$ from $\mathcal{D}_{L}$, generate aligned-geometry targets for $\mathcal{D}_{U}$, and train student $\Student$ on both sets. For each image, we use its corresponding object mesh \FinalLine{$\Mesh$ in the alignment procedure below.}
 
 \subsection{Learning Image--Geometry Alignment}
 \label{sec:learn_alignment}
-A teacher $\Teacher$ is trained on $\mathcal{D}_{L}$ using its reference targets. Its predictions initialize contact states for additional real images (Sec.~\ref{sec:unlabeled_alignment}). To correct these initial estimates, we train a residual aligner $\Aligner$ on the same labeled set.
+A teacher $\Teacher$ is trained on $\mathcal{D}_{L}$ using its GT targets. Its predictions initialize contact states for additional real images (Sec.~\ref{sec:unlabeled_alignment}). To correct these initial estimates, we train a residual aligner $\Aligner$ on the same labeled set.
 
 For a labeled pair $(\Tactile,q^\ast)$, we sample a state perturbation $\delta$ and project the mesh at $q^\ast+\delta$. The real image and mesh geometry remain fixed; only the candidate contact state changes. The aligner receives the real image and candidate depth and learns the known correction,
 \begin{equation}
@@ -68,7 +68,7 @@ The final state supplies $\tilde y=\Targets(\Mesh,q_T)$: depth, normal and plana
 
 \subsection{Student Training and Inference}
 \label{sec:student_training}
-Teacher $\Teacher$ and student $\Student$ are trained separately with the same architecture. Both use a frozen SITR encoder, a DPT decoder for depth and normals, and a planar-pose MLP; object identity conditions only the pose head (Sec.~\ref{sec:setup}). Student $\Student$ is trained on real images from $\mathcal{D}_{L}$ with reference targets $y^\ast$ and from $\mathcal{D}_{U}$ with aligned-geometry targets $\tilde y$. We pool both sets and sample frames uniformly, \FinalLine{assigning equal loss weight to each sample.}
+Teacher $\Teacher$ and student $\Student$ are trained separately with the same architecture. Both use a frozen SITR encoder, a DPT decoder for depth and normals, and a planar-pose MLP; object identity conditions only the pose head (Sec.~\ref{sec:setup}). Student $\Student$ is trained on real images from $\mathcal{D}_{L}$ with GT targets $y^\ast$ and from $\mathcal{D}_{U}$ with aligned-geometry targets $\tilde y$. We pool both sets and sample frames uniformly, \FinalLine{assigning equal loss weight to each sample.}
 
 The prediction objective combines depth and normal MSE, cosine rotation loss and L1 translation loss, with uncertainty-based learned weights~\cite{kendall2018multi} within the dense and pose groups. The same prediction task and loss components apply to both supervision sources. The main AlignTac pipeline trains exclusively on real tactile images, with renderer \FinalLine{augmentation evaluated as a separate variant.}
 
