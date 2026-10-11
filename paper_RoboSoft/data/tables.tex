@@ -458,10 +458,10 @@ $\dagger$ & Real only & 0.315 & 0.675 \\
 
 % ---- crossT ----
 \newcommand{\tabcrossT}{%
-Real only & 0.359 & \rankthird{0.612} & \ranksecond{2.00} & 0.362 & 0.652 & \ranksecond{1.86} \\
-Self-training & \rankthird{0.348} & 0.599 & \rankthird{2.14} & \rankthird{0.327} & \rankthird{0.676} & \rankthird{2.05} \\
-\textbf{AlignTac (ours)} & \rankfirst{0.306} & \rankfirst{0.656} & \rankfirst{1.68} & \ranksecond{0.291} & \ranksecond{0.706} & \rankfirst{1.73} \\
-\quad + learned synth. & \ranksecond{0.317} & \ranksecond{0.655} & \rankfirst{1.68} & \rankfirst{0.248} & \rankfirst{0.743} & \ranksecond{1.86} \\
+Real only & 0.359 & \rankthird{0.612} & \rankthird{16.2} & \ranksecond{2.00} & 0.362 & 0.652 & \rankthird{12.6} & \ranksecond{1.86} \\
+Self-training & \rankthird{0.348} & 0.599 & 18.7 & \rankthird{2.14} & \rankthird{0.327} & \rankthird{0.676} & 16.2 & \rankthird{2.05} \\
+\textbf{AlignTac (ours)} & \rankfirst{0.306} & \rankfirst{0.656} & \ranksecond{10.9} & \rankfirst{1.68} & \ranksecond{0.291} & \ranksecond{0.706} & \ranksecond{10.1} & \rankfirst{1.73} \\
+\quad + learned synth. & \ranksecond{0.317} & \ranksecond{0.655} & \rankfirst{9.6} & \rankfirst{1.68} & \rankfirst{0.248} & \rankfirst{0.743} & \rankfirst{9.7} & \ranksecond{1.86} \\
 }
 
 % ---- sbT ----
@@ -552,9 +552,9 @@ IoU$\uparrow$, AlignTac (ours) & \rankfirst{0.856} & \rankfirst{0.911} & \rankfi
 
 % ---- s2adapt: session-2 unlabeled pool (held-out half of session 2, 464 frames; hand-added 2026-10-10, see PAPER_NOTES) ----
 \newcommand{\tabstwoadapt}{%
-Real only & 0.356 & \rankthird{0.625} & \rankthird{1.78} & 0.365 & 0.658 & \rankthird{1.64} \\
-Self-training & 0.347 & 0.603 & 1.96 & \rankthird{0.336} & \rankthird{0.679} & 1.85 \\
-\quad + session-2 images & \rankthird{0.340} & 0.592 & 1.98 & 0.347 & 0.668 & 1.84 \\
-\textbf{AlignTac (ours)} & \ranksecond{0.304} & \rankfirst{0.663} & \ranksecond{1.49} & \ranksecond{0.294} & \rankfirst{0.710} & \ranksecond{1.54} \\
-\quad + session-2 images & \rankfirst{0.288} & \ranksecond{0.652} & \rankfirst{1.32} & \rankfirst{0.269} & \ranksecond{0.707} & \rankfirst{1.35} \\
+Real only & 0.356 & \rankthird{0.625} & \rankthird{14.8} & \rankthird{1.78} & 0.365 & 0.658 & \rankthird{12.4} & \rankthird{1.64} \\
+Self-training & 0.347 & 0.603 & 17.4 & 1.96 & \rankthird{0.336} & \rankthird{0.679} & 14.9 & 1.85 \\
+\quad + session 2 & \rankthird{0.340} & 0.592 & 19.6 & 1.98 & 0.347 & 0.668 & 14.7 & 1.84 \\
+\textbf{AlignTac (ours)} & \ranksecond{0.304} & \rankfirst{0.663} & \ranksecond{10.2} & \ranksecond{1.49} & \ranksecond{0.294} & \rankfirst{0.710} & \ranksecond{9.4} & \ranksecond{1.54} \\
+\quad + session 2 & \rankfirst{0.288} & \ranksecond{0.652} & \rankfirst{7.8} & \rankfirst{1.32} & \rankfirst{0.269} & \ranksecond{0.707} & \rankfirst{7.3} & \rankfirst{1.35} \\
 }
