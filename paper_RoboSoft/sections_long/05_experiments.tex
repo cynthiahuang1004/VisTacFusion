@@ -329,6 +329,33 @@ $\Kreal$ & pred. & +align & pred. & +align & pred. & +align & pred. & +align \\
 \label{tab:poseref}
 \end{table}
 
+\subsection{Additional Objects}
+\label{sec:addobj}
+We pressed sensor A against four further objects with different contact shapes: a button (flat top with two shallow holes), a hex key (flat-topped L-shaped bar), a block edge (a straight edge of a flat block) and a marble (a sphere); $3{,}156$ contacts in total. These captures record the end-effector pose but no contact height or object placement, so per object we fit the in-plane rotation offset and position of the mesh to image contact outlines on $40$ frames and fix the mean indentation at $1.0\,$mm (the marble's contact radius matches an elastic contact at this depth); the per-frame indentation follows the recorded end-effector height. Held-out test frames ($489$) follow the same index rule as the session-1 test set and are excluded from every component. We train real only, self-training and AlignTac on all 16 objects at $\Kreal=25$, with unchanged settings.
+
+\begin{table}[!tbp]
+\centering
+\tableformat
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{Contact MAE (mm)} & \multicolumn{2}{c}{Label IoU} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Object & Real only & AlignTac & Teacher & Aligned \\
+\midrule
+Button & $0.202$ & $\mathbf{0.186}$ & $0.69$ & $\mathbf{0.85}$ \\
+Hex key & $0.218$ & $\mathbf{0.180}$ & $0.69$ & $\mathbf{0.81}$ \\
+Block edge & $0.131$ & $\mathbf{0.115}$ & $0.84$ & $\mathbf{0.94}$ \\
+Marble & $\mathbf{0.078}$ & $0.083$ & $0.39$ & $\mathbf{0.93}$ \\
+\midrule
+All ($489$ frames) & $0.167$ & $\mathbf{0.146}$ & $0.64$ & $\mathbf{0.89}$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Additional objects} (sensor A, $\Kreal=25$, models trained on all 16 objects). Student contact MAE (mm) on held-out test frames, three-seed means; pseudo-label IoU against the withheld GT of unlabeled training frames.}
+\label{tab:addobj}
+\end{table}
+
+Table~\ref{tab:addobj} gives the results. AlignTac lowers contact MAE from $0.167$ to $0.146\,$mm ($12\%$; three-seed means, lower in every seed), raises IoU from $0.867$ to $0.889$ and lowers translation error from $0.83$ to $0.70\,$mm. Self-training (one seed) is worse than real-only training ($0.174\,$mm, IoU $0.724$). The gain is largest on the hex key and absent on the marble, whose sphere already gives the teacher accurate depth. Rotation error changes little ($7.7^\circ$ vs.\ $7.2^\circ$): the button's two holes leave its orientation nearly ambiguous ($23^\circ$ for both), the edge and the marble are already below $2^\circ$. Along the block edge the contact is translation-invariant, so its pose label is fixed only across the edge. On the 12 session-1 objects, the same 16-object models give $0.287$ (real only) and $0.243\,$mm (AlignTac) and rotation errors of $6.3^\circ$ and $2.9^\circ$, in line with the 12-object results. Fig.~\ref{fig:qual} (middle) shows one example per object.
+
 \subsection{Mesh-Assisted Test-Time Pose Refinement}
 \label{sec:tta}
 We reuse the fixed $\Kreal$-shot aligner to refine test-frame poses against their known meshes (Table~\ref{tab:poseref}). On the validation split rotation error falls from $3.2$--$9.6^\circ$ to $0.4$--$2.8^\circ$ for real-only models and from $2.5$--$4.7^\circ$ to $0.4$--$2.4^\circ$ for AlignTac models; from $\Kreal=25$ on the refined error is about $1^\circ$ whichever model proposes the pose, and translation error falls by $20$--$50\%$.
@@ -342,13 +369,13 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of three selected objects per sensor. Each example is the frame with the median AlignTac contact MAE for its object, chosen without reference to the baseline. Numbers are contact MAE (mm); depth maps share a color scale.}
+    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of four selected objects per group: sensor A (left), the four additional sensor-A objects of Sec.~\ref{sec:addobj} (middle; models trained on all 16 objects) and sensor B (right). Columns: tactile frame, real only, AlignTac, GT. Each example is the frame with the median AlignTac contact MAE for its object, chosen without reference to the baseline. Numbers are contact MAE (mm); depth maps share a color scale.}
     \label{fig:qual}
 \end{figure*}
 
 \subsection{Qualitative Results}
 \label{sec:qual}
-Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For each of the three displayed objects per sensor, we select the frame with the median contact-MAE improvement. This fixes selection within each object; the examples illustrate local reconstruction differences rather than the full distribution of results. Real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
+Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For each displayed object, we select the frame with the median AlignTac contact MAE. This fixes selection within each object; the examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the button rim and the hex-key contact are more complete, while the edge and marble predictions are similar. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
 
 \begin{table}[!tbp]
 \centering

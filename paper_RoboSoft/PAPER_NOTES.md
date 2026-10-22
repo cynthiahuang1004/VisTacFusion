@@ -289,3 +289,13 @@ Runs `pilot150_T_k{25,100}_{rf,rf_s2}{,_seed1,_seed2}` (150 epochs), tags `s2hal
 Three-seed means (cMAE / IoU / rot / trans mm): K=25 AlignTac 0.309 / 0.665 / 10.4 / 1.51 -> + session 2 0.290 / 0.651 / 7.9 / 1.33 (-5.9% cMAE); K=100 0.286 / 0.710 / 9.7 / 1.54 -> 0.270 / 0.708 / 7.3 / 1.35 (-5.8%).
 Per-seed cMAE change: K=25 -5.5 / -5.5 / -6.7 %; K=100 -8.4 / -8.4 / -0.5 % (lower in every seed; one K=100 seed marginal). Rotation gain is the most stable (seed std 0.06-0.5 deg).
 Paper: abstract and Sec. V-C say "a further 6%"; Table III bottom AlignTac rows are three-seed means (asterisk), the other rows single seed.
+
+## Additional (non-ridge) objects on sensor A (2026-10-22)
+Paper: Sec. V-C paragraph "Additional objects" (three-seed means), Fig. 6 middle group (layout wide, seed-0 models); long version Sec. "Additional Objects" + Table tab:addobj. Ridge wording removed from setup/conclusion (user: do not stress ridge objects).
+Data: button, edge, hex_key, marble (meshes `gs_blender/meshes/*_v2.obj`, 3,156 contacts, `gs_blender/real_filtered_plus4`); GT = mesh at the robot pose after a per-object placement calibration (theta offset + xy, fitted to image contact masks; mean press fixed at 1.0 mm), `aligntac_newobj/calibrate_newobj.py`. 489 test frames (`real_filtered_testP4`, same index rule as testA, excluded from every component).
+Runs (16 objects, K=25): `pilot150_P4_k25_{realonly,rf}{,_seed1,_seed2}`, `pilot150_P4_k25_semipm` (seed 0 only); eval `aligntac_newobj/eval_newobj.py` -> `aligntac_newobj/eval_newobj.json` (object-ID map from build_datasets!).
+Three-seed means, new objects (cMAE / IoU / rot / trans mm): real only 0.167 / 0.867 / 7.65 / 0.83; AlignTac 0.146 / 0.889 / 7.16 / 0.70 (-12% cMAE; lower in every seed: 0.163/0.170/0.168 vs 0.159/0.139/0.141). Self-training (1 seed) 0.174 / 0.724 / 8.0 / 0.88.
+Per object cMAE: button 0.202 -> 0.186, edge 0.131 -> 0.115, hex key 0.218 -> 0.180, marble 0.078 -> 0.083 (no gain). Button rotation ~23 deg for both (near-symmetric); edge along-edge translation unobservable.
+Same models on the 12 ridge objects (testA): real only 0.287 / 6.3 deg -> AlignTac 0.243 / 2.9 deg.
+Label quality (unlabeled train frames, teacher -> aligned IoU): button 0.69 -> 0.85, edge 0.84 -> 0.94, hex key 0.69 -> 0.81, marble 0.39 -> 0.93 (`aligntac_newobj/label_quality_newobj.json`).
+Fig. 6 candidates: `paper_RoboSoft/scripts/fig_qual_plus4.py` (layouts wide / tall).

@@ -73,7 +73,7 @@ Under the tested renderer, image similarity can favor an incorrect geometric sta
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$). Left: marker-free GelSlim~4.0 (sensor A); right: dot-marker GelSlim~4.0 (sensor B). Within each variant, columns show the real tactile frame, real-only prediction, AlignTac student $\Student$ prediction, and GT depth, from left to right. Rows show three objects per variant, using each object's median AlignTac contact-MAE frame. \FinalLine{Numbers overlaid on predictions report contact MAE (mm); the shared color bar shows depth (mm).}}
+    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$). Left: marker-free GelSlim~4.0 (sensor A); middle: the four additional sensor-A objects (models trained on all 16 objects); right: dot-marker GelSlim~4.0 (sensor B). Within each group, columns show the real tactile frame, real-only prediction, AlignTac student $\Student$ prediction, and GT depth, from left to right. Rows show four objects per group, using each object's median AlignTac contact-MAE frame. \FinalLine{Numbers overlaid on predictions report contact MAE (mm); the shared color bar shows depth (mm).}}
     \label{fig:qual}
 \end{figure*}
 
@@ -116,15 +116,17 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$
 
 \subsection{Robustness Across Sessions and Sensor Variants}
 \label{sec:general}
-We evaluate robustness across capture sessions and GelSlim~4.0 variants. First, we test models trained on the marker-free variant (A) on another day's contacts after object re-placement, without retraining and then with unlabeled second-session images (Table~\ref{tab:general}). Second, we retrain each method on the dot-marker variant (B) with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f).
+We evaluate robustness across capture sessions, GelSlim~4.0 variants and additional objects. First, we test models trained on the marker-free variant (A) on another day's contacts after object re-placement, without retraining and then with unlabeled second-session images (Table~\ref{tab:general}). Second, we retrain each method on the dot-marker variant (B) with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f).
 
 \noindent\textbf{Zero-shot cross-session transfer.} On sensor A's second session, AlignTac lowers contact MAE by $15$--$20\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.248\,$mm at $K=100$, a $31\%$ reduction from real-only training. Pose error rises for all methods (rotation $10$--$19^\circ$, translation $1.7$--$2.1\,$mm), well above within-session levels.
 
 \noindent\textbf{Label-free cross-session adaptation.} Re-placement invalidates the session-1 calibration (Sec.~\ref{sec:setup}), so new images come without usable poses. We take every contact frame from half of the session-2 presses ($1{,}066$ images), discard their poses, pseudo-label them with the session-1 teacher and aligner, and add them to student training. On the other half (Table~\ref{tab:general}, bottom), contact MAE falls by a further $6\%$ at both budgets (three-seed means; lower in every seed), and rotation error from $10.4^\circ$ to $7.9^\circ$ and from $9.7^\circ$ to $7.3^\circ$; IoU does not improve, and teacher labels for the same images give no consistent gain. A new session can thus be used without labeling its contacts.
 
-\noindent\textbf{Cross-variant applicability.} On \sensorB{} (sensor B; Fig.~\ref{fig:kshot}d), AlignTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are \FinalLine{less consistent at larger budgets (Fig.~\ref{fig:kshot}).}
+\noindent\textbf{Cross-variant applicability.} On \sensorB{} (sensor B; Fig.~\ref{fig:kshot}d), AlignTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are less consistent at larger budgets (Fig.~\ref{fig:kshot}).
 
-Fig.~\ref{fig:qual} illustrates differences in ridge continuity and junction placement; improvements vary across individual contacts, while the aggregate metrics consistently favor AlignTac.
+\noindent\textbf{Additional objects.} Four further sensor-A objects (button, hex key, block edge, marble; $3{,}156$ contacts) are labeled from the robot pose after fitting each object's placement to its contact outlines. Trained on all 16 objects at $K=25$, AlignTac lowers their contact MAE from $0.167$ to $0.146\,$mm ($12\%$; three-seed means, lower in every seed); the gain is largest on the hex key ($17\%$) and absent on the \FinalLine{marble.}
+
+Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac.
 
 \begin{figure}[!htb]
     \centering
