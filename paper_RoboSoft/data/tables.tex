@@ -109,35 +109,35 @@ mesh & aligner, no renderer & 0.72 & 0.23 & 1.1 & 0.0433 & 0.247 & 0.722 & 4.0 \
 
 % ---- cross ----
 \newcommand{\tabcross}{%
-Real only (9 objects, session 1) & 0.315 & 0.675 & 25.4 & 12.6 & 7.7 \\
-Blender & 0.294 & 0.701 & 24.9 & 9.5 & 5.1 \\
-Blender (domain rand.) & 0.294 & 0.691 & 25.5 & 10.3 & 5.5 \\
-Blender, bg-norm. & 0.291 & 0.698 & 24.9 & 9.1 & \textbf{4.5} \\
-GAN-LOO & 0.272 & 0.723 & 24.1 & 10.8 & 5.2 \\
-Bg-cond.\ GAN-LOO & 0.270 & 0.727 & 24.2 & 10.4 & 4.7 \\
-Blender $\oplus$ GAN-LOO & 0.275 & 0.724 & 24.0 & 10.2 & 5.0 \\
-Refiner (0 labels) & 0.290 & 0.714 & 24.6 & 11.6 & 5.1 \\
-\textit{GAN-full (full real set)} & \textit{0.259} & \textit{0.748} & \textit{22.9} & \textit{9.9} & \textit{4.8} \\
+Real only (9 objects, session 1) & 0.299 & 0.674 & 25.1 & 12.6 & 7.7 \\
+Blender & 0.276 & 0.701 & 24.3 & 9.5 & 5.1 \\
+Blender (domain rand.) & 0.278 & 0.689 & 25.1 & 10.3 & 5.5 \\
+Blender, bg-norm. & 0.273 & 0.697 & 24.3 & 9.1 & \textbf{4.5} \\
+GAN-LOO & 0.255 & 0.720 & 23.1 & 10.8 & 5.2 \\
+Bg-cond.\ GAN-LOO & 0.253 & 0.726 & 23.2 & 10.4 & 4.7 \\
+Blender $\oplus$ GAN-LOO & 0.256 & 0.723 & 23.0 & 10.2 & 5.0 \\
+Refiner (0 labels) & 0.271 & 0.712 & 23.9 & 11.6 & 5.1 \\
+\textit{GAN-full (full real set)} & \textit{0.241} & \textit{0.747} & \textit{21.6} & \textit{9.9} & \textit{4.8} \\
 \midrule
-Blender only ($\Kreal=0$) & 0.425 & 0.561 & 50.7 & 11.7 & 6.0 \\
-$\Kreal=25$ real only & 0.368 & 0.598 & 30.7 & 16.2 & 5.7 \\
-$\Kreal=25$ + Blender & 0.382 & 0.615 & 30.1 & 9.7 & 5.0 \\
-$\Kreal=25$ + GAN-25 & 0.342 & 0.589 & 28.7 & 10.2 & 5.0 \\
-$\Kreal=25$ + refiner-25 (0 labels) & 0.338 & 0.635 & 29.5 & 12.1 & 5.4 \\
-$\Kreal=25$ + self-trained GAN-25 & 0.363 & 0.606 & 29.1 & 11.6 & 5.2 \\
-$\Kreal=25$ + teacher-label self-training & 0.335 & 0.598 & 27.5 & 12.0 & 4.7 \\
-$\Kreal=25$ + AlignTac, L1 search & 0.322 & 0.621 & 27.4 & 10.1 & 4.6 \\
-$\Kreal=25$ + AlignTac & 0.306 & 0.654 & 27.3 & 10.9 & 6.0 \\
-$\Kreal=25$ + AlignTac + learned synth. & 0.310 & 0.660 & 27.2 & \textbf{9.0} & 4.6 \\
-$\Kreal=100$ real only & 0.351 & 0.657 & 27.5 & 12.9 & 7.3 \\
-$\Kreal=100$ + Blender & 0.299 & 0.647 & 25.3 & 9.8 & 4.7 \\
-$\Kreal=100$ + GAN-100 & 0.295 & 0.713 & 25.6 & 11.1 & 5.1 \\
-$\Kreal=100$ + refiner-100 (0 labels) & 0.330 & 0.688 & 26.2 & 11.6 & 4.8 \\
-$\Kreal=100$ + self-trained GAN-100 & 0.310 & 0.715 & 26.1 & 10.7 & 5.0 \\
-$\Kreal=100$ + teacher-label self-training & 0.300 & 0.707 & 24.2 & 10.9 & 4.9 \\
-$\Kreal=100$ + AlignTac, L1 search & 0.293 & 0.718 & 23.5 & 10.5 & 4.6 \\
-$\Kreal=100$ + AlignTac & 0.288 & 0.707 & 24.6 & 10.1 & 6.0 \\
-$\Kreal=100$ + AlignTac + learned synth. & \textbf{0.252} & \textbf{0.743} & \textbf{22.8} & 10.2 & 5.0 \\
+Blender only ($\Kreal=0$) & 0.409 & 0.562 & 51.5 & 11.7 & 6.0 \\
+$\Kreal=25$ real only & 0.352 & 0.593 & 31.6 & 16.2 & 5.7 \\
+$\Kreal=25$ + Blender & 0.363 & 0.609 & 31.0 & 9.7 & 5.0 \\
+$\Kreal=25$ + GAN-25 & 0.327 & 0.577 & 29.6 & 10.2 & 5.0 \\
+$\Kreal=25$ + refiner-25 (0 labels) & 0.325 & 0.627 & 30.0 & 12.1 & 5.4 \\
+$\Kreal=25$ + self-trained GAN-25 & 0.344 & 0.596 & 30.2 & 11.6 & 5.2 \\
+$\Kreal=25$ + teacher-label self-training & 0.318 & 0.585 & 28.0 & 12.0 & 4.7 \\
+$\Kreal=25$ + AlignTac, L1 search & 0.308 & 0.607 & 27.9 & 10.1 & 4.6 \\
+$\Kreal=25$ + AlignTac & 0.296 & 0.647 & 27.8 & 10.9 & 6.0 \\
+$\Kreal=25$ + AlignTac + learned synth. & 0.297 & 0.657 & 27.9 & \textbf{9.0} & 4.6 \\
+$\Kreal=100$ real only & 0.332 & 0.651 & 27.9 & 12.9 & 7.3 \\
+$\Kreal=100$ + Blender & 0.283 & 0.635 & 25.6 & 9.8 & 4.7 \\
+$\Kreal=100$ + GAN-100 & 0.278 & 0.707 & 25.2 & 11.1 & 5.1 \\
+$\Kreal=100$ + refiner-100 (0 labels) & 0.311 & 0.682 & 26.3 & 11.6 & 4.8 \\
+$\Kreal=100$ + self-trained GAN-100 & 0.290 & 0.713 & 25.7 & 10.7 & 5.0 \\
+$\Kreal=100$ + teacher-label self-training & 0.280 & 0.696 & 23.6 & 10.9 & 4.9 \\
+$\Kreal=100$ + AlignTac, L1 search & 0.274 & 0.709 & 23.0 & 10.5 & 4.6 \\
+$\Kreal=100$ + AlignTac & 0.274 & 0.707 & 24.5 & 10.1 & 6.0 \\
+$\Kreal=100$ + AlignTac + learned synth. & \textbf{0.237} & \textbf{0.737} & \textbf{22.2} & 10.2 & 5.0 \\
 }
 
 % ---- kshotmain ----
@@ -458,10 +458,10 @@ $\dagger$ & Real only & 0.315 & 0.675 \\
 
 % ---- crossT ----
 \newcommand{\tabcrossT}{%
-Real only & 0.359 & \rankthird{0.612} & \rankthird{16.2} & \ranksecond{2.00} & 0.362 & 0.652 & \rankthird{12.6} & \ranksecond{1.86} \\
-Self-training & \rankthird{0.348} & 0.599 & 18.7 & \rankthird{2.14} & \rankthird{0.327} & \rankthird{0.676} & 16.2 & \rankthird{2.05} \\
-\textbf{AlignTac (ours)} & \rankfirst{0.306} & \rankfirst{0.656} & \ranksecond{10.9} & \rankfirst{1.68} & \ranksecond{0.291} & \ranksecond{0.706} & \ranksecond{10.1} & \rankfirst{1.73} \\
-\quad + learned synth. & \ranksecond{0.317} & \ranksecond{0.655} & \rankfirst{9.6} & \rankfirst{1.68} & \rankfirst{0.248} & \rankfirst{0.743} & \rankfirst{9.7} & \ranksecond{1.86} \\
+Real only & 0.344 & \rankthird{0.608} & \rankthird{16.2} & \ranksecond{2.00} & 0.344 & 0.649 & \rankthird{12.6} & \ranksecond{1.86} \\
+Self-training & \rankthird{0.330} & 0.588 & 18.7 & \rankthird{2.14} & \rankthird{0.305} & \rankthird{0.666} & 16.2 & \rankthird{2.05} \\
+\textbf{AlignTac (ours)} & \rankfirst{0.295} & \ranksecond{0.650} & \ranksecond{10.9} & \rankfirst{1.68} & \ranksecond{0.274} & \ranksecond{0.707} & \ranksecond{10.1} & \rankfirst{1.73} \\
+\quad + learned synth. & \ranksecond{0.304} & \rankfirst{0.651} & \rankfirst{9.6} & \rankfirst{1.68} & \rankfirst{0.235} & \rankfirst{0.738} & \rankfirst{9.7} & \ranksecond{1.86} \\
 }
 
 % ---- sbT ----
@@ -552,9 +552,9 @@ IoU$\uparrow$, AlignTac (ours) & \rankfirst{0.856} & \rankfirst{0.911} & \rankfi
 
 % ---- s2adapt: session-2 unlabeled pool (held-out half of session 2, 464 frames; hand-added 2026-10-10, see PAPER_NOTES) ----
 \newcommand{\tabstwoadapt}{%
-Real only & 0.356 & \rankthird{0.625} & \rankthird{14.8} & \rankthird{1.78} & 0.365 & 0.658 & \rankthird{12.4} & \rankthird{1.64} \\
-Self-training & 0.347 & 0.603 & 17.4 & 1.96 & \rankthird{0.336} & \rankthird{0.679} & 14.9 & 1.85 \\
-\quad + session 2 & \rankthird{0.340} & 0.592 & 19.6 & 1.98 & 0.347 & 0.668 & 14.7 & 1.84 \\
-\textbf{AlignTac (ours)}$^{\ast}$ & \ranksecond{0.309} & \rankfirst{0.665} & \ranksecond{10.4} & \ranksecond{1.51} & \ranksecond{0.286} & \rankfirst{0.710} & \ranksecond{9.7} & \ranksecond{1.54} \\
-\quad + session 2$^{\ast}$ & \rankfirst{0.290} & \ranksecond{0.651} & \rankfirst{7.9} & \rankfirst{1.33} & \rankfirst{0.270} & \ranksecond{0.708} & \rankfirst{7.3} & \rankfirst{1.35} \\
+Real only & 0.341 & \rankthird{0.621} & \rankthird{14.8} & \rankthird{1.78} & 0.347 & 0.652 & \rankthird{12.4} & \rankthird{1.64} \\
+Self-training & 0.329 & 0.592 & 17.4 & 1.96 & \rankthird{0.313} & \rankthird{0.666} & 14.9 & 1.85 \\
+\quad + session 2 & \rankthird{0.322} & 0.583 & 19.6 & 1.98 & 0.325 & 0.655 & 14.7 & 1.84 \\
+\textbf{AlignTac (ours)}$^{\ast}$ & \ranksecond{0.295} & \rankfirst{0.661} & \ranksecond{10.4} & \ranksecond{1.51} & \ranksecond{0.271} & \rankfirst{0.709} & \ranksecond{9.7} & \ranksecond{1.54} \\
+\quad + session 2$^{\ast}$ & \rankfirst{0.280} & \ranksecond{0.650} & \rankfirst{7.9} & \rankfirst{1.33} & \rankfirst{0.256} & \ranksecond{0.703} & \rankfirst{7.3} & \rankfirst{1.35} \\
 }
