@@ -124,7 +124,7 @@ We evaluate robustness across capture sessions, GelSlim~4.0 variants and additio
 
 \noindent\textbf{Cross-variant applicability.} On \sensorB{} (sensor B; Fig.~\ref{fig:kshot}d), AlignTac lowers contact MAE by $36\%$ at $K=25$ (IoU $0.85\to0.91$) and matches real-only contact accuracy with twice as many labels. Reductions at other budgets range from $15$ to $33\%$, exceeding renderer augmentation and self-training on contact MAE. The trend holds over three seeds at every budget and at $K=25$ with the original public labels. Pose gains are less consistent at larger budgets (Fig.~\ref{fig:kshot}).
 
-\noindent\textbf{Additional objects.} Four further sensor-A objects (button, hex key, block edge, marble; $3{,}156$ contacts) are labeled from the robot pose after fitting each object's placement to its contact outlines. Trained on all 16 objects at $K=25$, AlignTac lowers their contact MAE from $0.167$ to $0.146\,$mm ($12\%$; three-seed means, lower in every seed); the gain is largest on the hex key ($17\%$) and absent on the \FinalLine{marble.}
+\noindent\textbf{Additional objects.} Four further sensor-A objects (button, hex key, block edge, marble; $3{,}156$ contacts) are labeled from the robot pose after fitting each object's placement to its contact outlines. Trained on all 16 objects at $K=25$, AlignTac lowers their contact MAE from $0.235$ to $0.204\,$mm ($13\%$; three-seed means, lower in every seed) and raises IoU from $0.70$ to $0.77$, with gains on all four \FinalLine{objects.}
 
 Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac.
 

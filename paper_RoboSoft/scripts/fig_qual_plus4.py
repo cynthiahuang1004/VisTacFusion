@@ -8,12 +8,13 @@ Data: outputs/robosoft_qual/qual_{A,B}.npz (dump_qual_preds.py) and qual_P4.npz 
 usage (cwd = VisTacFusion): python paper_RoboSoft/scripts/fig_qual_plus4.py <out_dir> [wide|tall ...]
 writes <out_dir>/image_grid_<layout>.pdf (width 248.4 bp, the size figures/fig_qual.tex places)
 """
-import os, sys
+import json, os, sys
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
+plt.rcParams["pdf.fonttype"] = 42          # as make_paper_figs.py (embedded TrueType)
 
 Q = "outputs/robosoft_qual"; VMAX = 1.2; W_BP = 248.4
 RUNS = {"A": ("T_k25_realonly", "T_k25_rf"), "B": ("S_k25_realonly_m", "S_k25_maplnr_m"), "P4": ("P4_k25_realonly", "P4_k25_rf")}
@@ -36,7 +37,13 @@ def data(name):
     return _D[name]
 
 
+PICKS = "paper_RoboSoft/figures/qualitative_assets/fig_qual_picks.json"   # optional {"<set>/<object>": frame key} chosen by the authors
+
+
 def median_frame(name, obj):
+    picks = json.load(open(PICKS)) if os.path.exists(PICKS) else {}
+    if f"{name}/{obj}" in picks:
+        return list(map(str, data(name)["keys"])).index(picks[f"{name}/{obj}"])
     d = data(name); err = d[f"cmae_{RUNS[name][1]}"]          # select by AlignTac's own error, not by its gain
     ids = sorted(np.nonzero(d["obj"] == obj)[0], key=lambda j: err[j])
     return ids[len(ids) // 2]
@@ -57,7 +64,7 @@ def grid(layout, out):
                 d = data(name); i = median_frame(name, obj); r0, r1 = RUNS[name]
                 for c, im in enumerate([d["img"][i], d[f"pred_{r0}"][i], d[f"pred_{r1}"][i], d["gt"][i]]):
                     ax = fig.add_subplot(inner[r, c])
-                    ax.imshow(im) if c == 0 else ax.imshow(im.astype(np.float32), cmap="viridis", vmin=0, vmax=VMAX)
+                    ax.imshow(im, interpolation="none") if c == 0 else ax.imshow(im.astype(np.float32), cmap="viridis", vmin=0, vmax=VMAX, interpolation="none")
                     ax.set_xticks([]); ax.set_yticks([]); ax.grid(False)
                     for s in ax.spines.values():
                         s.set_visible(False)
@@ -66,7 +73,7 @@ def grid(layout, out):
                         ax.text(0.96, 0.05, f"{e:.2f}", transform=ax.transAxes, ha="right", va="bottom", fontsize=fs, color="white",
                                 path_effects=[pe.withStroke(linewidth=0.8, foreground="black")])
                 print(layout, name, obj, "frame", d["keys"][i], "real only %.3f AlignTac %.3f" % (d[f"cmae_{r0}"][i], d[f"cmae_{r1}"][i]))
-    path = os.path.join(out, f"image_grid_{layout}.pdf"); fig.savefig(path); plt.close(fig)
+    path = os.path.join(out, f"image_grid_{layout}.pdf"); fig.savefig(path, dpi=600); plt.close(fig)   # images embedded at native 224 px (interpolation="none")
     print(path, f"{W_BP:.1f} x {h_bp:.1f} bp")
 
 
