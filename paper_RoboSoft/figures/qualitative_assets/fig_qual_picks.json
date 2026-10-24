@@ -1,5 +1,6 @@
 {
  "P4/button_v2": "real_filtered_testP4/button_v2/session_000:325",
  "P4/hex_key_v2": "real_filtered_testP4/hex_key_v2/session_000:288",
- "P4/marble_v2": "real_filtered_testP4/marble_v2/session_000:625"
+ "P4/marble_v2": "real_filtered_testP4/marble_v2/session_000:625",
+ "P4/edge_v2": "real_filtered_testP4/edge_v2/session_000:345"
 }

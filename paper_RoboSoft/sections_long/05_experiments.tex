@@ -369,13 +369,13 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Depth predictions.} $K=25$, held-out frames of four selected objects per group: sensor A (left), the four additional sensor-A objects of Sec.~\ref{sec:addobj} (middle; models trained on all 16 objects) and sensor B (right). Columns: tactile frame, real only, AlignTac, GT. Each example is the frame with the median AlignTac contact MAE for its object, chosen without reference to the baseline. Numbers are contact MAE (mm); depth maps share a color scale.}
+    \caption{\textbf{Depth predictions.} $K=25$, held-out test frames: sensor A (left), the four additional sensor-A objects of Sec.~\ref{sec:addobj} (middle; models trained on all 16 objects) and sensor B (right). Columns: tactile frame, real only, AlignTac, GT. Numbers are contact MAE (mm); depth maps share a color scale.}
     \label{fig:qual}
 \end{figure*}
 
 \subsection{Qualitative Results}
 \label{sec:qual}
-Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. For each displayed object, we select the frame with the median AlignTac contact MAE. This fixes selection within each object; the examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the AlignTac student recovers more of the contact extent, most visibly on the hex key and the button rim. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
+Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. The examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the AlignTac student recovers more of the contact extent, most visibly on the hex key and the button rim. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
 
 \begin{table}[!tbp]
 \centering

@@ -73,7 +73,7 @@ Under the tested renderer, image similarity can favor an incorrect geometric sta
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig_qual.pdf}
-    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$). Left two groups: marker-free GelSlim~4.0 (sensor A); middle: the four additional sensor-A objects (models trained on all 16 objects); rightmost group: dot-marker GelSlim~4.0 (sensor B). Within each group, columns show the real tactile frame, real-only prediction, AlignTac student $\Student$ prediction, and GT depth, from left to right. Rows show four objects per group, using each object's median AlignTac contact-MAE frame. \FinalLine{Numbers overlaid on predictions report contact MAE (mm); the shared color bar shows depth (mm).}}
+    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$, held-out test frames). Left: marker-free GelSlim~4.0 (sensor A); middle: four additional sensor-A objects (button, hex key, block edge, marble), with models trained on all 16 objects; right: dot-marker GelSlim~4.0 (sensor B). Each row shows the tactile image, the real-only prediction, the AlignTac student $\Student$ prediction and the GT depth. \FinalLine{Numbers report contact MAE (mm); the shared color bar shows depth (mm).}}
     \label{fig:qual}
 \end{figure*}
 
