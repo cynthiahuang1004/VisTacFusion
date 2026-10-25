@@ -65,6 +65,16 @@ def pic(s, path, x, y, w, h):
     return s.shapes.add_picture(path, Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2), Inches(pw), Inches(ph))
 
 
+def movie(s, path, x, y, w, h, poster=None):
+    """Embed an mp4 fitted into the box; poster = first frame of the clip (extracted with ffmpeg) unless given."""
+    if poster is None:
+        poster = osp.join(CROP, osp.basename(path).replace(".mp4", "_poster.png"))
+        if not osp.exists(poster):
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-frames:v", "1", poster], check=True)
+    iw, ih = Image.open(poster).size; sc = min(w / iw, h / ih); pw, ph = iw * sc, ih * sc
+    return s.shapes.add_movie(path, Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2), Inches(pw), Inches(ph), poster_frame_image=poster, mime_type="video/mp4")
+
+
 def caption(s, txt, y=6.55, color=GOLD, size=20):
     text(s, txt, 0.6, y, W - 1.2, 0.7, size, color, bold=True, align=PP_ALIGN.CENTER)
 
@@ -79,6 +89,7 @@ f4abc = crop(f"{PNG}/fig4_kshot.png", (0, 0, 0.5, 1), "fig4_sensorA.png"); f4def
 f6 = f"{PNG}/fig6_qual.png"; f6_new = crop(f6, (0.335, 0, 0.665, 1), "fig6_new_objects.png")
 photo = f"{P}/figures_archive/intro_figure/assets/images/acquisition_photo_crop.png"
 anim_mp4, anim_poster, anim_gif = f"{ANIM}/align_anim.mp4", f"{ANIM}/strip_it0.png", f"{ANIM}/align_anim_small.gif"
+STREAM = f"{V}/streams"; PERTURB = f"{V}/perturb/perturb.mp4"
 if not osp.exists(anim_gif):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", anim_mp4, "-vf", "fps=8,scale=1600:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse", anim_gif], check=True)
 
@@ -86,7 +97,7 @@ if not osp.exists(anim_gif):
 s = new_slide(8, NARR[0])
 text(s, "AlignTac:", 0.7, 2.0, W - 1.4, 1.1, 48, GOLD, bold=True, align=PP_ALIGN.CENTER)
 text(s, "Aligning Real Tactile Images with Simulated Geometry\nfor Label-Efficient Contact Learning", 0.7, 3.1, W - 1.4, 2.0, 36, WHITE, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Anonymous submission to RoboSoft 2027", 0.7, 5.6, W - 1.4, 0.6, 20, GREY, align=PP_ALIGN.CENTER)
+text(s, "Anonymous submission to RoboSoft 2027   ·   no audio", 0.7, 5.6, W - 1.4, 0.6, 20, GREY, align=PP_ALIGN.CENTER)
 
 s = new_slide(14, NARR[1],
               "Tactile images are easy to collect, their geometric labels are not")
@@ -107,13 +118,18 @@ caption(s, "Only a 4-D contact state (θ, x, y, z) separates a real image from i
 
 s = new_slide(16, NARR[4],
               "Step 1: a teacher and an aligner from K labeled contacts")
-pic(s, f2_s1, 0.6, 1.0, 12.1, 5.4)
-caption(s, "Aligner input: real image + mesh depth at a perturbed state;  target: the correction −δ", 6.55, WHITE)
+pic(s, f2_s1, 0.3, 1.05, 5.3, 4.6); movie(s, PERTURB, 5.7, 1.05, 7.4, 4.6)
+text(s, "Teacher: K labeled contacts → depth, normals, pose", 0.3, 5.75, 5.3, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Aligner: perturb the known state, project the mesh, learn to undo the perturbation", 5.7, 5.75, 7.4, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
+caption(s, "One labeled contact gives many (image, perturbed mesh depth → −δ) training pairs", 6.45, GOLD)
 
 s = new_slide(16, NARR[5],
               "Steps 2 and 3: pseudo-label the unlabeled images, train the student")
-pic(s, f2_s2, 0.3, 1.0, 8.2, 3.9); pic(s, f2_s3, 8.6, 1.0, 4.5, 3.9); pic(s, f2_inf, 2.4, 5.0, 8.5, 1.75)
-text(s, "Inference: image + object ID → depth, normals, pose   (mesh-assisted pose refinement optional)", 0.6, 6.85, W - 1.2, 0.5, 16, GREY, italic=True, align=PP_ALIGN.CENTER)
+movie(s, f"{STREAM}/label_pattern_32_run1.mp4", 0.3, 1.0, 8.6, 3.05); pic(s, f2_s3, 9.1, 1.0, 4.0, 3.05)
+text(s, "Unlabeled stream from a second session: teacher state (red) → six aligner updates (green) → mesh depth as the pseudo-label", 0.3, 4.1, 8.6, 0.8, 16, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Student: labeled + pseudo-labeled images", 9.1, 4.1, 4.0, 0.5, 16, WHITE, bold=True, align=PP_ALIGN.CENTER)
+pic(s, f2_inf, 2.9, 4.95, 7.5, 1.6)
+caption(s, "Inference needs only the image and the object identity;  mesh-assisted pose refinement is optional", 6.6, GOLD, 18)
 
 s = new_slide(16, NARR[6],
               "Alignment in action: six updates on held-out real contacts", GOLD)
@@ -137,9 +153,10 @@ text(s, "Learned renderer (K) and self-training use the same K labels / the same
 
 s = new_slide(12, NARR[9],
               "Contact-depth predictions on held-out frames")
-pic(s, f6, 0.3, 1.05, 12.7, 4.3)
-text(s, "left: marker-free sensor    middle: button, hex key, edge, marble    right: dot-marker sensor", 0.6, 5.45, W - 1.2, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
-text(s, "columns: real image | real only | AlignTac | ground truth;  numbers: contact MAE in mm", 0.6, 5.95, W - 1.2, 0.5, 16, GREY, align=PP_ALIGN.CENTER)
+movie(s, f"{STREAM}/pred_pattern_32_run1.mp4", 0.3, 1.0, 6.3, 2.3); movie(s, f"{STREAM}/pred_pattern_36_run1.mp4", 6.8, 1.0, 6.3, 2.3)
+pic(s, f6, 0.3, 3.5, 12.7, 2.9)
+text(s, "top: live predictions on a second-session stream (approach, press, lift);  arrow: AlignTac planar pose", 0.6, 6.4, W - 1.2, 0.45, 16, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "bottom: held-out frames — real image | real only | AlignTac | ground truth;  numbers: contact MAE (mm)", 0.6, 6.85, W - 1.2, 0.45, 15, GREY, align=PP_ALIGN.CENTER)
 
 s = new_slide(16, NARR[10],
               "Robust across sessions, sensor variants and objects")
@@ -149,8 +166,9 @@ for i, (hd, body) in enumerate([("Second session, zero-shot", "objects re-placed
     x = 0.4 + i * 4.2
     text(s, hd, x, 1.15, 4.1, 0.5, 22, BLUE, bold=True, align=PP_ALIGN.CENTER)
     text(s, body, x, 1.7, 4.1, 2.2, 19, WHITE, bold=True, align=PP_ALIGN.CENTER)
-pic(s, f6_new, 0.8, 4.05, 5.6, 2.9)
-text(s, "Four additional objects: button, hex key, block edge, marble\n\ncontact MAE 0.235 → 0.204 mm  (−13%)\nthree seeds, lower in every seed", 6.7, 4.2, 6.2, 2.6, 21, WHITE, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+movie(s, f"{STREAM}/scan_hex_key_v2.mp4", 0.3, 3.95, 6.3, 1.65); movie(s, f"{STREAM}/scan_button_v2.mp4", 6.8, 3.95, 6.3, 1.65)
+movie(s, f"{STREAM}/scan_marble_v2.mp4", 0.3, 5.65, 6.3, 1.65); movie(s, f"{STREAM}/scan_edge_v2.mp4", 6.8, 5.65, 6.3, 1.65)
+text(s, "Four additional objects, consecutive captures:  real image | real only | AlignTac | ground truth   —   contact MAE 0.235 → 0.204 mm (−13%, three seeds)", 0.3, 3.5, W - 0.6, 0.45, 15, GOLD, bold=True, align=PP_ALIGN.CENTER)
 
 s = new_slide(12, NARR[11],
               "The aligner also refines pose at test time")
