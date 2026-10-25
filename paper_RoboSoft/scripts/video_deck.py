@@ -151,7 +151,7 @@ pic(s, f"{PNG}/fig3_align.png", 0.4, 1.05, 7.2, 4.4); pic(s, f"{PNG}/fig5_labels
 text(s, "Same teacher, K = 25:  label IoU 0.47 (mesh at teacher pose)  →  0.72 (aligned mesh);  label rotation error 6.0° → 1.1°", 0.6, 5.65, W - 1.2, 0.6, 19, GOLD, bold=True, align=PP_ALIGN.CENTER)
 text(s, "Right: teacher vs. aligned-mesh label quality across budgets on both GelSlim 4.0 variants", 0.6, 6.3, W - 1.2, 0.5, 17, WHITE, align=PP_ALIGN.CENTER)
 
-s = new_slide(16, NARR[8],
+s = new_slide(14, NARR[8],
               "Label efficiency on two GelSlim 4.0 variants")
 pic(s, f"{PNG}/fig4_kshot.png", 0.3, 1.0, 12.7, 3.7)
 text(s, "K = 25:  contact MAE −20% (marker-free)  and  −36% (dot-marker)  vs. real-only training", 0.6, 4.85, W - 1.2, 0.6, 22, GOLD, bold=True, align=PP_ALIGN.CENTER)
@@ -183,7 +183,7 @@ pic(s, f"{PNG}/fig7_conv.png", 0.4, 1.05, 6.3, 4.3); pic(s, f"{PNG}/fig8_poseref
 text(s, "From the teacher pose: 5.7° → 1.2° after three updates;   15° perturbations → 0.5°", 0.6, 5.55, W - 1.2, 0.6, 22, GOLD, bold=True, align=PP_ALIGN.CENTER)
 text(s, "Optional: standard inference needs only the image and the object identity", 0.6, 6.2, W - 1.2, 0.5, 18, WHITE, align=PP_ALIGN.CENTER)
 
-s = new_slide(14, NARR[12],
+s = new_slide(12, NARR[12],
               "Takeaways", GOLD)
 text(s, "•  Real images supply appearance; a known mesh supplies geometry; AlignTac learns the contact state that connects them\n\n"
         "•  K = 25 labeled contacts per object: contact MAE −20% / −36% on two GelSlim 4.0 variants, matching real-only with 2× the labels\n\n"
