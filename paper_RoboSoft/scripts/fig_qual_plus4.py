@@ -5,7 +5,7 @@ Data: outputs/robosoft_qual/qual_{A,B}.npz (dump_qual_preds.py) and qual_P4.npz 
   layout "wide": three groups side by side (sensor A ridge | sensor A non-ridge | sensor B), four rows each,
                  same height as the current figure.
   layout "tall": top = sensor A ridge | sensor B (two rows each), bottom = the four non-ridge objects (two per group).
-usage (cwd = VisTacFusion): python paper_RoboSoft/scripts/fig_qual_plus4.py <out_dir> [wide|tall ...]
+usage (cwd = VisTacFusion): python paper_RoboSoft/scripts/fig_qual_plus4.py <out_dir> [wide|tall ...]   (paper: out_dir = paper_RoboSoft/figures/src, then rename image_grid_wide.pdf -> fig6_image_grid.pdf and run python build.py --figures)
 writes <out_dir>/image_grid_<layout>.pdf (width 248.4 bp, the size figures/fig_qual.tex places)
 """
 import json, os, sys
@@ -37,7 +37,7 @@ def data(name):
     return _D[name]
 
 
-PICKS = "paper_RoboSoft/figures/qualitative_assets/fig_qual_picks.json"   # optional {"<set>/<object>": frame key} chosen by the authors
+PICKS = "paper_RoboSoft/figures/src/fig6_picks.json"   # optional {"<set>/<object>": frame key} chosen by the authors
 
 
 def median_frame(name, obj):

@@ -35,20 +35,14 @@ def main() -> None:
         raise SystemExit('PDFLaTeX is required. Install TeX Live or MiKTeX, or compile main.tex in Overleaf.')
     flags = ['-interaction=nonstopmode', '-halt-on-error', '-file-line-error']
     if args.figures:
-        intro_dir = ROOT / 'figures' / 'intro_figure'
-        run([latex, *flags, '-output-directory=figures/intro_figure',
-             'figures/intro_figure/motivation_standalone.tex'])
-        shutil.copy2(intro_dir / 'motivation_standalone.pdf',
-                     intro_dir / 'AlignTac_Figure1_Updated.pdf')
+        # Standalone TikZ wrappers live in figures/src/; the paper includes the exported PDFs in figures/.
         for source, target in [
-            ('pipeline_standalone', 'fig_arch_training_inference'),
-            ('fig_qual_standalone', 'fig_qual'),
-            ('fig_kshot_standalone', 'fig_kshot'),
-            ('fig_labels_standalone', 'fig_labels'),
-            ('fig_renders_standalone', 'fig_renders'),
+            ('fig4_kshot_standalone', 'fig4_kshot'),
+            ('fig5_labels_standalone', 'fig5_labels'),
+            ('fig6_qual_standalone', 'fig6_qual'),
         ]:
-            run([latex, *flags, '-output-directory=figures', f'figures/{source}.tex'])
-            shutil.copy2(ROOT / f'figures/{source}.pdf', ROOT / f'figures/{target}.pdf')
+            run([latex, *flags, '-output-directory=figures/src', f'figures/src/{source}.tex'])
+            shutil.copy2(ROOT / f'figures/src/{source}.pdf', ROOT / f'figures/{target}.pdf')
     run([latex, *flags, 'main.tex'])
     if bibtex:
         run([bibtex, 'main'])

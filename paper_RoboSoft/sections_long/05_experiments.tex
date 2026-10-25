@@ -8,7 +8,7 @@ Sensor-A main runs use 150 epochs; seed checks, ablations and sensor-B runs use 
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig_kshot.pdf}
+    \includegraphics[width=0.95\textwidth]{figures/fig4_kshot.pdf}
     \caption{\textbf{Label efficiency.} Contact MAE, rotation and translation error against the label budget. (a--c) sensor-A held-out test frames (clean protocol) results; (d--f) sensor-B test results. Lower is better. Lines connect evaluated budgets. Sensor A uses 150 epochs except the $K=10$ learned renderer (full) (50); sensor B uses 50.}
     \label{fig:kshot}
 \end{figure*}
@@ -128,7 +128,7 @@ Depth & Pose & \shortstack[c]{\strut IoU\\\strut $\uparrow$} & \metrichead{Cont.
 
 \begin{figure}[!tbp]
     \centering
-    \includegraphics[width=\columnwidth]{figures/fig_labels.pdf}
+    \includegraphics[width=\columnwidth]{figures/fig5_labels.pdf}
     \caption{\textbf{Pseudo-label quality.} Teacher predictions and aligned mesh labels, evaluated against withheld training GT on each sensor. The withheld GT is not used for learning.}
     \label{fig:labels}
 \end{figure}
@@ -145,7 +145,7 @@ We use the same unlabeled images to compare teacher predictions, render-and-comp
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\columnwidth]{figures/fig_conv.pdf}
+    \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
     \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Error after six updates when the GT pose is perturbed by a rotation of the given magnitude plus a random in-plane shift of up to $1.5\,$mm; the shaded band is the $\pm8^\circ$ training range.}
     \label{fig:conv}
 \end{figure}
@@ -368,7 +368,7 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=0.97\textwidth]{figures/fig_qual.pdf}
+    \includegraphics[width=0.97\textwidth]{figures/fig6_qual.pdf}
     \caption{\textbf{Depth predictions.} $K=25$, held-out test frames: sensor A (left), the four additional sensor-A objects of Sec.~\ref{sec:addobj} (middle; models trained on all 16 objects) and sensor B (right). Columns: tactile frame, real only, AlignTac, GT. Numbers are contact MAE (mm); depth maps share a color scale.}
     \label{fig:qual}
 \end{figure*}
@@ -419,7 +419,7 @@ Tables~\ref{tab:kshot} and \ref{tab:kshotmore}, and Fig.~\ref{fig:kshot} vary th
 
 \begin{figure}[!tbp]
     \centering
-    \includegraphics[width=0.85\columnwidth]{figures/fig_fidelity.pdf}
+    \includegraphics[width=0.85\columnwidth]{figures/long/fig_fidelity.pdf}
     \caption{\textbf{Renderer fidelity and downstream error.} Contact-region L1 between rendered and real images on held-out real (depth, image) pairs versus depth MSE of the downstream model trained with that renderer's data, for every learned-renderer variant and budget.}
     \label{fig:fidelity}
 \end{figure}

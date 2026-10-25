@@ -2,7 +2,7 @@
 
 \begin{figure}[!t]
     \centering
-    \includegraphics[width=\columnwidth,trim=0 42 0 0,clip]{figures/intro_figure/AlignTac_Fig1.pdf}% trim: empty strip below the figure
+    \includegraphics[width=\columnwidth,trim=0 42 0 0,clip]{figures/fig1_teaser.pdf}% trim: empty strip below the figure
     \caption{\textbf{From few labels to aligned geometric supervision.}
     (a) A real contact is labeled by projecting the object mesh at the ground-truth (GT) contact state $q^\ast$ obtained from the robot pose; this needs calibration and verification, repeated after the object is re-placed (right; outlines mark the mesh contact region).
     (b) In simulation the state and depth are given, but tactile images need sensor-specific modeling: a physically based renderer (PBR) or a learned renderer fitted on labeled real pairs.
@@ -16,8 +16,8 @@ As shown in Fig.~\ref{fig:aligntac_teaser}a, real data collection requires each 
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figures/AlignTac_Fig2.pdf}
-    \caption{\textbf{AlignTac training and inference.} (a) Step~1: $K$ labeled real images per object train teacher $\Teacher$ and aligner $\Aligner$; the aligner receives each image with the mesh moved from its GT state $q^\ast$ to $q^\ast+\delta$ and learns the correction $-\delta$. Step~2: for each unlabeled image, $\Teacher$ predicts an initial state $q_0$, $\Aligner$ refines it to $q_T$ in six updates, and the mesh $\Mesh$ projected at $q_T$ gives the depth, normal and planar-pose pseudo-label. Step~3: student $\Student$ trains on the labeled and pseudo-labeled images. (b) Standard prediction uses the image and object identity; mesh-assisted pose refinement is optional. Outlines mark the mesh contact region at each state; pose glyphs are schematic.}
+    \includegraphics[width=\textwidth]{figures/fig2_pipeline.pdf}
+    \caption{\textbf{AlignTac training and inference.} (a) Step~1: $K$ labeled real images per object train teacher $\Teacher$ and aligner $\Aligner$; the aligner receives each image with the mesh moved from its GT state $q^\ast$ to $q^\ast+\delta$ and learns the correction $-\delta$. Step~2: for each unlabeled image, $\Teacher$ predicts an initial state $q_0$, $\Aligner$ refines it to $q_T$ in six updates, and the mesh $\Mesh$ projected at $q_T$ gives the depth, normal and planar-pose pseudo-label. Step~3: student $\Student$ trains on the labeled and pseudo-labeled images. (b) Standard prediction uses the image and object identity; mesh-assisted pose refinement is optional. Outlines on the tactile images mark the mesh contact region at each state ($q^\ast$, $q^\ast+\delta$, $q_0$, $q_T$); pose glyphs are schematic.}
     \label{fig:mapl}
 \end{figure*}
 
