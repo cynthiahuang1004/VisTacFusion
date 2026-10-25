@@ -108,9 +108,9 @@ s = new_slide(14, NARR[1],
               "Tactile images are easy to collect, their geometric labels are not")
 movie(s, f"{V}/robot/robot_press.mp4", 0.35, 1.0, 3.3, 5.5)
 movie(s, f"{STREAM}/pred_pattern_32_run1.mp4", 3.9, 1.0, 9.2, 3.25)
-text(s, "A robot presses the sensor on a known object.  Each press gives a tactile image for free.", 3.9, 4.35, 9.2, 0.5, 19, WHITE, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Its geometric label is the object mesh projected at the robot pose, which first needs calibration and verification,\nrepeated whenever the object is re-placed.", 3.9, 4.9, 9.2, 1.0, 18, WHITE, align=PP_ALIGN.CENTER)
-text(s, "(left: data collection, 1.5× speed;  right: tactile stream with contact-depth predictions)", 3.9, 5.95, 9.2, 0.4, 13, GREY, italic=True, align=PP_ALIGN.CENTER)
+text(s, "A robot presses the sensor on a known object: each press gives a tactile image for free.", 3.9, 4.35, 9.2, 0.45, 17, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Its geometric label is the mesh projected at the robot pose, which first needs calibration and verification,\nrepeated whenever the object is re-placed.", 3.9, 4.85, 9.2, 0.9, 16, WHITE, align=PP_ALIGN.CENTER)
+text(s, "(left: data collection, 1.5× speed;  right: tactile stream with contact-depth predictions)", 3.9, 5.85, 9.2, 0.4, 13, GREY, italic=True, align=PP_ALIGN.CENTER)
 caption(s, "Images are cheap; labels are not", 6.55)
 
 s = new_slide(12, NARR[2],
