@@ -313,3 +313,7 @@ Paper: zero-shot AlignTac vs real only 14-21% (was 15-20%); + learned synth. K=1
 
 ### 2026-10-25 figures folder layout
 `figures/fig1_teaser.pdf` ... `figures/fig8_poseref.pdf` = conference-paper figures in order; `figures/long/` = extended-version-only figures; `figures/src/` = TikZ wrappers, grids, curves and PPT sources (`python build.py --figures` rebuilds fig4-6 from them). Everything else moved to `figures_archive/` (local only, not synced to Overleaf). Fig. 6 grid: `scripts/fig_qual_plus4.py paper_RoboSoft/figures/src wide`, rename to `fig6_image_grid.pdf`.
+
+### 2026-10-25 co-author (X. Xu) figure suggestions
+- Fig. 6: last row of each group now shows surface normals (mean angular error over GT contact) instead of a fourth depth row — depth MAE can understate differences (marble: MAE 0.089 vs 0.098 but normals 9.7 -> 4.0 deg). Set-level normal error real only -> AlignTac: A 27.1 -> 23.1, B 19.0 -> 15.9, new objects 20.0 -> 15.5 deg. Dumps now store normals (`dump_qual_preds.py`, `eval_newobj.py`); grid `fig_qual_plus4.py`.
+- Fig. 7(b): "after 6 iterations" replaced by curves after 1/2/3/6 updates on a log axis with the no-update diagonal (`make_paper_figs.fig_conv`); same data (`aligner_convergence.json`).

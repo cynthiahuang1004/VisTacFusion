@@ -36,18 +36,23 @@ def main():
                 model = build_model(cfg).to(dev).eval(); load_checkpoint(osp.join(OUT, prefix + run, "best_depth.pt"), model, device=dev)
             idx = list(range(0, len(ds), S["step"]))
             keys = ["/" + "/".join(str(ds.samples[i][0]).split("/")[-3:]) + f"/:{ds.samples[i][1]}" for i in idx]
-            pred, gt, img = [], [], []
+            pred, gt, img, pn, gn = [], [], [], [], []
             for b in DataLoader(Subset(ds, idx), batch_size=32, num_workers=4):
                 o = model(b["rgb"].to(dev), b["tactile"].to(dev), config="tactile", object_ids=b["object"].to(dev))
                 pred.append(o["depth"].float().cpu()[:, 0]); gt.append(b["depth"].float()[:, 0]); img.append(b["tactile"])
-            pred, gt, img = torch.cat(pred), torch.cat(gt), torch.cat(img)
+                pn.append(torch.nn.functional.normalize(o["normal"].float().cpu(), dim=1)); gn.append(torch.nn.functional.normalize(b["normal"].float(), dim=1))
+            pred, gt, img, pn, gn = torch.cat(pred), torch.cat(gt), torch.cat(img), torch.cat(pn), torch.cat(gn)
             if "keys" not in out:
                 mean = torch.tensor(cfg.norm.imagenet_mean).view(1, 3, 1, 1); std = torch.tensor(cfg.norm.imagenet_std).view(1, 3, 1, 1)
-                out.update(keys=np.array(keys), gt=gt.numpy().astype(np.float16), img=(img * std + mean).clamp(0, 255).permute(0, 2, 3, 1).numpy().astype(np.uint8))
+                out.update(keys=np.array(keys), gt=gt.numpy().astype(np.float16), img=(img * std + mean).clamp(0, 255).permute(0, 2, 3, 1).numpy().astype(np.uint8),
+                           gt_normal=gn.permute(0, 2, 3, 1).numpy().astype(np.float16))
             assert list(out["keys"]) == keys
             m = gt > 0
             out[f"pred_{run}"] = pred.numpy().astype(np.float16)
             out[f"cmae_{run}"] = ((pred - gt).abs() * m).flatten(1).sum(1).div(m.flatten(1).sum(1).clamp(min=1)).numpy()
+            ang = torch.rad2deg(torch.acos((pn * gn).sum(1).clamp(-1 + 1e-6, 1 - 1e-6)))                  # [N,H,W] normal angular error
+            out[f"normal_{run}"] = pn.permute(0, 2, 3, 1).numpy().astype(np.float16)
+            out[f"nerr_{run}"] = (ang * m).flatten(1).sum(1).div(m.flatten(1).sum(1).clamp(min=1)).numpy()   # mean over GT contact pixels
             print(name, run, len(keys), "contact MAE", float(out[f"cmae_{run}"].mean()), flush=True)
         np.savez_compressed(f"outputs/robosoft_qual/qual_{name}.npz", **out)
 

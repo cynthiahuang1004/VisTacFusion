@@ -391,10 +391,14 @@ def fig_conv(out):
     ax.axvline(6, color="#b5b3ad", lw=0.8, ls=":"); ax.set_xticks([0, 2, 4, 6, 8, 10]); ax.set_ylim(0, None)
     ax.set_xlabel("Aligner iterations"); ax.set_title("(a) From teacher pose [deg]", loc="left", fontsize=6.6, pad=3); ax.legend(frameon=False, fontsize=6)
     ax = axes[1]; R = sorted(int(r) for r in d["basin"])
-    ax.plot(R, [d["basin"][str(r)]["rot"]["mean"][6] for r in R], color="#8a4fd3", marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label="mean")
-    ax.plot(R, [d["basin"][str(r)]["rot"]["median"][6] for r in R], color="#52514e", marker="o", ms=MS, mec="white", mew=0.5, lw=LW, label="median")
-    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_ylim(0, None); ax.set_xticks([0, 8, 15, 20, 25, 30])
-    ax.set_xlabel("Initial rotation error [deg]"); ax.set_title("(b) After 6 iterations [deg]", loc="left", fontsize=6.6, pad=3)
+    # basin of attraction: mean rotation error after 1, 2, 3 and 6 updates vs. the initial rotation perturbation (log scale);
+    # the dotted diagonal is the initial error itself (no update)
+    ax.plot(R, [max(r, 0.3) for r in R], color="#b5b3ad", lw=0.8, ls=":", label="no update")
+    for it, c in ((1, "#d9c2f0"), (2, "#b58ae0"), (3, "#8a4fd3"), (6, "#4b2a7a")):
+        ax.plot(R, [d["basin"][str(r)]["rot"]["mean"][it] for r in R], color=c, marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label=f"{it} update" + ("s" if it > 1 else ""))
+    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"])
+    ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.set_xlabel("Initial rotation error [deg]"); ax.set_title("(b) After alignment [deg], mean", loc="left", fontsize=6.6, pad=3)
+    ax.legend(frameon=False, fontsize=5.2, ncol=2, columnspacing=0.8, handlelength=1.4, loc="upper left")
     fig.tight_layout(w_pad=0.8)
     fig.savefig(osp.join(out, "fig_conv.pdf")); plt.close(fig)
 

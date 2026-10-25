@@ -146,7 +146,7 @@ We use the same unlabeled images to compare teacher predictions, render-and-comp
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
-    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Error after six updates when the GT pose is perturbed by a rotation of the given magnitude plus a random in-plane shift of up to $1.5\,$mm; the shaded band is the $\pm8^\circ$ training range.}
+    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Mean rotation error after one, two, three and six updates from perturbed GT states (random translation and indentation offsets) versus the perturbation magnitude, log scale; dotted: no update. Shaded region: training rotation range ($\pm8^\circ$).}
     \label{fig:conv}
 \end{figure}
 
@@ -369,13 +369,13 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.97\textwidth]{figures/fig6_qual.pdf}
-    \caption{\textbf{Depth predictions.} $K=25$, held-out test frames: sensor A (left), the four additional sensor-A objects of Sec.~\ref{sec:addobj} (middle; models trained on all 16 objects) and sensor B (right). Columns: tactile frame, real only, AlignTac, GT. Numbers are contact MAE (mm); depth maps share a color scale.}
+    \caption{\textbf{Depth predictions.} $K=25$, held-out test frames: sensor A (left), the four additional sensor-A objects of Sec.~\ref{sec:addobj} (middle; models trained on all 16 objects) and sensor B (right). Columns: tactile frame, real only, AlignTac, GT. The first three rows of each group show contact depth (numbers: contact MAE in mm, shared color scale), the last row surface normals (numbers: mean angular error over the GT contact in degrees).}
     \label{fig:qual}
 \end{figure*}
 
 \subsection{Qualitative Results}
 \label{sec:qual}
-Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. The examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the AlignTac student recovers more of the contact extent, most visibly on the hex key and the button rim. On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
+Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. The examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the AlignTac student recovers more of the contact extent, most visibly on the hex key and the button rim. The normal rows show differences that contact MAE understates: on the marble both depth predictions have similar MAE, whereas the AlignTac normals are much closer to the GT ($4^\circ$ vs.\ $10^\circ$ mean angular error); over the whole test sets the normal error falls from $27^\circ$ to $23^\circ$ (sensor A), $19^\circ$ to $16^\circ$ (sensor B) and $20^\circ$ to $16^\circ$ (additional objects). On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
 
 \begin{table}[!tbp]
 \centering

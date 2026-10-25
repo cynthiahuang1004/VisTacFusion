@@ -73,7 +73,7 @@ Under the tested renderer, image similarity can favor an incorrect geometric sta
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig6_qual.pdf}
-    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$, held-out test frames). Left: marker-free GelSlim~4.0 (sensor A); middle: four additional sensor-A objects (button, hex key, block edge, marble), with models trained on all 16 objects; right: dot-marker GelSlim~4.0 (sensor B). Each row shows the tactile image, the real-only prediction, the AlignTac student $\Student$ prediction and the GT depth. \FinalLine{Numbers report contact MAE (mm); the shared color bar shows depth (mm).}}
+    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$, held-out test frames). Left: marker-free GelSlim~4.0 (sensor A); middle: four additional sensor-A objects (button, hex key, block edge, marble), with models trained on all 16 objects; right: dot-marker GelSlim~4.0 (sensor B). Each row shows the tactile image, the real-only prediction, the AlignTac student $\Student$ prediction and the GT; the first three rows of each group show contact depth (numbers: contact MAE in mm; shared color bar in mm), the last row surface normals \FinalLine{(numbers: mean angular error over the GT contact in degrees).}}
     \label{fig:qual}
 \end{figure*}
 
@@ -110,7 +110,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
-    \caption{\textbf{Aligner convergence} (marker-free sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Rotation error after six updates from perturbed GT states, with random translation and indentation offsets. \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
+    \caption{\textbf{Aligner convergence} (marker-free sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Mean rotation error after one, two, three and six updates from perturbed GT states, with random translation and indentation offsets, versus the perturbation magnitude (log scale; dotted: no update). \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
     \label{fig:conv}
 \end{figure}
 
@@ -126,7 +126,7 @@ We evaluate robustness across capture sessions, GelSlim~4.0 variants and additio
 
 \noindent\textbf{Additional objects.} Four further sensor-A objects (button, hex key, block edge, marble; $3{,}156$ contacts) are labeled from the robot pose after fitting each object's placement to its contact outlines. Trained on all 16 objects at $K=25$, AlignTac lowers their contact MAE from $0.235$ to $0.204\,$mm ($13\%$; three-seed means, lower in every seed) and raises IoU from $0.70$ to $0.77$, with gains on all four \FinalLine{objects.}
 
-Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac.
+Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac. Contact MAE can understate the difference: on the marble, both predictions have similar MAE, but the AlignTac normals are closer to the GT ($4^\circ$ vs.\ $10^\circ$).
 
 \begin{figure}[!htb]
     \centering
