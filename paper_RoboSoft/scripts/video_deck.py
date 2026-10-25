@@ -141,7 +141,6 @@ s = new_slide(16, NARR[6],
 movie(s, anim_mp4, 0.4, 1.15, 12.53, 3.13, poster=anim_poster)
 text(s, "red: teacher initial state q0     green: after six aligner updates     white: ground-truth contact region", 0.6, 4.45, W - 1.2, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
 text(s, "Rotation error on these four frames: 6–8° → 0.0–0.4°;  translation: 0.2–1.3 mm → 0.1–0.3 mm", 0.6, 5.0, W - 1.2, 0.5, 18, GREY, align=PP_ALIGN.CENTER)
-text(s, "(video embedded; align_anim_small.gif is the same sequence as an animated GIF)", 0.6, 5.5, W - 1.2, 0.4, 12, GREY, italic=True, align=PP_ALIGN.CENTER)
 
 s = new_slide(14, NARR[7],
               "Accurate alignment turns known geometry into accurate labels")
