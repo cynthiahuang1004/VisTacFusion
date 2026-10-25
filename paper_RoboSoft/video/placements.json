@@ -1,6 +1,22 @@
 {
  "placements": [
   {
+   "slide": 2,
+   "clip": "paper_RoboSoft/video/robot/robot_press.mp4",
+   "x": 0.3500000000000002,
+   "y": 1.2583892617449668,
+   "w": 3.2999999999999994,
+   "h": 4.983221476510066
+  },
+  {
+   "slide": 2,
+   "clip": "paper_RoboSoft/video/streams/pred_pattern_32_run1.mp4",
+   "x": 3.9,
+   "y": 1.0131889763779527,
+   "w": 9.2,
+   "h": 3.2236220472440946
+  },
+  {
    "slide": 5,
    "clip": "paper_RoboSoft/video/perturb/perturb.mp4",
    "x": 5.7,

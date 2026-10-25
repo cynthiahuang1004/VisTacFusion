@@ -34,10 +34,10 @@ def cmap(d):
 def up(rgb): return cv2.resize(rgb, None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
 
 
-def outline(im, depth_mm, color, width=3):
+def outline(im, depth_mm, color, width=7):
     m = (depth_mm > 0).astype(np.uint8); cs, _ = cv2.findContours(m, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
     cs = [(c * UP).astype(np.int32) for c in cs]
-    cv2.drawContours(im, cs, -1, (0, 0, 0), width + 2); cv2.drawContours(im, cs, -1, color, width); return im
+    cv2.drawContours(im, cs, -1, (0, 0, 0), width + 4); cv2.drawContours(im, cs, -1, color, width); return im
 
 
 def glyph(im, theta, x_mm, y_mm, color=(255, 200, 0), L=18):

@@ -26,7 +26,7 @@ def outline(im, depth_mm, color, width=2):
     """Draw the contact outline (depth > 0, 224-px map) on `im`, an UP-times upscaled copy of the frame."""
     m = (depth_mm > 0).astype(np.uint8); cs, _ = cv2.findContours(m, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
     cs = [(c * UP).astype(np.int32) for c in cs]
-    cv2.drawContours(im, cs, -1, (0, 0, 0), width + 2); cv2.drawContours(im, cs, -1, color, width)
+    cv2.drawContours(im, cs, -1, (0, 0, 0), width + 4); cv2.drawContours(im, cs, -1, color, width)
     return im
 
 
@@ -93,9 +93,9 @@ def main():
             rgb = np.array(Image.open(osp.join(r["unit"], "samples", f"{r['frame']:04d}.png")).convert("RGB"))
             q = r["traj"][it]; d = B.gt_depth_mm(r["obj"], q[0], q[1], q[2], q[3]); dg = B.gt_depth_mm(r["obj"], *r["g"], r["pg"])
             im = cv2.resize(rgb, None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
-            im = outline(im, dg, (255, 255, 255), 2)                                   # GT outline, white
+            im = outline(im, dg, (255, 255, 255), 5)                                   # GT outline, white
             t = it / T; col = (int(255 * (1 - t)), int(220 * t), 60)                    # red -> green
-            im = outline(im, d, col, 3)
+            im = outline(im, d, col, 7)
             im = label(im, f"rotation error {r['rot'][it]:.1f} deg,  translation error {r['trans'][it]:.2f} mm", "")
             d_ = osp.join(VID, f"{r['obj']}_{r['frame']:04d}"); os.makedirs(d_, exist_ok=True); Image.fromarray(im).save(osp.join(d_, f"it{it}.png"))
             tiles.append(im)

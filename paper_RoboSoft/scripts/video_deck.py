@@ -106,9 +106,12 @@ text(s, "Anonymous submission to RoboSoft 2027   ·   no audio", 0.7, 5.6, W - 1
 
 s = new_slide(14, NARR[1],
               "Tactile images are easy to collect, their geometric labels are not")
-pic(s, photo, 0.4, 1.05, 3.6, 5.3); pic(s, f1a, 4.2, 1.05, 8.9, 5.3)
-text(s, "[ robot video clip here ]", 0.4, 6.4, 3.6, 0.4, 14, GREY, italic=True, align=PP_ALIGN.CENTER)
-caption(s, "Every labeled contact requires calibration and verification of the robot pose", 6.6)
+movie(s, f"{V}/robot/robot_press.mp4", 0.35, 1.0, 3.3, 5.5)
+movie(s, f"{STREAM}/pred_pattern_32_run1.mp4", 3.9, 1.0, 9.2, 3.25)
+text(s, "A robot presses the sensor on a known object.  Each press gives a tactile image for free.", 3.9, 4.35, 9.2, 0.5, 19, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Its geometric label is the object mesh projected at the robot pose, which first needs calibration and verification,\nrepeated whenever the object is re-placed.", 3.9, 4.9, 9.2, 1.0, 18, WHITE, align=PP_ALIGN.CENTER)
+text(s, "(left: data collection, 1.5× speed;  right: tactile stream with contact-depth predictions)", 3.9, 5.95, 9.2, 0.4, 13, GREY, italic=True, align=PP_ALIGN.CENTER)
+caption(s, "Images are cheap; labels are not", 6.55)
 
 s = new_slide(12, NARR[2],
               "Simulation and self-training each pay a different price")

@@ -15,7 +15,7 @@ VID = osp.join(ROOT, "paper_RoboSoft", "video", "perturb"); FONT = "/usr/share/f
 
 def outline(im, d, color, width):
     cs, _ = cv2.findContours((d > 0).astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE); cs = [(c * UP).astype(np.int32) for c in cs]
-    cv2.drawContours(im, cs, -1, (0, 0, 0), width + 2); cv2.drawContours(im, cs, -1, color, width); return im
+    cv2.drawContours(im, cs, -1, (0, 0, 0), width + 4); cv2.drawContours(im, cs, -1, color, width); return im
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
     base = cv2.resize(rgb, None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
     for k in range(14):
         d = rng.uniform(-1, 1, 4) * np.array([math.radians(8), 1.5, 1.5, 0.15]) * (0.3 if k % 2 else 1.0)
-        im = outline(base.copy(), dg, (60, 230, 90), 3); im = outline(im, B.gt_depth_mm(OBJ, q[0] + d[0], q[1] + d[1], q[2] + d[2], q[3] + d[3]), (255, 150, 0), 3)
+        im = outline(base.copy(), dg, (60, 230, 90), 7); im = outline(im, B.gt_depth_mm(OBJ, q[0] + d[0], q[1] + d[1], q[2] + d[2], q[3] + d[3]), (255, 150, 0), 7)
         pil = Image.new("RGB", (im.shape[1] + 800, im.shape[0]), (0, 0, 0)); pil.paste(Image.fromarray(im), (0, 0)); dr = ImageDraw.Draw(pil); x0 = im.shape[1] + 24
         dr.text((x0, 30), "labeled real image", fill=(255, 255, 255), font=f)
         dr.text((x0, 90), "mesh at GT state q*", fill=(60, 230, 90), font=f2)
