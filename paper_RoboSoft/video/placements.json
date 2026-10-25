@@ -1,0 +1,91 @@
+{
+ "placements": [
+  {
+   "slide": 5,
+   "clip": "paper_RoboSoft/video/perturb/perturb.mp4",
+   "x": 5.7,
+   "y": 1.660869565217391,
+   "w": 7.4,
+   "h": 3.3782608695652177
+  },
+  {
+   "slide": 6,
+   "clip": "paper_RoboSoft/video/streams/label_pattern_32_run1.mp4",
+   "x": 0.3,
+   "y": 1.0183070866141732,
+   "w": 8.6,
+   "h": 3.0133858267716533
+  },
+  {
+   "slide": 7,
+   "clip": "paper_RoboSoft/video/align_anim/align_anim.mp4",
+   "x": 0.4049999999999999,
+   "y": 1.15,
+   "w": 12.52,
+   "h": 3.13
+  },
+  {
+   "slide": 10,
+   "clip": "paper_RoboSoft/video/streams/pred_pattern_32_run1.mp4",
+   "x": 0.3,
+   "y": 1.046259842519685,
+   "w": 6.3,
+   "h": 2.20748031496063
+  },
+  {
+   "slide": 10,
+   "clip": "paper_RoboSoft/video/streams/pred_pattern_36_run1.mp4",
+   "x": 6.8,
+   "y": 1.046259842519685,
+   "w": 6.3,
+   "h": 2.20748031496063
+  },
+  {
+   "slide": 11,
+   "clip": "paper_RoboSoft/video/streams/scan_hex_key_v2.mp4",
+   "x": 0.3075842696629218,
+   "y": 3.95,
+   "w": 6.284831460674156,
+   "h": 1.6499999999999997
+  },
+  {
+   "slide": 11,
+   "clip": "paper_RoboSoft/video/streams/scan_button_v2.mp4",
+   "x": 6.807584269662922,
+   "y": 3.95,
+   "w": 6.284831460674156,
+   "h": 1.6499999999999997
+  },
+  {
+   "slide": 11,
+   "clip": "paper_RoboSoft/video/streams/scan_marble_v2.mp4",
+   "x": 0.3075842696629218,
+   "y": 5.65,
+   "w": 6.284831460674156,
+   "h": 1.6499999999999997
+  },
+  {
+   "slide": 11,
+   "clip": "paper_RoboSoft/video/streams/scan_edge_v2.mp4",
+   "x": 6.807584269662922,
+   "y": 5.65,
+   "w": 6.284831460674156,
+   "h": 1.6499999999999997
+  }
+ ],
+ "seconds": [
+  8,
+  14,
+  12,
+  14,
+  16,
+  16,
+  16,
+  14,
+  16,
+  12,
+  16,
+  12,
+  14
+ ]
+}

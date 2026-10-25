@@ -3,7 +3,7 @@
 Assets: paper_RoboSoft/video/png/fig*.png (pdftoppm -r 300 of figures/fig*.pdf), video/align_anim/ (video_align_anim.py),
 figures_archive/intro_figure/assets/images/acquisition_photo_crop.png.
 usage (cwd = VisTacFusion): python paper_RoboSoft/scripts/video_deck.py   -> paper_RoboSoft/video/AlignTac_video.pptx, SCRIPT.md"""
-import os, os.path as osp, subprocess
+import json, os, os.path as osp, subprocess
 from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
@@ -17,6 +17,8 @@ FONT = "Times New Roman"; W, H = 13.333, 7.5
 prs = Presentation(); prs.slide_width, prs.slide_height = Inches(W), Inches(H)
 BLANK = prs.slide_layouts[6]
 script = []
+POSTER = bool(os.environ.get("DECK_POSTER"))      # poster deck: clips replaced by their first frame (for rendering backgrounds)
+PLACEMENTS = []                                    # (slide index, clip path, x, y, w, h in inches) of every embedded clip
 # narration per slide (~2.4 words/s)
 NARR = [
     'AlignTac: aligning real tactile images with simulated geometry for label-efficient contact learning.',
@@ -71,8 +73,11 @@ def movie(s, path, x, y, w, h, poster=None):
         poster = osp.join(CROP, osp.basename(path).replace(".mp4", "_poster.png"))
         if not osp.exists(poster):
             subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-frames:v", "1", poster], check=True)
-    iw, ih = Image.open(poster).size; sc = min(w / iw, h / ih); pw, ph = iw * sc, ih * sc
-    return s.shapes.add_movie(path, Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2), Inches(pw), Inches(ph), poster_frame_image=poster, mime_type="video/mp4")
+    iw, ih = Image.open(poster).size; sc = min(w / iw, h / ih); pw, ph = iw * sc, ih * sc; px, py = x + (w - pw) / 2, y + (h - ph) / 2
+    PLACEMENTS.append(dict(slide=len(prs.slides), clip=path, x=px, y=py, w=pw, h=ph))
+    if POSTER:
+        return s.shapes.add_picture(poster, Inches(px), Inches(py), Inches(pw), Inches(ph))
+    return s.shapes.add_movie(path, Inches(px), Inches(py), Inches(pw), Inches(ph), poster_frame_image=poster, mime_type="video/mp4")
 
 
 def caption(s, txt, y=6.55, color=GOLD, size=20):
@@ -133,7 +138,7 @@ caption(s, "Inference needs only the image and the object identity;  mesh-assist
 
 s = new_slide(16, NARR[6],
               "Alignment in action: six updates on held-out real contacts", GOLD)
-mv = s.shapes.add_movie(anim_mp4, Inches(0.4), Inches(1.15), Inches(12.53), Inches(3.13), poster_frame_image=anim_poster, mime_type="video/mp4")
+movie(s, anim_mp4, 0.4, 1.15, 12.53, 3.13, poster=anim_poster)
 text(s, "red: teacher initial state q0     green: after six aligner updates     white: ground-truth contact region", 0.6, 4.45, W - 1.2, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
 text(s, "Rotation error on these four frames: 6–8° → 0.0–0.4°;  translation: 0.2–1.3 mm → 0.1–0.3 mm", 0.6, 5.0, W - 1.2, 0.5, 18, GREY, align=PP_ALIGN.CENTER)
 text(s, "(video embedded; align_anim_small.gif is the same sequence as an animated GIF)", 0.6, 5.5, W - 1.2, 0.4, 12, GREY, italic=True, align=PP_ALIGN.CENTER)
@@ -164,11 +169,11 @@ for i, (hd, body) in enumerate([("Second session, zero-shot", "objects re-placed
                                  ("Label-free adaptation", "unlabeled session-2 images,\npseudo-labeled by the same aligner\n\na further −5% contact MAE\nrotation 10.4° → 7.9°"),
                                  ("Dot-marker variant", "retrained, same aligner settings\n\ncontact MAE −36% at K = 25\n−15 to −33% at other budgets")]):
     x = 0.4 + i * 4.2
-    text(s, hd, x, 1.15, 4.1, 0.5, 22, BLUE, bold=True, align=PP_ALIGN.CENTER)
-    text(s, body, x, 1.7, 4.1, 2.2, 19, WHITE, bold=True, align=PP_ALIGN.CENTER)
+    text(s, hd, x, 1.05, 4.1, 0.5, 21, BLUE, bold=True, align=PP_ALIGN.CENTER)
+    text(s, body, x, 1.55, 4.1, 1.9, 17, WHITE, bold=True, align=PP_ALIGN.CENTER)
 movie(s, f"{STREAM}/scan_hex_key_v2.mp4", 0.3, 3.95, 6.3, 1.65); movie(s, f"{STREAM}/scan_button_v2.mp4", 6.8, 3.95, 6.3, 1.65)
 movie(s, f"{STREAM}/scan_marble_v2.mp4", 0.3, 5.65, 6.3, 1.65); movie(s, f"{STREAM}/scan_edge_v2.mp4", 6.8, 5.65, 6.3, 1.65)
-text(s, "Four additional objects, consecutive captures:  real image | real only | AlignTac | ground truth   —   contact MAE 0.235 → 0.204 mm (−13%, three seeds)", 0.3, 3.5, W - 0.6, 0.45, 15, GOLD, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Four additional objects, consecutive captures:  real image | real only | AlignTac | ground truth   —   contact MAE 0.235 → 0.204 mm (−13%, three seeds)", 0.3, 3.5, W - 0.6, 0.4, 14, GOLD, bold=True, align=PP_ALIGN.CENTER)
 
 s = new_slide(12, NARR[11],
               "The aligner also refines pose at test time")
@@ -185,7 +190,8 @@ text(s, "•  Real images supply appearance; a known mesh supplies geometry; Ali
         "•  Code will be released",
      0.9, 1.3, W - 1.8, 5.2, 24, WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
-prs.save(f"{V}/AlignTac_video.pptx")
+prs.save(f"{V}/AlignTac_video_poster.pptx" if POSTER else f"{V}/AlignTac_video.pptx")
+json.dump(dict(placements=PLACEMENTS, seconds=[x[1] for x in script]), open(f"{V}/placements.json", "w"), indent=1)
 total = sum(x[1] for x in script)
 with open(f"{V}/SCRIPT.md", "w") as f:
     f.write(f"# AlignTac video script  (planned {total} s ≈ {total // 60}:{total % 60:02d}; narration ~{sum(len(x[3].split()) for x in script)} words)\n\n")
