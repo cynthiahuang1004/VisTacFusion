@@ -179,9 +179,11 @@ text(s, "Left: three unlabeled frames, mesh at the teacher pose vs. at the align
 
 s = new_slide(14, NARR[8], "Label efficiency on two GelSlim 4.0 variants")
 pic(s, f"{PLOTS}/kshot6.png", 0.3, 1.05, 12.73, 3.95)
-table(s, [["K = 25", "Real only", "AlignTac", "Change"], ["Contact MAE, sensor A [mm]", "0.291", "0.233", "−20%"], ["Contact MAE, sensor B [mm]", "0.127", "0.081", "−36%"],
-          ["Rotation error, sensor A [deg]", "5.7", "3.2", "−44%"]], 0.6, 5.15, [3.6, 1.5, 1.5, 1.3], size=16, row_h=0.4, bold_last_col=True)
-text(s, "AlignTac matches real-only accuracy obtained with 2× the labels.\n\nLearned renderer (K) and self-training use the same K labels and the same unlabeled images.", 8.6, 5.15, 4.5, 1.7, 16, BLACK, anchor=MSO_ANCHOR.MIDDLE)
+table(s, [["K = 25", "Real only", "AlignTac", "Change"],
+          ["Contact MAE [mm], sensor A", "0.291", "0.233", "−20%"], ["Rotation [deg], sensor A", "5.7", "3.2", "−44%"], ["Translation [mm], sensor A", "1.09", "0.88", "−19%"],
+          ["Contact MAE [mm], sensor B", "0.127", "0.081", "−36%"], ["Rotation [deg], sensor B", "8.6", "8.3", "−4%"], ["Translation [mm], sensor B", "1.18", "1.11", "−6%"]],
+      0.5, 5.05, [3.4, 1.4, 1.4, 1.2], size=14, row_h=0.33, bold_last_col=True)
+text(s, "AlignTac matches real-only accuracy obtained with 2× the labels.\n\nPose gains are large on sensor A and small on sensor B.\n\nLearned renderer (K) and self-training use the same K labels and the same unlabeled images.", 8.2, 5.05, 4.9, 2.35, 15, BLACK, anchor=MSO_ANCHOR.MIDDLE)
 
 s = new_slide(14, NARR[9], "Contact depth and normals on held-out frames")
 movie(s, f"{PLOTS}/qual_cycle.mp4", 0.3, 1.05, 12.73, 2.95, poster=f"{PLOTS}/qual_0.png")
