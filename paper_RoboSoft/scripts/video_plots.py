@@ -30,6 +30,8 @@ plt.rcParams.update({"figure.facecolor": BG, "axes.facecolor": BG, "savefig.face
                      "xtick.color": FG, "ytick.color": FG, "axes.edgecolor": "#9a9995", "grid.color": GRID, "axes.grid": True,
                      "axes.spines.top": False, "axes.spines.right": False, "font.family": ["Arial", "Liberation Sans", "DejaVu Sans"], "legend.frameon": False})
 Ks = [10, 25, 50, 100]
+MAE = os.environ.get("MAE_NAME", "Contact MAE")        # metric name in the video plots (the paper says contact MAE)
+QUAL_NOHDR = bool(os.environ.get("QUAL_NOHDR"))      # qual_cycle without its own column-header row (headers placed on the slide)
 
 
 def concat_video(frames, durs, out, fps=30, gif=None):
@@ -74,7 +76,7 @@ def kshot():
                 c = COL[name]; m, ls = M.STY[name][1], M.STY[name][2]; on = name in shown; last = name == "+ AlignTac (ours, strict)"
                 ax.plot(*D[name], color=c, marker=m, ls=ls, lw=3.2 if last else 2.2, ms=15 if m == "*" else 8, mec=BG, mew=0.8, label=NAMES[name],
                         alpha=1.0 if on else 0.0)
-            style(ax, "K  (labeled contacts per object)", t); ax.set_ylabel("contact MAE [mm]  ↓", fontsize=15); ax.set_ylim(0, None)
+            style(ax, "K  (labeled contacts per object)", t); ax.set_ylabel(MAE + " [mm]  ↓", fontsize=15); ax.set_ylim(0, None)
         h, l = axes[0].get_legend_handles_labels()
         leg = fig.legend(h, l, loc="lower center", ncol=6, fontsize=13, columnspacing=1.4, handletextpad=0.5, handlelength=2.2, bbox_to_anchor=(0.5, 0.0))
         for txt, hd, name in zip(leg.get_texts(), leg.legend_handles, order):
@@ -90,7 +92,7 @@ def labels():
     frames = []
     for step in (1, 2):
         fig, axes = plt.subplots(1, 3, figsize=(8.8, 4.0), dpi=DPI)
-        for ax, (i, lab) in zip(axes, [(0, "Label IoU  ↑"), (3, "Contact MAE [mm]  ↓"), (6, "Rotation error [deg]  ↓")]):
+        for ax, (i, lab) in zip(axes, [(0, "Label IoU  ↑"), (3, MAE + " [mm]  ↓"), (6, "Rotation error [deg]  ↓")]):
             for name, D, off, c, m in series:
                 on = step == 2 or off == 0
                 ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, lw=3.0 if off else 2.2, ms=15 if m == "*" else 8, mec=BG, mew=0.8, label=name, alpha=1.0 if on else 0.0)
@@ -128,14 +130,16 @@ def align_toggle(K=25):
             m = B.gt_depth_mm(o, *f["pose"], f["p"]); a, b = m > 0.05, gt > 0
             return (a & b).sum() / max(1, (a | b).sum())
         sc = sorted((iou_of(t), t) for t in cand[::7]); rows.append(sc[len(sc) // 2][1])
-    S, gap, top = 300, 10, 70; cols = ["real image", "teacher depth", "mesh at the", "GT mesh depth"]
-    W = 4 * S + 3 * gap; H = top + 3 * S + 2 * gap + 50
+    INTILE = bool(os.environ.get("ALIGN_TOGGLE_INTILE"))   # no header / footer rows; the phase label sits inside the mesh tile
+    S, gap, top = 300, 10, (0 if INTILE else 70); cols = ["real image", "teacher depth", "mesh at the", "GT mesh depth"]
+    W = 4 * S + 3 * gap; H = top + 3 * S + 2 * gap + (0 if INTILE else 50)
     frames = []
     for phase in (0, 1):
         im = Image.new("RGB", (W, H), (255, 255, 255)); dr = ImageDraw.Draw(im)
-        for c, t in enumerate(cols):
-            put(dr, (c * (S + gap) + S / 2, 8), t if c != 2 else ("mesh at the" if True else t), 24, anchor="ma")
-        put(dr, (2 * (S + gap) + S / 2, 38), "teacher pose" if phase == 0 else "aligned pose", 24, (255, 90, 96) if phase == 0 else (60, 230, 90), anchor="ma")
+        if not INTILE:
+            for c, t in enumerate(cols):
+                put(dr, (c * (S + gap) + S / 2, 8), t, 24, anchor="ma")
+            put(dr, (2 * (S + gap) + S / 2, 38), "teacher pose" if phase == 0 else "aligned pose", 24, (255, 90, 96) if phase == 0 else (60, 230, 90), anchor="ma")
         for r, t in enumerate(rows):
             f = fits[t]; o = t.split("/")[-5]
             gt = np.load(t.replace("samples", "raw_data").replace(".png", "_gt.npy")) * 1000
@@ -146,7 +150,8 @@ def align_toggle(K=25):
             for c, a in enumerate([np.array(Image.open(t).convert("RGB")), vir(td), vir(mm), vir(gt)]):
                 im.paste(Image.fromarray(tile(a, S)), (c * (S + gap), y))
             put(dr, (2 * (S + gap) + S - 8, y + S - 8), f"IoU {iou:.2f}", 26, (255, 90, 96) if phase == 0 else (60, 230, 90), anchor="rd")
-        put(dr, (W / 2, H - 40), "same teacher, K = 25;  IoU against the withheld GT", 22, (90, 90, 90), False, anchor="ma")
+            if INTILE: put(dr, (2 * (S + gap) + 8, y + 8), "teacher pose" if phase == 0 else "aligned pose", 24, (255, 90, 96) if phase == 0 else (60, 230, 90), anchor="la")
+        if not INTILE: put(dr, (W / 2, H - 40), "same teacher, K = 25;  IoU against the withheld GT", 22, (90, 90, 90), False, anchor="ma")
         p = f"{OUT}/align_toggle_{phase}.png"; im.save(p); frames.append(p)
     concat_video(frames * 3, [1.6, 1.6] * 3, f"{OUT}/align_toggle.mp4")
 
@@ -158,7 +163,7 @@ def qual_cycle():
     pretty = lambda o: o.replace("_v2", "").replace("_", " ").replace("lines angle", "lines, angle")
     samples = [(name, obj) for grp in F.LAYOUTS["wide"][0] for name, obj in grp]
     S, gap, hdr, blk_gap = 230, 8, 46, 80; cols = ["real image", "real only", "AlignTac", "ground truth"]
-    bw = 4 * S + 3 * gap; W = 2 * bw + blk_gap; H = 2 * hdr + 2 * S + gap + 20
+    bw = 4 * S + 3 * gap; W = 2 * bw + blk_gap; nh = 1 if QUAL_NOHDR else 2; H = nh * hdr + 2 * S + gap + 20
     vis = lambda nm: (((nm.astype(np.float32) + 1) / 2).clip(0, 1) * 255).astype(np.uint8)
     frames = []
     for k in range(0, len(samples), 2):
@@ -166,12 +171,13 @@ def qual_cycle():
         for b, (name, obj) in enumerate(samples[k:k + 2]):
             d = F.data(name); i = F.median_frame(name, obj, "cmae"); r0, r1 = F.RUNS[name]; x0 = b * (bw + blk_gap)
             put(dr, (x0 + bw / 2, 6), f"{sets[name]}:  {pretty(obj)}", 24, (106, 43, 184), anchor="ma")
-            for c, t in enumerate(cols): put(dr, (x0 + c * (S + gap) + S / 2, hdr + 4), t, 19, anchor="ma")
+            if not QUAL_NOHDR:
+                for c, t in enumerate(cols): put(dr, (x0 + c * (S + gap) + S / 2, hdr + 4), t, 19, anchor="ma")
             masks = [d["gt"][i] > 0, d[f"pred_{r0}"][i] > 0.05, d[f"pred_{r1}"][i] > 0.05]
             ha, va, fx, fy = F.free_corner(masks)
             for r, ims in enumerate([[d["img"][i], vir(d[f"pred_{r0}"][i]), vir(d[f"pred_{r1}"][i]), vir(d["gt"][i])],
                                      [d["img"][i], vis(d[f"normal_{r0}"][i]), vis(d[f"normal_{r1}"][i]), vis(d["gt_normal"][i])]]):
-                y = 2 * hdr + r * (S + gap)
+                y = nh * hdr + r * (S + gap)
                 for c, a in enumerate(ims):
                     x = x0 + c * (S + gap); im.paste(Image.fromarray(tile(a, S)), (x, y))
                     if c in (1, 2):
@@ -179,10 +185,10 @@ def qual_cycle():
                         txt = f"{float(d[f'cmae_{run}'][i]):.2f} mm" if r == 0 else f"{float(d[f'nerr_{run}'][i]):.0f}°"
                         px = x + (S - 8 if ha == "right" else 8); py = y + (S - 8 if va == "bottom" else 8)
                         put(dr, (px, py), txt, 24, (255, 255, 255), anchor=("r" if ha == "right" else "l") + ("d" if va == "bottom" else "a"))
-            put(dr, (x0 + bw + 2, 2 * hdr + S / 2), "depth", 19, (90, 90, 90), False, anchor="lm") if b == 0 else None
-            put(dr, (x0 + bw + 2, 2 * hdr + S + gap + S / 2), "normals", 19, (90, 90, 90), False, anchor="lm") if b == 0 else None
-        p = f"{OUT}/qual_{k // 2}.png"; im.save(p); frames.append(p)
-    concat_video(frames, [2.2] * len(frames), f"{OUT}/qual_cycle.mp4")
+            put(dr, (x0 + bw + 2, nh * hdr + S / 2), "depth", 19, (90, 90, 90), False, anchor="lm") if b == 0 else None
+            put(dr, (x0 + bw + 2, nh * hdr + S + gap + S / 2), "normals", 19, (90, 90, 90), False, anchor="lm") if b == 0 else None
+        p = f"{OUT}/qual_{k // 2}{'_nohdr' if QUAL_NOHDR else ''}.png"; im.save(p); frames.append(p)
+    concat_video(frames, [2.2] * len(frames), f"{OUT}/qual_cycle{'_nohdr' if QUAL_NOHDR else ''}.mp4")
 
 
 # ------------------------------------------------------------------ Fig. 7(a) growing beside the alignment strips; Fig. 7(b); Fig. 8
@@ -250,7 +256,7 @@ def poseref():
 def kshot6():
     series = {"Real only": "realonly", "+ Blender (physical)": "blender", "+ GAN-K (learned, strict)": "gank", "+ self-training": "semipm",
               "+ GAN-full (leaky)": "ganfull", "+ AlignTac (ours, strict)": "rf"}
-    panels = [("c_mae", "Contact MAE [mm]"), ("pose_rot_deg", "Rotation [deg]"), ("pose_trans", "Translation [mm]")]
+    panels = [("c_mae", MAE + " [mm]"), ("pose_rot_deg", "Rotation [deg]"), ("pose_trans", "Translation [mm]")]
     sbkey = {"c_mae": ("c_mae", 1.0, "sensorB_mesh"), "pose_rot_deg": ("rot_deg", 1.0, "sensorB_mesh_bp"), "pose_trans": ("trans_l1", M.HALF_MM / 2, "sensorB_mesh_bp")}
     fig, axes = plt.subplots(1, 6, figsize=(12.6, 3.9), dpi=DPI)
     for i, (ax, (key, lab)) in enumerate(zip(axes[:3], panels)):
