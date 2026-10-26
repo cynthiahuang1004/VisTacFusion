@@ -34,27 +34,51 @@
   },
   {
    "slide": 7,
-   "clip": "paper_RoboSoft/video/align_anim/align_anim.mp4",
-   "x": 0.4049999999999999,
-   "y": 1.15,
-   "w": 12.52,
-   "h": 3.13
+   "clip": "paper_RoboSoft/video/plots/align_anim_plot.mp4",
+   "x": 0.3,
+   "y": 1.1382654867256639,
+   "w": 12.73,
+   "h": 2.5234690265486726
+  },
+  {
+   "slide": 8,
+   "clip": "paper_RoboSoft/video/plots/align_toggle.mp4",
+   "x": 0.3,
+   "y": 1.0634146341463413,
+   "w": 6.0,
+   "h": 5.073170731707317
+  },
+  {
+   "slide": 8,
+   "clip": "paper_RoboSoft/video/plots/labels_anim.mp4",
+   "x": 6.5,
+   "y": 1.0613636363636363,
+   "w": 6.55,
+   "h": 2.9772727272727275
+  },
+  {
+   "slide": 9,
+   "clip": "paper_RoboSoft/video/plots/kshot_anim.mp4",
+   "x": 0.3,
+   "y": 1.0063750000000002,
+   "w": 12.73,
+   "h": 4.13725
   },
   {
    "slide": 10,
-   "clip": "paper_RoboSoft/video/streams/pred_pattern_32_run1.mp4",
-   "x": 0.3,
-   "y": 1.046259842519685,
-   "w": 6.3,
-   "h": 2.20748031496063
+   "clip": "paper_RoboSoft/video/plots/qual_cycle.mp4",
+   "x": 1.6601724137931033,
+   "y": 1.0,
+   "w": 10.009655172413794,
+   "h": 2.95
   },
   {
    "slide": 10,
    "clip": "paper_RoboSoft/video/streams/pred_pattern_36_run1.mp4",
-   "x": 6.8,
-   "y": 1.046259842519685,
-   "w": 6.3,
-   "h": 2.20748031496063
+   "x": 0.3,
+   "y": 4.150984251968504,
+   "w": 7.7,
+   "h": 2.6980314960629923
   },
   {
    "slide": 11,
@@ -99,7 +123,7 @@
   16,
   14,
   14,
-  12,
+  14,
   16,
   12,
   12

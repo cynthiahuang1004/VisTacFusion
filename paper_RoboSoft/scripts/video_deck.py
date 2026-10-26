@@ -27,12 +27,12 @@ NARR = [
     'Our insight: the real image already holds the appearance, and the known mesh already holds the geometry. Only a four-dimensional contact state is missing. AlignTac learns to align the mesh with each real image.',
     'From K labeled contacts per object, twenty-five here, we train a teacher for depth, normals and pose, and an aligner: perturb the known contact state, project the mesh there, and learn to recover the perturbation from the image and the candidate depth.',
     'For each unlabeled image, the teacher gives an initial state and the aligner refines it in six updates. The mesh at the final state is the pseudo-label. A student trains on both sets and predicts from the image and object identity alone.',
-    "On held-out frames, red is the mesh at the teacher's state, several degrees off the ridges. Each update moves it; after six, the green outline matches the ground-truth region in white, with errors below half a degree.",
+    "On held-out frames, red is the mesh at the teacher's state, several degrees off the ridges. Each update moves it; after six, the green outline matches the ground-truth region in white. Over all held-out frames, the mean rotation error falls from 5.7 to 1.2 degrees in three updates.",
     "Alignment is what makes geometry useful. With the same teacher, the mesh at the teacher's pose gives labels with IoU 0.47, worse than teacher depth. Aligned, the IoU is 0.72 and rotation error falls from six degrees to one.",
     'The student trained on aligned geometry has the lowest contact error at every budget on both variants. With 25 labels per object, error drops twenty and thirty-six percent on the two sensors, matching real-only training with twice the labels.',
-    'The real-only model blurs or breaks thin ridges and misplaces junctions; the AlignTac student recovers them, also on everyday shapes: a button, a hex key, an edge and a marble.',
+    'The real-only model blurs or breaks thin ridges and misplaces junctions; the AlignTac student recovers them, also on everyday shapes: a button, a hex key, an edge and a marble. Where depth errors are similar, the surface normals still show the difference.',
     'On a second session with re-placed objects, error stays fourteen to twenty-one percent lower. Pseudo-labeling the new images with the same aligner, with no poses, lowers it a further five percent; on four new objects the gain is thirteen percent.',
-    "The same aligner also refines pose at inference: from the teacher's pose, rotation error drops from 5.7 to 1.2 degrees in three updates, and fifteen-degree perturbations shrink to half a degree.",
+    "The same aligner also refines pose at inference: fifteen-degree perturbations, twice the training range, shrink to half a degree, and refining each predictor's own pose lowers its error on both sessions.",
     'In short: real images provide appearance, aligned geometry provides supervision. A few labeled contacts learn the alignment, which labels many more images, transfers to a new session, and refines pose at test time. Code will be released. Thank you.',
 ]
 
@@ -90,11 +90,9 @@ f1a = crop(f1, (0, 0, 1, 829 / 2563), "fig1a.png"); f1b = crop(f1, (0, 848 / 256
 f2 = f"{PNG}/fig2_pipeline.png"
 f2_s1 = crop(f2, (0.005, 0.07, 0.412, 0.635), "fig2_step1.png"); f2_s2 = crop(f2, (0.415, 0.07, 0.995, 0.635), "fig2_step2.png")
 f2_s3 = crop(f2, (0.005, 0.645, 0.495, 0.965), "fig2_step3.png"); f2_inf = crop(f2, (0.498, 0.645, 0.995, 0.965), "fig2_inference.png")
-f4abc = crop(f"{PNG}/fig4_kshot.png", (0, 0, 0.5, 1), "fig4_sensorA.png"); f4def = crop(f"{PNG}/fig4_kshot.png", (0.5, 0, 1, 1), "fig4_sensorB.png")
-f6 = f"{PNG}/fig6_qual.png"; f6_new = crop(f6, (0.335, 0, 0.665, 1), "fig6_new_objects.png")
 photo = f"{P}/figures_archive/intro_figure/assets/images/acquisition_photo_crop.png"
 anim_mp4, anim_poster, anim_gif = f"{ANIM}/align_anim.mp4", f"{ANIM}/strip_it0.png", f"{ANIM}/align_anim_small.gif"
-STREAM = f"{V}/streams"; PERTURB = f"{V}/perturb/perturb.mp4"
+STREAM = f"{V}/streams"; PERTURB = f"{V}/perturb/perturb.mp4"; PLOTS = f"{V}/plots"
 if not osp.exists(anim_gif):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", anim_mp4, "-vf", "fps=8,scale=1600:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse", anim_gif], check=True)
 
@@ -141,29 +139,32 @@ caption(s, "Inference needs only the image and the object identity;  mesh-assist
 
 s = new_slide(16, NARR[6],
               "Alignment in action: six updates on held-out real contacts", GOLD)
-movie(s, anim_mp4, 0.4, 1.15, 12.53, 3.13, poster=anim_poster)
-text(s, "red: teacher initial state q0     green: after six aligner updates     white: ground-truth contact region", 0.6, 4.45, W - 1.2, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Rotation error on these four frames: 6–8° → 0.0–0.4°;  translation: 0.2–1.3 mm → 0.1–0.3 mm", 0.6, 5.0, W - 1.2, 0.5, 18, GREY, align=PP_ALIGN.CENTER)
+movie(s, f"{PLOTS}/align_anim_plot.mp4", 0.3, 1.1, 12.73, 2.6, poster=f"{PLOTS}/align_anim_plot_poster.png")
+text(s, "red: teacher initial state q0     green: after six aligner updates     white: ground-truth contact region", 0.6, 3.9, W - 1.2, 0.5, 18, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Rotation error on these four frames: 6–8° → 0.0–0.4°;  translation: 0.2–1.3 mm → 0.1–0.3 mm", 0.6, 4.45, W - 1.2, 0.5, 18, GREY, align=PP_ALIGN.CENTER)
+text(s, "Right: mean and median rotation error over all 472 held-out frames, update by update", 0.6, 4.95, W - 1.2, 0.5, 18, GREY, align=PP_ALIGN.CENTER)
+caption(s, "Mean rotation error from the teacher pose: 5.7° → 1.2° after three updates", 5.8, GOLD, 22)
 
 s = new_slide(14, NARR[7],
               "Accurate alignment turns known geometry into accurate labels")
-pic(s, f"{PNG}/fig3_align.png", 0.4, 1.05, 7.2, 4.4); pic(s, f"{PNG}/fig5_labels.png", 7.8, 1.05, 5.2, 4.4)
-text(s, "Same teacher, K = 25:  label IoU 0.47 (mesh at teacher pose)  →  0.72 (aligned mesh);  label rotation error 6.0° → 1.1°", 0.6, 5.65, W - 1.2, 0.6, 19, GOLD, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Right: teacher vs. aligned-mesh label quality across budgets on both GelSlim 4.0 variants", 0.6, 6.3, W - 1.2, 0.5, 17, WHITE, align=PP_ALIGN.CENTER)
+movie(s, f"{PLOTS}/align_toggle.mp4", 0.3, 1.05, 6.0, 5.1, poster=f"{PLOTS}/align_toggle_0.png")
+movie(s, f"{PLOTS}/labels_anim.mp4", 6.5, 1.05, 6.55, 3.0, poster=f"{PLOTS}/labels_final.png")
+text(s, "Teacher vs. aligned-mesh label quality on the unlabeled training images, both GelSlim 4.0 variants", 6.5, 4.1, 6.55, 0.8, 16, WHITE, align=PP_ALIGN.CENTER)
+text(s, "Same teacher, K = 25,  teacher pose → aligned pose:\nlabel IoU 0.47 → 0.72,  label rotation error 6.0° → 1.1°", 6.5, 5.0, 6.55, 1.2, 19, GOLD, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Left: the same three unlabeled frames, mesh at the teacher pose vs. at the aligned pose", 0.3, 6.25, 6.0, 0.8, 15, GREY, align=PP_ALIGN.CENTER)
 
 s = new_slide(14, NARR[8],
               "Label efficiency on two GelSlim 4.0 variants")
-pic(s, f"{PNG}/fig4_kshot.png", 0.3, 1.0, 12.7, 3.7)
-text(s, "K = 25:  contact MAE −20% (marker-free)  and  −36% (dot-marker)  vs. real-only training", 0.6, 4.85, W - 1.2, 0.6, 22, GOLD, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Matches real-only accuracy obtained with 2× the labels;  pose error also falls (3.2° vs. 5.7° at K = 25)", 0.6, 5.5, W - 1.2, 0.6, 20, WHITE, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Learned renderer (K) and self-training use the same K labels / the same unlabeled images", 0.6, 6.15, W - 1.2, 0.5, 16, GREY, align=PP_ALIGN.CENTER)
+movie(s, f"{PLOTS}/kshot_anim.mp4", 0.3, 1.0, 12.73, 4.15, poster=f"{PLOTS}/kshot_final.png")
+text(s, "K = 25:  contact MAE −20% (marker-free)  and  −36% (dot-marker)  vs. real-only training", 0.6, 5.3, W - 1.2, 0.6, 22, GOLD, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Matches real-only accuracy obtained with 2× the labels;  rotation error 5.7° → 3.2° at K = 25", 0.6, 5.9, W - 1.2, 0.6, 19, WHITE, bold=True, align=PP_ALIGN.CENTER)
+text(s, "Learned renderer (K) and self-training use the same K labels and the same unlabeled images as AlignTac", 0.6, 6.5, W - 1.2, 0.5, 16, GREY, align=PP_ALIGN.CENTER)
 
-s = new_slide(12, NARR[9],
-              "Contact-depth predictions on held-out frames")
-movie(s, f"{STREAM}/pred_pattern_32_run1.mp4", 0.3, 1.0, 6.3, 2.3); movie(s, f"{STREAM}/pred_pattern_36_run1.mp4", 6.8, 1.0, 6.3, 2.3)
-pic(s, f6, 0.3, 3.5, 12.7, 2.9)
-text(s, "top: live predictions on a second-session stream (approach, press, lift);  arrow: AlignTac planar pose", 0.6, 6.4, W - 1.2, 0.45, 16, WHITE, bold=True, align=PP_ALIGN.CENTER)
-text(s, "bottom: held-out frames — real image | real only | AlignTac | ground truth;  numbers: contact MAE (mm)", 0.6, 6.85, W - 1.2, 0.45, 15, GREY, align=PP_ALIGN.CENTER)
+s = new_slide(14, NARR[9],
+              "Contact-depth and normal predictions on held-out frames")
+movie(s, f"{PLOTS}/qual_cycle.mp4", 0.3, 1.0, 12.73, 2.95, poster=f"{PLOTS}/qual_0.png")
+movie(s, f"{STREAM}/pred_pattern_36_run1.mp4", 0.3, 4.15, 7.7, 2.7)
+text(s, "Top: held-out frames of both sensor variants and of the four additional objects (button, hex key, block edge, marble), K = 25.\n\nNumbers: contact MAE (mm) and mean normal angle error over the contact region. Where depth errors are similar, the normals show the difference.\n\nBottom: live predictions on a second-session stream (approach, press, lift); the arrow is the predicted planar pose.", 8.2, 4.15, 4.9, 2.9, 14.5, WHITE, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE)
 
 s = new_slide(16, NARR[10],
               "Robust across sessions, sensor variants and objects")
@@ -179,9 +180,10 @@ text(s, "Four additional objects, consecutive captures:  real image | real only 
 
 s = new_slide(12, NARR[11],
               "The aligner also refines pose at test time")
-pic(s, f"{PNG}/fig7_conv.png", 0.4, 1.05, 6.3, 4.3); pic(s, f"{PNG}/fig8_poseref.png", 6.9, 1.05, 6.1, 4.3)
-text(s, "From the teacher pose: 5.7° → 1.2° after three updates;   15° perturbations → 0.5°", 0.6, 5.55, W - 1.2, 0.6, 22, GOLD, bold=True, align=PP_ALIGN.CENTER)
-text(s, "Optional: standard inference needs only the image and the object identity", 0.6, 6.2, W - 1.2, 0.5, 18, WHITE, align=PP_ALIGN.CENTER)
+pic(s, f"{PLOTS}/conv_b.png", 0.3, 1.05, 6.2, 4.4); pic(s, f"{PLOTS}/poseref.png", 6.7, 1.05, 6.3, 4.4)
+text(s, "Left: starting from a rotated GT pose, n aligner updates bring the error back below 1° up to 15°, twice the training range", 0.3, 5.5, 6.2, 0.9, 15, WHITE, align=PP_ALIGN.CENTER)
+text(s, "Right: refining each predictor's own pose at inference (hollow → filled), session 1 and the re-placed session 2", 6.7, 5.5, 6.3, 0.9, 15, WHITE, align=PP_ALIGN.CENTER)
+caption(s, "15° perturbations → 0.5° after six updates;  optional: standard inference needs only the image and the object identity", 6.45, GOLD, 19)
 
 s = new_slide(12, NARR[12],
               "Takeaways", GOLD)
