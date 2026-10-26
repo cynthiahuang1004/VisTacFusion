@@ -432,8 +432,10 @@ def fig_poseref(out):
         ax.set_title(f"({'abcd'[i]}) {lab}, {sname}", loc="left", fontsize=6.6, pad=3); ax.set_ylim(0, None)
         ax.grid(axis="y", color="#e6e4df", lw=0.5); ax.set_axisbelow(True)
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=4, frameon=False, fontsize=5.6, bbox_to_anchor=(0.5, -0.01), handlelength=1.2, columnspacing=0.8, handletextpad=0.4)
-    fig.tight_layout(w_pad=0.5, h_pad=0.3, rect=(0, 0.06, 1, 1.02))
+    fig.legend(h, l, loc="lower center", ncol=4, frameon=False, fontsize=5.6, bbox_to_anchor=(0.5, 0.0), handlelength=1.2, columnspacing=0.8, handletextpad=0.4)
+    for ax in axes[2:]:
+        ax.xaxis.labelpad = 1.0
+    fig.tight_layout(w_pad=0.5, h_pad=0.3, rect=(0, 0.035, 1, 1.02))
     fig.savefig(osp.join(out, "fig_poseref.pdf"), bbox_inches="tight", pad_inches=0.01); plt.close(fig)
 
 

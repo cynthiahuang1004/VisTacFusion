@@ -110,8 +110,10 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
+    \vspace{-10pt}
     \caption{\textbf{Aligner convergence} (marker-free sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error versus the number of aligner updates, starting from the teacher's predicted pose; dotted line: the six updates used throughout. (b) Mean rotation error after $n$ updates, starting from the GT state rotated by the given angle plus random translation and indentation offsets (log scale; dotted: no update). \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
     \label{fig:conv}
+    \vspace{3pt}
 \end{figure}
 
 \subsection{Robustness Across Sessions, Sensor Variants and Objects}
@@ -128,9 +130,12 @@ We evaluate robustness across capture sessions, GelSlim~4.0 variants and additio
 
 Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac. Contact MAE can understate the gain: on the marble both MAEs are similar, but the AlignTac normals are closer to the GT ($4^\circ$ vs.\ $12^\circ$).
 
+\medskip
+
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig8_poseref.pdf}
+    \vspace{-10pt}
     \caption{\textbf{Pose error before and after test-time refinement on marker-free GelSlim~4.0 (sensor A).} Hollow bars: predictor output; filled bars: after six updates of the fixed aligner with the known mesh; $K$: labeled contacts per object. Mean errors over session-1 test frames (a, c) and session-2 frames (b, d); no retraining.}
     \label{fig:poseref}
 \end{figure}
