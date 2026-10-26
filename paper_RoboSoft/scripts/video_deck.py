@@ -192,13 +192,13 @@ text(s, "Top: held-out frames of both sensor variants and of the four additional
 
 s = new_slide(16, NARR[10], "Robust across sessions, sensor variants and objects")
 movie(s, f"{PLOTS}/qual_p4.mp4", 0.3, 1.05, 5.5, 2.95, poster=f"{PLOTS}/qual_p4_poster.png")
-table(s, [["Setting", "Contact MAE", "Pose / IoU"],
-          ["Second session, zero-shot (objects re-placed)", "−14 to −21%", "—"],
-          ["Label-free adaptation (unlabeled session-2 images)", "further −5%", "10.4° → 7.9°"],
-          ["Dot-marker variant, retrained", "−36% at K = 25", "—"],
-          ["Four additional objects, K = 25", "0.235 → 0.204 mm (−13%)", "IoU 0.70 → 0.77"]],
-      5.75, 1.05, [3.7, 2.0, 1.8], size=13.5, row_h=0.5)
-text(s, "changes vs. real-only training;  pose column: rotation error", 5.75, 3.65, 7.5, 0.35, 13, GREY, italic=True)
+table(s, [["Contact MAE [mm] at K = 25", "Real only", "AlignTac", "Change"],
+          ["Session 2, zero-shot (objects re-placed, no retraining)", "0.344", "0.295", "−14%"],
+          ["Session 2, label-free adaptation (its unlabeled images added)", "0.341", "0.280", "−18%"],
+          ["Sensor B, dot-marker variant (retrained)", "0.127", "0.081", "−36%"],
+          ["Four additional objects (16 objects, K = 25 each)", "0.235", "0.204", "−13%"]],
+      5.75, 1.05, [4.3, 1.1, 1.1, 1.0], size=13.5, row_h=0.5, bold_last_col=True)
+text(s, "Label-free adaptation: the same aligner pseudo-labels the new session's unlabeled images; against zero-shot on the same frames, contact MAE 0.295 → 0.280 and rotation 10.4° → 7.9°.", 5.75, 3.6, 7.5, 0.6, 12.5, GREY, italic=True)
 m, g = clip("scan_hex_key_v2"); movie(s, m, 0.3, 4.3, 6.3, 1.55, gif=g); m, g = clip("scan_button_v2"); movie(s, m, 6.8, 4.3, 6.3, 1.55, gif=g)
 m, g = clip("scan_marble_v2"); movie(s, m, 0.3, 5.9, 6.3, 1.55, gif=g); m, g = clip("scan_edge_v2"); movie(s, m, 6.8, 5.9, 6.3, 1.55, gif=g)
 
