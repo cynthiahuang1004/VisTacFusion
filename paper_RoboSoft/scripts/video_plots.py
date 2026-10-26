@@ -186,24 +186,28 @@ def qual_cycle():
 
 
 # ------------------------------------------------------------------ Fig. 7(a) growing beside the alignment strips; Fig. 7(b); Fig. 8
+CONV_VIDEO = "ablation/pilot_robosoft/aligner_convergence_video.json"   # same evaluation as the paper's json plus mesh-label IoU / MAE
+
+
 def conv_live(T=6):
-    d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); t = d["teacher"]["rot"]; strips = []
+    d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); t = d["teacher"]["rot"]; strips = []; plots = []   # the paper's numbers
     for it in range(T + 1):
-        fig, ax = plt.subplots(figsize=(3.4, 3.4), dpi=DPI)
+        fig, ax = plt.subplots(figsize=(4.4, 3.2), dpi=DPI)
         ax.plot(range(T + 1), t["mean"][:T + 1], color="#dedcd7", lw=2.0); ax.plot(range(T + 1), t["median"][:T + 1], color="#dedcd7", lw=2.0)
         ax.plot(range(it + 1), t["mean"][:it + 1], color="#8a4fd3", marker="*", ms=13, mec=BG, lw=3.0, label="mean")
         ax.plot(range(it + 1), t["median"][:it + 1], color="#52514e", marker="o", ms=7, mec=BG, lw=2.2, label="median")
         ax.set_xlim(-0.3, T + 0.3); ax.set_ylim(0, 6.5); ax.set_xticks(range(T + 1)); ax.tick_params(labelsize=12)
         ax.set_xlabel("aligner updates", fontsize=13); ax.set_ylabel("rotation error [deg]", fontsize=13)
-        ax.set_title("472 held-out frames", loc="left", fontsize=13, pad=6); ax.legend(fontsize=12, loc="upper right")
+        ax.set_title(f"{d['n']} held-out frames, from the teacher pose", loc="left", fontsize=13, pad=6); ax.legend(fontsize=12, loc="upper right")
         ax.text(it, t["mean"][it] + 0.35, f"{t['mean'][it]:.1f}°", color="#8a4fd3", fontsize=13, ha="center", fontweight="bold")
-        fig.tight_layout(); p = f"{OUT}/conv_live_it{it}.png"; fig.savefig(p); plt.close(fig)
+        fig.tight_layout(); p = f"{OUT}/conv_live_it{it}.png"; fig.savefig(p); plt.close(fig); plots.append(p)
         strip = Image.open(f"paper_RoboSoft/video/align_anim/strip_it{it}.png"); plot = Image.open(p).convert("RGB")
         plot = plot.resize((int(plot.width * strip.height / plot.height), strip.height), Image.LANCZOS)
         out = Image.new("RGB", (strip.width + 30 + plot.width, strip.height), (255, 255, 255)); out.paste(strip, (0, 0)); out.paste(plot, (strip.width + 30, 0))
         q = f"{OUT}/align_plot_it{it}.png"; out.save(q); strips.append(q)
-    frames = [strips[0]] + strips[1:] + [strips[-1]]; durs = [1.5] + [0.8] * T + [1.5]
+    frames = [strips[0]] + strips[1:] + [strips[-1]]; durs = [1.5] + [0.8] * T + [1.5]       # same timing as align_anim.mp4 (video_align_anim.py)
     concat_video(frames, durs, f"{OUT}/align_anim_plot.mp4"); Image.open(strips[0]).save(f"{OUT}/align_anim_plot_poster.png")
+    concat_video([plots[0]] + plots[1:] + [plots[-1]], durs, f"{OUT}/conv_live.mp4"); Image.open(plots[0]).save(f"{OUT}/conv_live_poster.png")
 
 
 def conv_b():

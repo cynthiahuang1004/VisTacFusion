@@ -34,11 +34,19 @@
   },
   {
    "slide": 7,
-   "clip": "paper_RoboSoft/video/plots/align_anim_plot.mp4",
+   "clip": "paper_RoboSoft/video/align_anim/align_anim.mp4",
    "x": 0.3,
-   "y": 1.1449295774647887,
+   "y": 1.0693348115299335,
    "w": 12.73,
-   "h": 2.510140845070423
+   "h": 3.1613303769401333
+  },
+  {
+   "slide": 7,
+   "clip": "paper_RoboSoft/video/plots/conv_live.mp4",
+   "x": 0.46249999999999986,
+   "y": 4.8,
+   "w": 3.575,
+   "h": 2.6
   },
   {
    "slide": 8,

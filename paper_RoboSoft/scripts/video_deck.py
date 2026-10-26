@@ -153,11 +153,16 @@ pic(s, f2_inf, 2.9, 5.0, 7.5, 1.55)
 caption(s, "Inference uses only the image and the object identity;  mesh-based pose refinement is optional", 6.6, ACC, 20)
 
 s = new_slide(16, NARR[6], "Alignment on held-out real contacts", ACC)
-movie(s, f"{PLOTS}/align_anim_plot.mp4", 0.3, 1.1, 12.73, 2.6, poster=f"{PLOTS}/align_anim_plot_poster.png")
-text(s, "red: mesh at the teacher state     green: after the aligner updates     white: ground-truth contact region", 0.3, 3.85, W - 0.6, 0.5, 17, BLACK, bold=True, align=PP_ALIGN.CENTER)
-table(s, [["These four frames", "Rotation error", "Translation error"], ["Teacher state", "6–8°", "0.2–1.3 mm"], ["After six updates", "0.0–0.4°", "0.1–0.3 mm"]],
-      3.1, 4.5, [2.8, 2.2, 2.2], size=17, row_h=0.42)
-caption(s, "Mean over 472 held-out frames: 5.7° → 1.2° after three updates", 6.05)
+movie(s, f"{ANIM}/align_anim.mp4", 0.3, 1.05, 12.73, 3.2, poster=f"{ANIM}/strip_it0.png")
+text(s, "red: mesh at the teacher state     green: after the aligner updates     white: ground-truth contact region", 0.3, 4.3, W - 0.6, 0.45, 17, BLACK, bold=True, align=PP_ALIGN.CENTER)
+movie(s, f"{PLOTS}/conv_live.mp4", 0.3, 4.8, 3.9, 2.6, poster=f"{PLOTS}/conv_live_poster.png")
+CV = json.load(open("ablation/pilot_robosoft/aligner_convergence_video.json"))                 # mesh-label IoU / MAE per update (same 472 frames)
+tr = json.load(open("ablation/pilot_robosoft/aligner_convergence.json"))["teacher"]             # rotation / translation: the paper's numbers (Fig. 7a)
+rows = [["Aligner updates", "Rotation [deg]", "Translation [mm]", "Label IoU", "Contact MAE [mm]"]]
+for it in (0, 1, 3, 6):
+    rows.append([f"n = {it}" + ("  (teacher state)" if it == 0 else ""), f"{tr['rot']['mean'][it]:.1f}", f"{tr['trans']['mean'][it]:.2f}", f"{CV['label'][str(it)]['iou']:.2f}", f"{CV['label'][str(it)]['cmae']:.2f}"])
+table(s, rows, 4.6, 4.8, [2.7, 1.4, 1.6, 1.2, 1.6], size=15, row_h=0.4)
+text(s, f"Means over all {CV['n']} held-out frames of sensor A (K = 25); label IoU and contact MAE compare the mesh at the current state with the ground truth.", 4.6, 7.0, 8.5, 0.45, 12.5, GREY, italic=True)
 
 s = new_slide(14, NARR[7], "Alignment turns known geometry into accurate labels")
 movie(s, f"{PLOTS}/align_toggle.mp4", 0.3, 1.1, 6.0, 5.0, poster=f"{PLOTS}/align_toggle_0.png")
