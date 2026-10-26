@@ -370,12 +370,12 @@ def fig_labels(out):
         for name, D, off, c, m, ms in series:
             ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
-        ax.tick_params(labelsize=5.8); ax.set_xlabel("$K$", fontsize=7); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
+        ax.tick_params(labelsize=5.8); ax.set_xlabel("$K$", fontsize=7, labelpad=1); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
     axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.01), columnspacing=0.9, handletextpad=0.3,
-               handlelength=1.6, fontsize=5.8)
-    fig.tight_layout(w_pad=0.5, rect=(0, 0.09, 1, 1.02))
+    fig.legend(h, l, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 0.0), columnspacing=0.9, handletextpad=0.3,
+               handlelength=1.6, fontsize=5.8, borderaxespad=0.0)
+    fig.tight_layout(pad=0.3, w_pad=0.5, rect=(0, 0.06, 1, 1.0))
     fig.savefig(osp.join(out, "fig_labels.pdf"), bbox_inches="tight", pad_inches=0.01); plt.close(fig)
 
 
