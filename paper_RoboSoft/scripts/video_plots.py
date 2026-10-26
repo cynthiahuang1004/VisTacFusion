@@ -20,15 +20,15 @@ import make_paper_figs as M          # noqa: E402  (loads the result JSONs at im
 import fig_qual_plus4 as F           # noqa: E402
 
 OUT = "paper_RoboSoft/video/plots"; os.makedirs(OUT, exist_ok=True)
-BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"; REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-BG = "#000000"; FG = "#ffffff"; GRID = "#3a3a3a"; DPI = 200
-COL = {"Real only": "#d6d4cf", "+ Blender (physical)": "#4d93ee", "+ GAN-K (learned, strict)": "#ff7a45", "+ self-training": "#e6b93a",
-       "+ GAN-full (leaky)": "#2ad08f", "+ AlignTac (ours, strict)": "#b07cff"}
+import matplotlib.font_manager as _fm
+BOLD = _fm.findfont(_fm.FontProperties(family="Arial", weight="bold")); REG = _fm.findfont(_fm.FontProperties(family="Arial"))
+BG = "#ffffff"; FG = "#000000"; GRID = "#e4e2dd"; DPI = 200
+COL = {k: v[0] for k, v in M.STY.items()}                     # the paper's series colours (light background)
 NAMES = {"Real only": "Real only", "+ Blender (physical)": "PBR", "+ GAN-K (learned, strict)": "Learned renderer (K)", "+ self-training": "Self-training",
          "+ GAN-full (leaky)": "Learned renderer (full)", "+ AlignTac (ours, strict)": "AlignTac (ours)"}
 plt.rcParams.update({"figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG, "text.color": FG, "axes.labelcolor": FG,
-                     "xtick.color": FG, "ytick.color": FG, "axes.edgecolor": "#888888", "grid.color": GRID, "axes.grid": True,
-                     "axes.spines.top": False, "axes.spines.right": False, "font.family": "DejaVu Sans", "legend.frameon": False})
+                     "xtick.color": FG, "ytick.color": FG, "axes.edgecolor": "#9a9995", "grid.color": GRID, "axes.grid": True,
+                     "axes.spines.top": False, "axes.spines.right": False, "font.family": ["Arial", "Liberation Sans", "DejaVu Sans"], "legend.frameon": False})
 Ks = [10, 25, 50, 100]
 
 
@@ -78,7 +78,7 @@ def kshot():
         h, l = axes[0].get_legend_handles_labels()
         leg = fig.legend(h, l, loc="lower center", ncol=6, fontsize=13, columnspacing=1.4, handletextpad=0.5, handlelength=2.2, bbox_to_anchor=(0.5, 0.0))
         for txt, hd, name in zip(leg.get_texts(), leg.legend_handles, order):
-            on = name in shown; txt.set_color(FG if on else "#555555"); hd.set_alpha(1.0 if on else 0.15)
+            on = name in shown; txt.set_color(FG if on else "#c8c6c1"); hd.set_alpha(1.0 if on else 0.15)
         fig.tight_layout(w_pad=2.0, rect=(0, 0.09, 1, 1)); p = f"{OUT}/kshot_{step}.png"; fig.savefig(p); plt.close(fig); frames.append(p)
     concat_video(frames, [1.4] * (len(frames) - 1) + [5.0], f"{OUT}/kshot_anim.mp4"); Image.open(frames[-1]).save(f"{OUT}/kshot_final.png")
 
@@ -86,7 +86,7 @@ def kshot():
 # ------------------------------------------------------------------ Fig. 5: label quality, teacher then aligned mesh
 def labels():
     A, Bq = M._label_quality()
-    series = [("Teacher (A)", A, 0, "#d6d4cf", "o"), ("Aligned mesh (A)", A, 1, "#b07cff", "*"), ("Teacher (B)", Bq, 0, "#ff7a45", "s"), ("Aligned mesh (B)", Bq, 1, "#2ad08f", "D")]
+    series = [("Teacher (A)", A, 0, "#52514e", "o"), ("Aligned mesh (A)", A, 1, "#8a4fd3", "*"), ("Teacher (B)", Bq, 0, "#eb6834", "s"), ("Aligned mesh (B)", Bq, 1, "#1baf7a", "D")]
     frames = []
     for step in (1, 2):
         fig, axes = plt.subplots(1, 3, figsize=(8.8, 4.0), dpi=DPI)
@@ -99,7 +99,7 @@ def labels():
         h, l = axes[0].get_legend_handles_labels()
         leg = fig.legend(h, l, loc="lower center", ncol=4, fontsize=12.5, columnspacing=1.2, handletextpad=0.4, bbox_to_anchor=(0.5, 0.0))
         for txt, hd, (name, _, off, _, _) in zip(leg.get_texts(), leg.legend_handles, series):
-            on = step == 2 or off == 0; txt.set_color(FG if on else "#555555"); hd.set_alpha(1.0 if on else 0.15)
+            on = step == 2 or off == 0; txt.set_color(FG if on else "#c8c6c1"); hd.set_alpha(1.0 if on else 0.15)
         fig.tight_layout(w_pad=1.5, rect=(0, 0.1, 1, 1)); p = f"{OUT}/labels_{step}.png"; fig.savefig(p); plt.close(fig); frames.append(p)
     concat_video(frames, [2.5, 6.0], f"{OUT}/labels_anim.mp4"); Image.open(frames[-1]).save(f"{OUT}/labels_final.png")
 
@@ -113,7 +113,7 @@ def tile(im, size):
     return np.array(Image.fromarray(im).resize((size, size), Image.NEAREST if im.shape[0] >= size else Image.BICUBIC))
 
 
-def put(draw, xy, txt, size=26, color=(255, 255, 255), bold=True, anchor="la"):
+def put(draw, xy, txt, size=26, color=(0, 0, 0), bold=True, anchor="la"):
     draw.text(xy, txt, fill=color, font=ImageFont.truetype(BOLD if bold else REG, size), anchor=anchor)
 
 
@@ -132,7 +132,7 @@ def align_toggle(K=25):
     W = 4 * S + 3 * gap; H = top + 3 * S + 2 * gap + 50
     frames = []
     for phase in (0, 1):
-        im = Image.new("RGB", (W, H), (0, 0, 0)); dr = ImageDraw.Draw(im)
+        im = Image.new("RGB", (W, H), (255, 255, 255)); dr = ImageDraw.Draw(im)
         for c, t in enumerate(cols):
             put(dr, (c * (S + gap) + S / 2, 8), t if c != 2 else ("mesh at the" if True else t), 24, anchor="ma")
         put(dr, (2 * (S + gap) + S / 2, 38), "teacher pose" if phase == 0 else "aligned pose", 24, (255, 90, 96) if phase == 0 else (60, 230, 90), anchor="ma")
@@ -146,7 +146,7 @@ def align_toggle(K=25):
             for c, a in enumerate([np.array(Image.open(t).convert("RGB")), vir(td), vir(mm), vir(gt)]):
                 im.paste(Image.fromarray(tile(a, S)), (c * (S + gap), y))
             put(dr, (2 * (S + gap) + S - 8, y + S - 8), f"IoU {iou:.2f}", 26, (255, 90, 96) if phase == 0 else (60, 230, 90), anchor="rd")
-        put(dr, (W / 2, H - 40), "same teacher, K = 25;  IoU against the withheld GT", 20, (190, 190, 190), False, anchor="ma")
+        put(dr, (W / 2, H - 40), "same teacher, K = 25;  IoU against the withheld GT", 22, (90, 90, 90), False, anchor="ma")
         p = f"{OUT}/align_toggle_{phase}.png"; im.save(p); frames.append(p)
     concat_video(frames * 3, [1.6, 1.6] * 3, f"{OUT}/align_toggle.mp4")
 
@@ -162,10 +162,10 @@ def qual_cycle():
     vis = lambda nm: (((nm.astype(np.float32) + 1) / 2).clip(0, 1) * 255).astype(np.uint8)
     frames = []
     for k in range(0, len(samples), 2):
-        im = Image.new("RGB", (W, H), (0, 0, 0)); dr = ImageDraw.Draw(im)
+        im = Image.new("RGB", (W, H), (255, 255, 255)); dr = ImageDraw.Draw(im)
         for b, (name, obj) in enumerate(samples[k:k + 2]):
             d = F.data(name); i = F.median_frame(name, obj, "cmae"); r0, r1 = F.RUNS[name]; x0 = b * (bw + blk_gap)
-            put(dr, (x0 + bw / 2, 6), f"{sets[name]}:  {pretty(obj)}", 22, (255, 192, 0), anchor="ma")
+            put(dr, (x0 + bw / 2, 6), f"{sets[name]}:  {pretty(obj)}", 24, (106, 43, 184), anchor="ma")
             for c, t in enumerate(cols): put(dr, (x0 + c * (S + gap) + S / 2, hdr + 4), t, 19, anchor="ma")
             masks = [d["gt"][i] > 0, d[f"pred_{r0}"][i] > 0.05, d[f"pred_{r1}"][i] > 0.05]
             ha, va, fx, fy = F.free_corner(masks)
@@ -179,8 +179,8 @@ def qual_cycle():
                         txt = f"{float(d[f'cmae_{run}'][i]):.2f} mm" if r == 0 else f"{float(d[f'nerr_{run}'][i]):.0f}°"
                         px = x + (S - 8 if ha == "right" else 8); py = y + (S - 8 if va == "bottom" else 8)
                         put(dr, (px, py), txt, 24, (255, 255, 255), anchor=("r" if ha == "right" else "l") + ("d" if va == "bottom" else "a"))
-            put(dr, (x0 + bw + 2, 2 * hdr + S / 2), "depth", 17, (190, 190, 190), False, anchor="lm") if b == 0 else None
-            put(dr, (x0 + bw + 2, 2 * hdr + S + gap + S / 2), "normals", 17, (190, 190, 190), False, anchor="lm") if b == 0 else None
+            put(dr, (x0 + bw + 2, 2 * hdr + S / 2), "depth", 19, (90, 90, 90), False, anchor="lm") if b == 0 else None
+            put(dr, (x0 + bw + 2, 2 * hdr + S + gap + S / 2), "normals", 19, (90, 90, 90), False, anchor="lm") if b == 0 else None
         p = f"{OUT}/qual_{k // 2}.png"; im.save(p); frames.append(p)
     concat_video(frames, [2.2] * len(frames), f"{OUT}/qual_cycle.mp4")
 
@@ -190,17 +190,17 @@ def conv_live(T=6):
     d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); t = d["teacher"]["rot"]; strips = []
     for it in range(T + 1):
         fig, ax = plt.subplots(figsize=(3.4, 3.4), dpi=DPI)
-        ax.plot(range(T + 1), t["mean"][:T + 1], color="#3a3a3a", lw=2.0); ax.plot(range(T + 1), t["median"][:T + 1], color="#3a3a3a", lw=2.0)
-        ax.plot(range(it + 1), t["mean"][:it + 1], color="#b07cff", marker="*", ms=13, mec=BG, lw=3.0, label="mean")
-        ax.plot(range(it + 1), t["median"][:it + 1], color="#d6d4cf", marker="o", ms=7, mec=BG, lw=2.2, label="median")
+        ax.plot(range(T + 1), t["mean"][:T + 1], color="#dedcd7", lw=2.0); ax.plot(range(T + 1), t["median"][:T + 1], color="#dedcd7", lw=2.0)
+        ax.plot(range(it + 1), t["mean"][:it + 1], color="#8a4fd3", marker="*", ms=13, mec=BG, lw=3.0, label="mean")
+        ax.plot(range(it + 1), t["median"][:it + 1], color="#52514e", marker="o", ms=7, mec=BG, lw=2.2, label="median")
         ax.set_xlim(-0.3, T + 0.3); ax.set_ylim(0, 6.5); ax.set_xticks(range(T + 1)); ax.tick_params(labelsize=12)
         ax.set_xlabel("aligner updates", fontsize=13); ax.set_ylabel("rotation error [deg]", fontsize=13)
         ax.set_title("472 held-out frames", loc="left", fontsize=13, pad=6); ax.legend(fontsize=12, loc="upper right")
-        ax.text(it, t["mean"][it] + 0.35, f"{t['mean'][it]:.1f}°", color="#b07cff", fontsize=13, ha="center", fontweight="bold")
+        ax.text(it, t["mean"][it] + 0.35, f"{t['mean'][it]:.1f}°", color="#8a4fd3", fontsize=13, ha="center", fontweight="bold")
         fig.tight_layout(); p = f"{OUT}/conv_live_it{it}.png"; fig.savefig(p); plt.close(fig)
         strip = Image.open(f"paper_RoboSoft/video/align_anim/strip_it{it}.png"); plot = Image.open(p).convert("RGB")
         plot = plot.resize((int(plot.width * strip.height / plot.height), strip.height), Image.LANCZOS)
-        out = Image.new("RGB", (strip.width + 30 + plot.width, strip.height), (0, 0, 0)); out.paste(strip, (0, 0)); out.paste(plot, (strip.width + 30, 0))
+        out = Image.new("RGB", (strip.width + 30 + plot.width, strip.height), (255, 255, 255)); out.paste(strip, (0, 0)); out.paste(plot, (strip.width + 30, 0))
         q = f"{OUT}/align_plot_it{it}.png"; out.save(q); strips.append(q)
     frames = [strips[0]] + strips[1:] + [strips[-1]]; durs = [1.5] + [0.8] * T + [1.5]
     concat_video(frames, durs, f"{OUT}/align_anim_plot.mp4"); Image.open(strips[0]).save(f"{OUT}/align_anim_plot_poster.png")
@@ -209,12 +209,12 @@ def conv_live(T=6):
 def conv_b():
     d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); R = sorted(int(r) for r in d["basin"])
     fig, ax = plt.subplots(figsize=(6.0, 4.2), dpi=DPI)
-    curves = [(0, "#8d8d8d", ":"), (1, "#d2b4ff", "-"), (2, "#b07cff", "-"), (3, "#8a4fd3", "-"), (6, "#6a2bb8", "-")]
+    curves = [(0, "#8c8a85", ":"), (1, "#b57bee", "-"), (2, "#8f4fd6", "-"), (3, "#6a2bb8", "-"), (6, "#3d1778", "-")]
     for it, c, ls in curves:
         y = [max(r, 0.3) for r in R] if it == 0 else [d["basin"][str(r)]["rot"]["mean"][it] for r in R]
         ax.plot(R, y, color=c, ls=ls, lw=2.0 if it == 0 else 2.8, marker=None if it == 0 else "*", ms=12, mec=BG)
         ax.text(31.0, y[-1] * (1.25 if it == 3 else 0.8 if it == 6 else 1.0), "n = 0" if it == 0 else f"n = {it}", color=c, fontsize=13, va="center", ha="left", fontweight="bold", clip_on=False)
-    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.18, lw=0); ax.text(4, 0.36, "training\nrange", color="#c9b3f0", fontsize=11, ha="center")
+    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.text(4, 0.36, "training\nrange", color="#6a2bb8", fontsize=11, ha="center")
     ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_xlim(-0.5, 30.5); ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"]); ax.minorticks_off()
     ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.tick_params(labelsize=13); ax.set_xlabel("initial rotation error [deg]", fontsize=14); ax.set_ylabel("rotation error after n updates [deg]", fontsize=14)
     ax.set_title("From a perturbed GT pose (+ random ±1.5 mm shift)", loc="left", fontsize=14, pad=8)
@@ -223,7 +223,7 @@ def conv_b():
 
 def poseref():
     PRJ = json.load(open("ablation/pilot_robosoft/pose_refine_results.json"))
-    meth = [("Real only", "T_k{K}_realonly_realonly", "#d6d4cf"), ("AlignTac (ours)", "T_k{K}_rf_realonly", "#b07cff")]
+    meth = [("Real only", "T_k{K}_realonly_realonly", "#52514e"), ("AlignTac (ours)", "T_k{K}_rf_realonly", "#8a4fd3")]
     panels = [("rot", "Rotation error [deg]", "testA", "session 1"), ("rot", "Rotation error [deg]", "session2", "session 2"),
               ("trans", "Translation error [mm]", "testA", "session 1"), ("trans", "Translation error [mm]", "session2", "session 2")]
     fig, axes = plt.subplots(2, 2, figsize=(6.4, 4.6), dpi=DPI); axes = axes.ravel(); w = 0.19; x = np.arange(len(Ks))
@@ -242,7 +242,64 @@ def poseref():
     fig.tight_layout(w_pad=1.0, h_pad=0.8, rect=(0, 0.06, 1, 1)); fig.savefig(f"{OUT}/poseref.png", bbox_inches="tight", pad_inches=0.05); plt.close(fig)
 
 
+# ------------------------------------------------------------------ Fig. 4, all six panels, video size
+def kshot6():
+    series = {"Real only": "realonly", "+ Blender (physical)": "blender", "+ GAN-K (learned, strict)": "gank", "+ self-training": "semipm",
+              "+ GAN-full (leaky)": "ganfull", "+ AlignTac (ours, strict)": "rf"}
+    panels = [("c_mae", "Contact MAE [mm]"), ("pose_rot_deg", "Rotation [deg]"), ("pose_trans", "Translation [mm]")]
+    sbkey = {"c_mae": ("c_mae", 1.0, "sensorB_mesh"), "pose_rot_deg": ("rot_deg", 1.0, "sensorB_mesh_bp"), "pose_trans": ("trans_l1", M.HALF_MM / 2, "sensorB_mesh_bp")}
+    fig, axes = plt.subplots(1, 6, figsize=(12.6, 3.9), dpi=DPI)
+    for i, (ax, (key, lab)) in enumerate(zip(axes[:3], panels)):
+        for name, suf in series.items():
+            xs, ys = [], []
+            for K in Ks:
+                r = f"T_k{K}_{suf}"; y = M.ta(r, key, "pilot_" if r == "T_k10_ganfull" else "pilot150_")
+                if y is None: continue
+                xs.append(K); ys.append(y * (M.HALF_MM if key == "pose_trans" else 1.0))
+            c, m, ls = M.STY[name]; last = suf == "rf"
+            ax.plot(xs, ys, color=c, marker=m, ls=ls, lw=2.6 if last else 1.8, ms=12 if m == "*" else 6.5, mec=BG, mew=0.7, label=NAMES[name])
+        ax.set_title(f"({'abc'[i]}) {lab}", loc="left", fontsize=12.5, pad=6); ax.text(0.96, 0.96, "Sensor A", transform=ax.transAxes, ha="right", va="top", fontsize=12, color="#6b6a66")
+    for i, (ax, (key, lab)) in enumerate(zip(axes[3:], panels)):
+        for name, suf in (("Real only", "realonly_m"), ("+ GAN-K (learned, strict)", "gan40m"), ("+ self-training", "semipm_m"), ("+ AlignTac (ours, strict)", "maplnr_m")):
+            c, m, ls = M.STY[name]; last = suf == "maplnr_m"
+            ax.plot(Ks, [M.SB[f"pilot_S_k{k}_{suf}/{sbkey[key][2]}"][sbkey[key][0]] * sbkey[key][1] for k in Ks], color=c, marker=m, ls=ls,
+                    lw=2.6 if last else 1.8, ms=12 if m == "*" else 6.5, mec=BG, mew=0.7)
+        ax.set_title(f"({'def'[i]}) {lab}", loc="left", fontsize=12.5, pad=6); ax.text(0.96, 0.96, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=12, color="#6b6a66")
+    for ax in axes:
+        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off(); ax.tick_params(labelsize=11.5)
+        ax.yaxis.set_major_locator(MaxNLocator(5)); ax.set_xlabel("K", fontsize=13, labelpad=2)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=6, fontsize=13, columnspacing=1.6, handletextpad=0.5, handlelength=2.4, bbox_to_anchor=(0.5, 0.0))
+    fig.tight_layout(w_pad=1.0, rect=(0, 0.1, 1, 1)); fig.savefig(f"{OUT}/kshot6.png"); plt.close(fig)
+
+
+# ------------------------------------------------------------------ the four additional objects, one at a time, depth + normals
+def qual_p4():
+    os.environ.setdefault("FIG6_SELECT", "gain"); nice = {"button_v2": "button", "hex_key_v2": "hex key", "edge_v2": "block edge", "marble_v2": "marble"}
+    S, gap, hdr = 240, 8, 46; cols = ["real image", "real only", "AlignTac", "ground truth"]
+    W = 4 * S + 3 * gap + 110; H = 2 * hdr + 2 * S + gap + 10
+    vis = lambda nm: (((nm.astype(np.float32) + 1) / 2).clip(0, 1) * 255).astype(np.uint8); frames = []
+    d = F.data("P4"); r0, r1 = F.RUNS["P4"]
+    for obj, name in nice.items():
+        i = F.median_frame("P4", obj, "cmae"); im = Image.new("RGB", (W, H), (255, 255, 255)); dr = ImageDraw.Draw(im)
+        put(dr, ((4 * S + 3 * gap) / 2, 6), f"{name}   (K = 25, trained on all 16 objects)", 24, (106, 43, 184), anchor="ma")
+        for c, t in enumerate(cols): put(dr, (c * (S + gap) + S / 2, hdr + 4), t, 20, anchor="ma")
+        ha, va, fx, fy = F.free_corner([d["gt"][i] > 0, d[f"pred_{r0}"][i] > 0.05, d[f"pred_{r1}"][i] > 0.05])
+        for r, ims in enumerate([[d["img"][i], vir(d[f"pred_{r0}"][i]), vir(d[f"pred_{r1}"][i]), vir(d["gt"][i])],
+                                 [d["img"][i], vis(d[f"normal_{r0}"][i]), vis(d[f"normal_{r1}"][i]), vis(d["gt_normal"][i])]]):
+            y = 2 * hdr + r * (S + gap)
+            for c, a in enumerate(ims):
+                x = c * (S + gap); im.paste(Image.fromarray(tile(a, S)), (x, y))
+                if c in (1, 2):
+                    run = r0 if c == 1 else r1; txt = f"{float(d[f'cmae_{run}'][i]):.2f} mm" if r == 0 else f"{float(d[f'nerr_{run}'][i]):.0f}°"
+                    px = x + (S - 8 if ha == "right" else 8); py = y + (S - 8 if va == "bottom" else 8)
+                    put(dr, (px, py), txt, 25, (255, 255, 255), anchor=("r" if ha == "right" else "l") + ("d" if va == "bottom" else "a"))
+            put(dr, (4 * S + 3 * gap + 10, y + S / 2), "depth" if r == 0 else "normals", 20, (90, 90, 90), False, anchor="lm")
+        p = f"{OUT}/qual_p4_{obj}.png"; im.save(p); frames.append(p)
+    concat_video(frames, [2.5] * 4, f"{OUT}/qual_p4.mp4"); Image.open(frames[0]).save(f"{OUT}/qual_p4_poster.png")
+
+
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["kshot", "labels", "align_toggle", "qual_cycle", "conv_live", "conv_b", "poseref"]
+    which = sys.argv[1:] or ["kshot", "kshot6", "labels", "align_toggle", "qual_cycle", "qual_p4", "conv_live", "conv_b", "poseref"]
     for w in which:
         globals()[w](); print("done", w, flush=True)

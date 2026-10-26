@@ -51,26 +51,26 @@ def glyph(im, theta, x_mm, y_mm, color=(255, 200, 0), L=18):
 def band(im, text, size=28, bottom=False):
     pil = Image.fromarray(im); d = ImageDraw.Draw(pil); f = ImageFont.truetype(FONT, size); h = size + 14
     y0 = pil.height - h if bottom else 0
-    d.rectangle([0, y0, pil.width, y0 + h], fill=(0, 0, 0)); d.text((12, y0 + 6), text, fill=(255, 255, 255), font=f); return np.array(pil)
+    d.rectangle([0, y0, pil.width, y0 + h], fill=(255, 255, 255)); d.text((12, y0 + 6), text, fill=(0, 0, 0), font=f); return np.array(pil)
 
 
 def titled(im, text, size=26):
     """title strip above a tile."""
-    pil = Image.fromarray(im); W = pil.width; strip = Image.new("RGB", (W, size + 14), (0, 0, 0)); d = ImageDraw.Draw(strip)
-    f = ImageFont.truetype(FONT, size); w = d.textlength(text, font=f); d.text(((W - w) / 2, 6), text, fill=(255, 255, 255), font=f)
+    pil = Image.fromarray(im); W = pil.width; strip = Image.new("RGB", (W, size + 14), (255, 255, 255)); d = ImageDraw.Draw(strip)
+    f = ImageFont.truetype(FONT, size); w = d.textlength(text, font=f); d.text(((W - w) / 2, 6), text, fill=(0, 0, 0), font=f)
     out = Image.new("RGB", (W, pil.height + strip.height)); out.paste(strip, (0, 0)); out.paste(pil, (0, strip.height)); return np.array(out)
 
 
 def hstack(tiles, gap=8):
     h = max(t.shape[0] for t in tiles); w = sum(t.shape[1] for t in tiles) + gap * (len(tiles) - 1)
-    out = np.zeros((h, w, 3), np.uint8); x = 0
+    out = np.full((h, w, 3), 255, np.uint8); x = 0
     for t in tiles:
         out[:t.shape[0], x:x + t.shape[1]] = t; x += t.shape[1] + gap
     return out
 
 
 def write_clip(frames, name, fps=FPS):
-    os.makedirs(osp.join(VID, name), exist_ok=True)
+    import shutil; shutil.rmtree(osp.join(VID, name), ignore_errors=True); os.makedirs(osp.join(VID, name))   # stale frames would be concatenated
     for i, f in enumerate(frames): Image.fromarray(f).save(osp.join(VID, name, f"{i:04d}.png"))
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", osp.join(VID, name, "%04d.png"),
                     "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-r", "30", osp.join(VID, f"{name}.mp4")], check=True)
@@ -82,6 +82,8 @@ def write_clip(frames, name, fps=FPS):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--obj", required=True, help="real name, e.g. pattern_32"); ap.add_argument("--run", default="1")
     ap.add_argument("--iters", nargs="+", type=int, default=[2, 3]); ap.add_argument("--pad", type=int, default=5, help="frames kept before/after each contact")
+    ap.add_argument("--pred-sec", nargs=2, type=float, default=None, help="keep this time range [s] of the 4 fps prediction clip")
+    ap.add_argument("--label-sec", nargs=2, type=float, default=None, help="keep this time range [s] of the 4 fps labeling clip")
     ap.add_argument("--device", default="cuda:0"); a = ap.parse_args(); dev = a.device; os.chdir(ROOT)
     sim = B.OBJ_MAP[a.obj][0]
     cfg = merge_configs("ablation/encoder/tac_sitr_single.yaml", "ablation/pilot_robosoft/train_pilot_e50.yaml", "ablation/pilot_robosoft/data_T_k25_realonly.yaml")
@@ -106,8 +108,7 @@ def main():
         se2 = out[("T_k25_rf", "best_pose")]["se2"][0].float().cpu(); th, px, py = math.atan2(se2[1], se2[0]), float(se2[2]) * HALF_MM, float(se2[3]) * HALF_MM
         contact = bool(f["is_at_or_below_contact"]); tsec = f["capture_wall_time_sec"] - t0
         # ---- prediction clip (cropped view, as the student sees it)
-        t1 = up(rgb)
-        if contact: t1 = glyph(t1, th, px, py)                       # drawn in full-view coordinates, then cropped like the input
+        t1 = up(rgb)                                                # the student's cropped view, no pose glyph
         side = int(224 * UP * 0.816); o = (224 * UP - side) // 2; t1 = cv2.resize(t1[o:o + side, o:o + side], (224 * UP, 224 * UP), interpolation=cv2.INTER_CUBIC)
         tiles = [titled(t1, "tactile stream"), titled(cmap(d_ro), "real only (K = 25)"), titled(cmap(d_al), "AlignTac student (K = 25)")]
         fr = hstack(tiles); fr = band(fr, f"{a.obj.replace('_', ' ')}   press {f['iteration']}   t = {tsec:5.1f} s   indentation {f['actual_press_depth_m'] * 1000:.2f} mm" + ("" if contact else "   (no contact)"), bottom=True)
@@ -121,11 +122,12 @@ def main():
             q0 = p[0].cpu().numpy().tolist(); qT = refine(A, [sim], img, p, dev, iters=6)[0].cpu().numpy().tolist()
             d0 = B.gt_depth_mm(sim, *q0); dT = B.gt_depth_mm(sim, *qT)
             g1 = outline(g1, d0, (255, 60, 60)); g2 = outline(g2, dT, (60, 230, 90)); g3 = cmap(dT)
-        tiles = [titled(g1, "teacher initial state"), titled(g2, "after 6 aligner updates"), titled(g3, "pseudo-label (mesh depth)")]
+        tiles = [titled(g1, "teacher initial state"), titled(g2, "after aligner updates"), titled(g3, "pseudo-label (mesh depth)")]
         fr = hstack(tiles); fr = band(fr, f"{a.obj.replace('_', ' ')}   press {f['iteration']}   t = {tsec:5.1f} s" + ("" if contact else "   (no contact)"), bottom=True)
         label_frames.append(fr)
     tag = f"{a.obj}_run{a.run}"
-    write_clip(pred_frames, f"pred_{tag}"); write_clip(label_frames, f"label_{tag}")
+    trim = lambda fr, sec: fr if sec is None else fr[int(round(sec[0] * FPS)):int(round(sec[1] * FPS))]
+    write_clip(trim(pred_frames, a.pred_sec), f"pred_{tag}"); write_clip(trim(label_frames, a.label_sec), f"label_{tag}")
     print(tag, len(sel), "frames ->", VID)
 
 

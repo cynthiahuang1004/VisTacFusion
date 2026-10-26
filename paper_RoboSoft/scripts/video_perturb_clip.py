@@ -22,22 +22,21 @@ def main():
     os.makedirs(VID, exist_ok=True); u = f"{G}/{OBJ}/session_000/sensor_0000"
     rgb = np.array(Image.open(f"{u}/samples/{FR}.png").convert("RGB")); P = json.load(open(f"{u}/raw_data/{FR}_pose.json"))
     q = [P["rotation_euler"][2], P["sample_x"] * 1e3, P["sample_y"] * 1e3, float(np.clip(np.load(f"{u}/raw_data/{FR}_gt.npy").max() * 1e3, 0.3, 1.6))]
-    dg = B.gt_depth_mm(OBJ, *q); rng = np.random.RandomState(3); frames = []; f = ImageFont.truetype(FONT, 30); f2 = ImageFont.truetype(FONT, 26)
+    dg = B.gt_depth_mm(OBJ, *q); rng = np.random.RandomState(3); frames = []; f = ImageFont.truetype(FONT, 32); f2 = ImageFont.truetype(FONT, 27)
     base = cv2.resize(rgb, None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
     for k in range(14):
         d = rng.uniform(-1, 1, 4) * np.array([math.radians(8), 1.5, 1.5, 0.15]) * (0.3 if k % 2 else 1.0)
         im = outline(base.copy(), dg, (60, 230, 90), 7); im = outline(im, B.gt_depth_mm(OBJ, q[0] + d[0], q[1] + d[1], q[2] + d[2], q[3] + d[3]), (255, 150, 0), 7)
-        pil = Image.new("RGB", (im.shape[1] + 800, im.shape[0]), (0, 0, 0)); pil.paste(Image.fromarray(im), (0, 0)); dr = ImageDraw.Draw(pil); x0 = im.shape[1] + 24
-        dr.text((x0, 30), "labeled real image", fill=(255, 255, 255), font=f)
-        dr.text((x0, 90), "mesh at GT state q*", fill=(60, 230, 90), font=f2)
-        dr.text((x0, 130), "mesh at q* + δ", fill=(255, 150, 0), font=f2)
-        dr.text((x0, 220), "sampled perturbation δ", fill=(255, 255, 255), font=f2)
-        dr.text((x0, 260), f"rotation  {math.degrees(d[0]):+5.1f}°", fill=(255, 150, 0), font=f2)
-        dr.text((x0, 296), f"x, y      {d[1]:+4.2f}, {d[2]:+4.2f} mm", fill=(255, 150, 0), font=f2)
-        dr.text((x0, 332), f"indent.   {d[3]:+5.2f} mm", fill=(255, 150, 0), font=f2)
-        dr.text((x0, 420), "aligner input: image + mesh depth at q* + δ", fill=(255, 255, 255), font=f2)
-        dr.text((x0, 456), "training target:  −δ", fill=(60, 230, 90), font=f2)
-        dr.text((x0, 540), "one labeled contact → many training pairs", fill=(180, 180, 180), font=f2)
+        pil = Image.new("RGB", (im.shape[1] + 620, im.shape[0]), (255, 255, 255)); pil.paste(Image.fromarray(im), (0, 0)); dr = ImageDraw.Draw(pil); x0 = im.shape[1] + 30
+        K = (0, 0, 0); GR = (40, 170, 70); OR = (235, 120, 0)
+        dr.text((x0, 30), "one labeled contact", fill=K, font=f)
+        dr.text((x0, 95), "GT state  q*", fill=GR, font=f2)
+        dr.text((x0, 135), "perturbed  q* + δ", fill=OR, font=f2)
+        dr.text((x0, 230), "δ", fill=OR, font=f)
+        for k2, (lab, val) in enumerate([("rotation", f"{math.degrees(d[0]):+5.1f}°"), ("shift", f"{d[1]:+4.2f}, {d[2]:+4.2f} mm"), ("indentation", f"{d[3]:+5.2f} mm")]):
+            dr.text((x0 + 60, 236 + 36 * k2), lab, fill=OR, font=f2); dr.text((x0 + 270, 236 + 36 * k2), val, fill=OR, font=f2)
+        dr.text((x0, 420), "input:   image + mesh depth at q* + δ", fill=K, font=f2)
+        dr.text((x0, 460), "target:  −δ", fill=GR, font=f2)
         frames.append(np.array(pil))
     for i, fr in enumerate(frames): Image.fromarray(fr).save(osp.join(VID, f"{i:04d}.png"))
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", "2", "-i", osp.join(VID, "%04d.png"), "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p", "-r", "30", osp.join(VID, "perturb.mp4")], check=True)

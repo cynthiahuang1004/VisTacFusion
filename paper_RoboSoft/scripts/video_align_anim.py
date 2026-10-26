@@ -36,9 +36,9 @@ def label(im, text, sub=""):
         f = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30); f2 = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
     except OSError:
         f = f2 = ImageFont.load_default()
-    d.rectangle([0, 0, pil.width, 44], fill=(0, 0, 0)); d.text((12, 6), text, fill=(255, 255, 255), font=f)
+    d.rectangle([0, 0, pil.width, 44], fill=(255, 255, 255)); d.text((12, 6), text, fill=(0, 0, 0), font=f)
     if sub:
-        d.rectangle([0, pil.height - 36, pil.width, pil.height], fill=(0, 0, 0)); d.text((12, pil.height - 32), sub, fill=(255, 255, 255), font=f2)
+        d.rectangle([0, pil.height - 36, pil.width, pil.height], fill=(255, 255, 255)); d.text((12, pil.height - 32), sub, fill=(0, 0, 0), font=f2)
     return np.array(pil)
 
 
@@ -99,8 +99,8 @@ def main():
             im = label(im, f"rotation error {r['rot'][it]:.1f} deg,  translation error {r['trans'][it]:.2f} mm", "")
             d_ = osp.join(VID, f"{r['obj']}_{r['frame']:04d}"); os.makedirs(d_, exist_ok=True); Image.fromarray(im).save(osp.join(d_, f"it{it}.png"))
             tiles.append(im)
-        strip = np.concatenate(tiles, 1)
-        strip = label(strip, f"teacher initial state  ->  aligner update {it} of {T}" if it else "teacher initial state q0 (red); GT outline (white)", "")
+        strip = np.concatenate([np.pad(t, ((0, 0), (0, 6), (0, 0)), constant_values=255) for t in tiles], 1)[:, :-6]
+        strip = label(strip, f"aligner update {it} of {T}" if it else "teacher initial state (red);  GT contact region (white)", "")
         Image.fromarray(strip).save(osp.join(VID, f"strip_it{it}.png")); strips.append(strip)
     # gif / mp4: 0.8 s per update, hold first and last for 1.5 s
     seq = [strips[0]] * 2 + strips[1:] + [strips[-1]] * 2
