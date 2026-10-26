@@ -21,6 +21,7 @@ prs = Presentation(); prs.slide_width, prs.slide_height = Inches(W), Inches(H)
 BLANK = prs.slide_layouts[6]
 script = []
 POSTER = bool(os.environ.get("DECK_POSTER"))      # poster deck: clips replaced by their first frame (for rendering backgrounds)
+GIF_DECK = bool(os.environ.get("DECK_GIF"))        # every clip embedded as an animated GIF (no mp4 objects) -> AlignTac_video_gif.pptx
 PLACEMENTS = []                                    # (slide index, clip path, x, y, w, h in inches) of every embedded clip
 NARR = [
     'AlignTac: aligning real tactile images with simulated geometry for label-efficient contact learning.',
@@ -99,6 +100,10 @@ def movie(s, path, x, y, w, h, poster=None, gif=None):
     PLACEMENTS.append(dict(slide=len(prs.slides), clip=path, x=px, y=py, w=pw, h=ph))
     if POSTER:
         return s.shapes.add_picture(poster, Inches(px), Inches(py), Inches(pw), Inches(ph))
+    if GIF_DECK and not gif:                                   # all-GIF deck: convert the mp4 once (cached next to it)
+        gif = path.replace(".mp4", "_deck.gif")
+        if not osp.exists(gif):
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-vf", "fps=8,scale=760:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse", gif], check=True)
     if gif:
         return s.shapes.add_picture(gif, Inches(px), Inches(py), Inches(pw), Inches(ph))
     return s.shapes.add_movie(path, Inches(px), Inches(py), Inches(pw), Inches(ph), poster_frame_image=poster, mime_type="video/mp4")
@@ -209,7 +214,7 @@ text(s, "•  Real images supply appearance; the known mesh supplies geometry; A
         "•  Code will be released",
      0.9, 1.3, W - 1.8, 5.2, 24, BLACK, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
-prs.save(f"{V}/AlignTac_video_poster.pptx" if POSTER else f"{V}/AlignTac_video.pptx")
+prs.save(f"{V}/AlignTac_video_poster.pptx" if POSTER else f"{V}/AlignTac_video_gif.pptx" if GIF_DECK else f"{V}/AlignTac_video.pptx")
 json.dump(dict(placements=PLACEMENTS, seconds=[x[1] for x in script]), open(f"{V}/placements.json", "w"), indent=1)
 total = sum(x[1] for x in script)
 with open(f"{V}/SCRIPT.md", "w") as f:
