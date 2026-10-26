@@ -125,8 +125,8 @@ def fig_kshot(out):
         ax.set_title(f"({letters[i + 3]}) {lab}", loc="left", fontsize=6.4, pad=3)
         ax.text(0.96, 0.96, "Sensor B", transform=ax.transAxes, ha="right", va="top", fontsize=6.5, color="#6b6a66")
     for ax in axes:
-        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks], fontsize=6.5); ax.minorticks_off()
-        ax.yaxis.set_major_locator(MaxNLocator(5)); ax.tick_params(axis="y", labelsize=6.5, pad=1.5); ax.tick_params(axis="x", pad=1.5)
+        ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks], fontsize=5.8); ax.minorticks_off()
+        ax.yaxis.set_major_locator(MaxNLocator(5)); ax.tick_params(axis="y", labelsize=5.8, pad=1.5); ax.tick_params(axis="x", pad=1.5)
         ax.set_xlabel("$K$", fontsize=6.8, labelpad=1.5)
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, frameon=False, ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.015), columnspacing=1.0, handletextpad=0.4, fontsize=6.8)
@@ -363,14 +363,14 @@ def _label_quality():
 def fig_labels(out):
     """Label quality on the unlabeled frames: the K-shot teacher's own prediction vs the mesh at the aligned pose, both sensors."""
     A, Bq = _label_quality(); Ks = [10, 25, 50, 100]
-    series = [("Teacher, sensor A", A, 0, "#52514e", "o", 4.2), ("Aligned mesh, sensor A", A, 1, "#8a4fd3", "*", 6.8),
-              ("Teacher, sensor B", Bq, 0, "#eb6834", "s", 4.0), ("Aligned mesh, sensor B", Bq, 1, "#1baf7a", "D", 3.8)]
+    series = [("Teacher (A)", A, 0, "#52514e", "o", 4.2), ("Aligned mesh (A)", A, 1, "#8a4fd3", "*", 6.8),
+              ("Teacher (B)", Bq, 0, "#eb6834", "s", 4.0), ("Aligned mesh (B)", Bq, 1, "#1baf7a", "D", 3.8)]
     fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.48))
-    for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Pose error [deg] $\\downarrow$")]):
+    for ax, (i, lab) in zip(axes, [(0, "Label IoU $\\uparrow$"), (3, "Contact MAE [mm] $\\downarrow$"), (6, "Rotation [deg] $\\downarrow$")]):
         for name, D, off, c, m, ms in series:
             ax.plot(Ks, [D[k][i + off] for k in Ks], color=c, marker=m, ls="-", lw=LW, ms=MS_STAR if m == "*" else MS, mec="white", mew=0.5, label=name)
         ax.set_xscale("log"); ax.set_xticks(Ks); ax.set_xticklabels([str(k) for k in Ks]); ax.minorticks_off()
-        ax.set_xlabel("$K$"); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
+        ax.tick_params(labelsize=5.8); ax.set_xlabel("$K$", fontsize=7); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
     axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, -0.03), columnspacing=1.2, handletextpad=0.4,
@@ -384,27 +384,27 @@ def fig_conv(out):
     (a) rotation error vs. iteration from the K-shot teacher's predicted pose on the 472 validation frames;
     (b) rotation error after six iterations vs. the magnitude of a rotation perturbation of the GT pose (plus +-1.5 mm shift)."""
     d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); N = d["iters"]
-    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.5))
+    fig, axes = plt.subplots(1, 2, figsize=(3.45, 1.5)); TK, LB, TT = 5.6, 6.2, 6.3
     ax = axes[0]; t = d["teacher"]["rot"]
     ax.plot(range(N + 1), t["mean"], color="#8a4fd3", marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label="mean")
     ax.plot(range(N + 1), t["median"], color="#52514e", marker="o", ms=MS, mec="white", mew=0.5, lw=LW, label="median")
-    ax.axvline(6, color="#b5b3ad", lw=0.8, ls=":"); ax.set_xticks([0, 2, 4, 6, 8, 10]); ax.set_ylim(0, None)
-    ax.set_xlabel("Aligner updates"); ax.set_ylabel("Rotation error [deg]"); ax.set_title("(a) From the teacher pose", loc="left", fontsize=6.6, pad=3)
-    ax.legend(frameon=False, fontsize=6)
+    ax.axvline(6, color="#b5b3ad", lw=0.8, ls=":"); ax.set_xticks([0, 2, 4, 6, 8, 10]); ax.set_ylim(0, None); ax.tick_params(labelsize=TK)
+    ax.set_xlabel("Aligner updates", fontsize=LB); ax.set_ylabel("Rotation error [deg]", fontsize=LB); ax.set_title("(a) From the teacher pose", loc="left", fontsize=TT, pad=3)
+    ax.legend(frameon=False, fontsize=5.6)
     ax = axes[1]; R = sorted(int(r) for r in d["basin"])
-    # basin of attraction: mean rotation error after n = 1, 2, 3, 6 updates vs. the initial rotation perturbation (log scale);
-    # curves labelled at their right end, the dotted diagonal is the initial error itself (no update)
-    ax.plot(R, [max(r, 0.3) for r in R], color="#b5b3ad", lw=0.8, ls=":")
-    ax.text(31, 30, "no update", fontsize=5.6, color="#8c8a85", va="center", ha="left")
-    for it, c, lab, k in ((1, "#d9c2f0", "$n$=1", 1.0), (2, "#b58ae0", "2", 1.0), (3, "#8a4fd3", "3", 1.25), (6, "#4b2a7a", "6", 0.8)):
-        y = [d["basin"][str(r)]["rot"]["mean"][it] for r in R]
-        ax.plot(R, y, color=c, marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW)
-        ax.text(31, y[-1] * k, lab, fontsize=6, color=c, va="center", ha="left", fontweight="bold")
-    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_xlim(-1, 37)
-    ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"]); ax.minorticks_off()
-    ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.set_xlabel("Initial rotation error [deg]"); ax.set_ylabel("Rotation error [deg]")
-    ax.set_title("(b) After $n$ updates", loc="left", fontsize=6.6, pad=3)
-    fig.tight_layout(w_pad=0.8)
+    # basin of attraction: mean rotation error after n = 0 (none), 1, 2, 3, 6 updates vs. the initial rotation perturbation
+    # (log scale); curves labelled just outside the right axis limit so that the grid stops at 30 deg
+    curves = [(0, "#8c8a85", ":", [max(r, 0.3) for r in R], 1.0), (1, "#b57bee", "-", None, 1.0), (2, "#8f4fd6", "-", None, 1.0),
+              (3, "#6a2bb8", "-", None, 1.25), (6, "#3d1778", "-", None, 0.8)]
+    for it, c, ls, y, k in curves:
+        y = y or [d["basin"][str(r)]["rot"]["mean"][it] for r in R]
+        ax.plot(R, y, color=c, ls=ls, lw=0.8 if it == 0 else LW, marker=None if it == 0 else "*", ms=MS_STAR, mec="white", mew=0.5)
+        ax.text(30.9, y[-1] * k, "$n$=0" if it == 0 else str(it), fontsize=5.8, color=c, va="center", ha="left", fontweight="bold", clip_on=False)
+    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_xlim(-0.5, 30.5)
+    ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"]); ax.minorticks_off(); ax.tick_params(labelsize=TK)
+    ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.set_xlabel("Initial rotation error [deg]", fontsize=LB); ax.set_ylabel("Rotation error [deg]", fontsize=LB)
+    ax.set_title("(b) After $n$ updates", loc="left", fontsize=TT, pad=3)
+    fig.tight_layout(w_pad=1.6)
     fig.savefig(osp.join(out, "fig_conv.pdf")); plt.close(fig)
 
 
@@ -426,9 +426,9 @@ def fig_poseref(out):
             off = (j - 0.5) * 2 * w
             ax.bar(x + off - w / 2, pre, w, color="white", edgecolor=c, lw=0.8, label=name if i == 0 else None)
             ax.bar(x + off + w / 2, post, w, color=c, edgecolor=c, lw=0.8, label=f"{name} + align" if i == 0 else None)
-        ax.set_xticks(x); ax.set_xticklabels(Ks)
+        ax.set_xticks(x); ax.set_xticklabels(Ks); ax.tick_params(labelsize=5.8)
         if i >= 2:
-            ax.set_xlabel("$K$")
+            ax.set_xlabel("$K$", fontsize=7)
         ax.set_title(f"({'abcd'[i]}) {lab}, {sname}", loc="left", fontsize=6.6, pad=3); ax.set_ylim(0, None)
         ax.grid(axis="y", color="#e6e4df", lw=0.5); ax.set_axisbelow(True)
     h, l = axes[0].get_legend_handles_labels()

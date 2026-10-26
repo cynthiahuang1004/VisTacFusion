@@ -61,6 +61,15 @@ def median_frame(name, obj, metric="cmae"):
     return max(good, key=lambda j: e0[j] - e1[j])
 
 
+def free_corner(masks, fw=0.42, fh=0.28):
+    """Corner (ha, va, x, y in axes fraction) whose box holds the fewest contact pixels over the given masks (H x W bool)."""
+    H, W = masks[0].shape; bh, bw = int(H * fh), int(W * fw); m = np.zeros((H, W), bool)
+    for k in masks: m |= k
+    boxes = {"br": m[H - bh:, W - bw:], "bl": m[H - bh:, :bw], "tr": m[:bh, W - bw:], "tl": m[:bh, :bw]}
+    best = min(boxes, key=lambda c: boxes[c].sum())                      # ties keep the bottom-right default
+    return {"br": ("right", "bottom", 0.96, 0.05), "bl": ("left", "bottom", 0.04, 0.05), "tr": ("right", "top", 0.96, 0.95), "tl": ("left", "top", 0.04, 0.95)}[best]
+
+
 def grid(layout, out):
     L = LAYOUTS[layout]; n_gr, n_gc = len(L), len(L[0]); n_r = len(L[0][0])
     gap_c, gap_r, sp = 0.05, 0.06, 0.012                       # group gaps / tile spacing, in tile units
@@ -77,6 +86,7 @@ def grid(layout, out):
                 vis = lambda nm: ((nm.astype(np.float32) + 1) / 2).clip(0, 1)                       # unit normal -> RGB
                 ims = [d["img"][i]] + ([vis(d[f"normal_{r0}"][i]), vis(d[f"normal_{r1}"][i]), vis(d["gt_normal"][i])] if normals
                                        else [d[f"pred_{r0}"][i], d[f"pred_{r1}"][i], d["gt"][i]])
+                ha, va, tx, ty = free_corner([d["gt"][i] > 0, d[f"pred_{r0}"][i] > 0.05, d[f"pred_{r1}"][i] > 0.05])   # number away from the contact
                 for c, im in enumerate(ims):
                     ax = fig.add_subplot(inner[r, c])
                     ax.imshow(im, interpolation="none") if (c == 0 or normals) else ax.imshow(im.astype(np.float32), cmap="viridis", vmin=0, vmax=VMAX, interpolation="none")
@@ -86,7 +96,7 @@ def grid(layout, out):
                     if c in (1, 2):
                         run = (r0, r1)[c - 1]
                         txt = f"{float(d[f'nerr_{run}'][i]):.0f}°" if normals else f"{float(d[f'cmae_{run}'][i]):.2f}"
-                        ax.text(0.96, 0.05, txt, transform=ax.transAxes, ha="right", va="bottom", fontsize=fs, color="white",
+                        ax.text(tx, ty, txt, transform=ax.transAxes, ha=ha, va=va, fontsize=fs, color="white",
                                 path_effects=[pe.withStroke(linewidth=0.8, foreground="black")])
                 print(layout, name, obj, "frame", d["keys"][i], "real only %.3f AlignTac %.3f" % (d[f"cmae_{r0}"][i], d[f"cmae_{r1}"][i]),
                       "normals %.1f / %.1f deg" % (d[f"nerr_{r0}"][i], d[f"nerr_{r1}"][i]), "(normal row)" if normals else "")
