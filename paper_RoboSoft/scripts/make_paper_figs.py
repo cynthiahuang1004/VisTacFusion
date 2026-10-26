@@ -392,13 +392,16 @@ def fig_conv(out):
     ax.set_xlabel("Aligner iterations"); ax.set_title("(a) From teacher pose [deg]", loc="left", fontsize=6.6, pad=3); ax.legend(frameon=False, fontsize=6)
     ax = axes[1]; R = sorted(int(r) for r in d["basin"])
     # basin of attraction: mean rotation error after 1, 2, 3 and 6 updates vs. the initial rotation perturbation (log scale);
-    # the dotted diagonal is the initial error itself (no update)
-    ax.plot(R, [max(r, 0.3) for r in R], color="#b5b3ad", lw=0.8, ls=":", label="no update")
+    # curves labelled at their right end, the dotted diagonal is the initial error itself (no update)
+    ax.plot(R, [max(r, 0.3) for r in R], color="#b5b3ad", lw=0.8, ls=":")
+    ax.text(30.8, 30, "initial", fontsize=5.6, color="#8c8a85", va="center", ha="left")
     for it, c in ((1, "#d9c2f0"), (2, "#b58ae0"), (3, "#8a4fd3"), (6, "#4b2a7a")):
-        ax.plot(R, [d["basin"][str(r)]["rot"]["mean"][it] for r in R], color=c, marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW, label=f"{it} update" + ("s" if it > 1 else ""))
-    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"])
-    ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.set_xlabel("Initial rotation error [deg]"); ax.set_title("(b) After alignment [deg], mean", loc="left", fontsize=6.6, pad=3)
-    ax.legend(frameon=False, fontsize=5.2, ncol=2, columnspacing=0.8, handlelength=1.4, loc="upper left")
+        y = [d["basin"][str(r)]["rot"]["mean"][it] for r in R]
+        ax.plot(R, y, color=c, marker="*", ms=MS_STAR, mec="white", mew=0.5, lw=LW)
+        ax.text(30.8, y[-1] * {1: 1.0, 2: 1.0, 3: 1.3, 6: 0.78}[it], f"{it}", fontsize=5.8, color=c, va="center", ha="left", fontweight="bold")   # keep 3 / 6 apart
+    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_xlim(-1, 34)
+    ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"]); ax.minorticks_off()
+    ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.set_xlabel("Initial rotation error [deg]"); ax.set_title("(b) After 1, 2, 3, 6 updates [deg]", loc="left", fontsize=6.6, pad=3)
     fig.tight_layout(w_pad=0.8)
     fig.savefig(osp.join(out, "fig_conv.pdf")); plt.close(fig)
 

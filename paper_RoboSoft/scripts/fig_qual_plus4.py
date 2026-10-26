@@ -23,7 +23,7 @@ RUNS = {"A": ("T_k25_realonly", "T_k25_rf"), "B": ("S_k25_realonly_m", "S_k25_ma
 LAYOUTS = {
     "wide": [[[("A", "pattern_01_2_lines_angle_2"), ("A", "pattern_32"), ("A", "pattern_36"), ("A", "pattern_04_3_lines_angle_1")],
               [("P4", "button_v2"), ("P4", "hex_key_v2"), ("P4", "edge_v2"), ("P4", "marble_v2")],
-              [("B", "pattern_04_3_lines_angle_1"), ("B", "pattern_33"), ("B", "pattern_06_5_lines_angle_1"), ("B", "pattern_36")]]],
+              [("B", "pattern_04_3_lines_angle_1"), ("B", "pattern_06_5_lines_angle_1"), ("B", "pattern_36"), ("B", "pattern_33")]]],   # last row = normals
     "tall": [[[("A", "pattern_01_2_lines_angle_2"), ("A", "pattern_36")], [("B", "pattern_04_3_lines_angle_1"), ("B", "pattern_06_5_lines_angle_1")]],
              [[("P4", "button_v2"), ("P4", "hex_key_v2")], [("P4", "edge_v2"), ("P4", "marble_v2")]]],
 }
