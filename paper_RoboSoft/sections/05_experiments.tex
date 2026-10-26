@@ -20,7 +20,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig4_kshot.pdf}
-    \caption{\textbf{Label efficiency on the two GelSlim~4.0 variants.} Contact MAE, rotation and translation error versus labeled contacts per object, $K$. Marker-free sensor A: (a--c); dot-marker sensor B: (d--f). Results use each variant's held-out test frames. PBR and the full-set renderer are reported for sensor A only; PBR is calibrated to its illumination, and the full-set renderer uses additional real training pairs.}
+    \caption{\textbf{Label efficiency on the two GelSlim~4.0 variants.} Contact MAE, rotation and translation error versus $K$, the number of labeled contacts per object. Marker-free sensor A: (a--c); dot-marker sensor B: (d--f). Results use each variant's held-out test frames. PBR and the full-set renderer are reported for sensor A only; PBR is calibrated to its illumination, and the full-set renderer uses additional real training pairs.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -57,7 +57,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig5_labels.pdf}
-    \caption{\textbf{Pseudo-label quality across label budgets.} Teacher and aligned-mesh targets are compared on the unlabeled training images of marker-free (A) and dot-marker (B) GelSlim~4.0. Ground truth is withheld during training and used only for this evaluation. Curves report contact IoU, \FinalLine{contact MAE (mm), and rotation error (deg).}}
+    \caption{\textbf{Pseudo-label quality across label budgets.} Teacher and aligned-mesh targets are compared on the unlabeled training images of marker-free (A) and dot-marker (B) GelSlim~4.0 for $K$ labeled contacts per object. Ground truth is withheld during training and used only for this evaluation. Curves report contact IoU, \FinalLine{contact MAE (mm), and rotation error (deg).}}
     \label{fig:labels}
 \end{figure}
 
@@ -110,7 +110,7 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
-    \caption{\textbf{Aligner convergence} (marker-free sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error from teacher initialization versus update count; dotted line: six updates. (b) Mean rotation error after one, two, three and six updates from perturbed GT states, with random translation and indentation offsets, versus the perturbation magnitude (log scale; dotted: no update). \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
+    \caption{\textbf{Aligner convergence} (marker-free sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error versus the number of aligner updates, starting from the teacher's predicted pose; dotted line: the six updates used throughout. (b) Mean rotation error after $n$ updates, starting from the GT state rotated by the given angle plus random translation and indentation offsets (log scale; dotted: no update). \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
     \label{fig:conv}
 \end{figure}
 
@@ -126,12 +126,12 @@ We evaluate robustness across capture sessions, GelSlim~4.0 variants and additio
 
 \noindent\textbf{Additional objects.} Four further sensor-A objects (button, hex key, block edge, marble; $3{,}156$ contacts) are labeled from the robot pose after fitting each object's placement to its contact outlines. Trained on all 16 objects at $K=25$, AlignTac lowers their contact MAE from $0.235$ to $0.204\,$mm ($13\%$; three-seed means, lower in every seed) and raises IoU from $0.70$ to $0.77$, with gains on all four \FinalLine{objects.}
 
-Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac. Contact MAE can understate the difference: on the marble, both predictions have similar MAE, but the AlignTac normals are closer to the GT ($4^\circ$ vs.\ $10^\circ$).
+Fig.~\ref{fig:qual} shows examples from both variants and the additional objects; improvements vary across individual contacts, while the aggregate metrics favor AlignTac. Contact MAE can understate the gain: on the marble both MAEs are similar, but the AlignTac normals are closer to the GT ($4^\circ$ vs.\ $12^\circ$).
 
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig8_poseref.pdf}
-    \caption{\textbf{Pose error before and after test-time refinement on marker-free GelSlim~4.0 (sensor A).} Hollow bars: predictor output; filled bars: after six updates of the fixed aligner with the known mesh. Mean errors over session-1 test frames (a, c) and session-2 frames (b, d); no retraining.}
+    \caption{\textbf{Pose error before and after test-time refinement on marker-free GelSlim~4.0 (sensor A).} Hollow bars: predictor output; filled bars: after six updates of the fixed aligner with the known mesh; $K$: labeled contacts per object. Mean errors over session-1 test frames (a, c) and session-2 frames (b, d); no retraining.}
     \label{fig:poseref}
 \end{figure}
 

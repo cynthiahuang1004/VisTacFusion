@@ -42,13 +42,23 @@ def data(name):
 PICKS = "paper_RoboSoft/figures/src/fig6_picks.json"   # optional {"<set>/<object>": frame key} chosen by the authors
 
 
-def median_frame(name, obj):
+SELECT = os.environ.get("FIG6_SELECT", "gain")   # "median": the object's median AlignTac-error frame; "gain": largest improvement
+
+
+def median_frame(name, obj, metric="cmae"):
+    """Frame index for (set, object). Explicit picks in fig6_picks.json win; otherwise SELECT decides:
+    median = the object's median AlignTac-error frame (chosen without reference to the baseline);
+    gain   = the frame with the largest real-only minus AlignTac error among frames whose AlignTac error is at most the
+             object's median (a clear, representative improvement). `metric` is cmae (depth rows) or nerr (normal row)."""
     picks = json.load(open(PICKS)) if os.path.exists(PICKS) else {}
     if f"{name}/{obj}" in picks:
         return list(map(str, data(name)["keys"])).index(picks[f"{name}/{obj}"])
-    d = data(name); err = d[f"cmae_{RUNS[name][1]}"]          # select by AlignTac's own error, not by its gain
-    ids = sorted(np.nonzero(d["obj"] == obj)[0], key=lambda j: err[j])
-    return ids[len(ids) // 2]
+    d = data(name); r0, r1 = RUNS[name]; e0, e1 = d[f"{metric}_{r0}"], d[f"{metric}_{r1}"]
+    ids = sorted(np.nonzero(d["obj"] == obj)[0], key=lambda j: e1[j])
+    if SELECT == "median":
+        return ids[len(ids) // 2]
+    good = ids[:len(ids) // 2 + 1]
+    return max(good, key=lambda j: e0[j] - e1[j])
 
 
 def grid(layout, out):
@@ -63,7 +73,7 @@ def grid(layout, out):
         for gj in range(n_gc):
             inner = outer[gi, gj].subgridspec(n_r, 4, wspace=sp, hspace=sp * 4 / 4)
             for r, (name, obj) in enumerate(L[gi][gj]):
-                d = data(name); i = median_frame(name, obj); r0, r1 = RUNS[name]; normals = r == n_r - 1
+                normals = r == n_r - 1; d = data(name); i = median_frame(name, obj, "nerr" if normals else "cmae"); r0, r1 = RUNS[name]
                 vis = lambda nm: ((nm.astype(np.float32) + 1) / 2).clip(0, 1)                       # unit normal -> RGB
                 ims = [d["img"][i]] + ([vis(d[f"normal_{r0}"][i]), vis(d[f"normal_{r1}"][i]), vis(d["gt_normal"][i])] if normals
                                        else [d[f"pred_{r0}"][i], d[f"pred_{r1}"][i], d["gt"][i]])

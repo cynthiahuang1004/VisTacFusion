@@ -146,7 +146,7 @@ We use the same unlabeled images to compare teacher predictions, render-and-comp
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
-    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Mean rotation error after one, two, three and six updates from perturbed GT states (random translation and indentation offsets) versus the perturbation magnitude, log scale; dotted: no update. Shaded region: training rotation range ($\pm8^\circ$).}
+    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error against the number of aligner updates, starting from the teacher's predicted pose; the dotted line marks the six updates used throughout. (b) Mean rotation error after $n$ updates, starting from the GT state rotated by the given angle plus random translation and indentation offsets (log scale; dotted: no update). Shaded region: training rotation range ($\pm8^\circ$).}
     \label{fig:conv}
 \end{figure}
 
@@ -375,7 +375,7 @@ We also test refinement on held-out objects: trained on the nine seen objects of
 
 \subsection{Qualitative Results}
 \label{sec:qual}
-Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. The examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the AlignTac student recovers more of the contact extent, most visibly on the hex key and the button rim. The normal rows show differences that contact MAE understates: on the marble both depth predictions have similar MAE, whereas the AlignTac normals are much closer to the GT ($4^\circ$ vs.\ $10^\circ$ mean angular error); over the whole test sets the normal error falls from $27^\circ$ to $23^\circ$ (sensor A), $19^\circ$ to $16^\circ$ (sensor B) and $20^\circ$ to $16^\circ$ (additional objects). On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
+Fig.~\ref{fig:qual} compares predictions on held-out frames at $\Kreal=25$. The examples illustrate local reconstruction differences rather than the full distribution of results. On the session-1 objects, real-only models blur or break thin ridges and misplace junctions; the AlignTac student recovers their extent and position. On the additional objects the AlignTac student recovers more of the contact extent, most visibly on the hex key and the button rim. The normal rows show differences that contact MAE understates: on the marble both depth predictions have similar MAE, whereas the AlignTac normals are much closer to the GT ($4^\circ$ vs.\ $12^\circ$ mean angular error); over the whole test sets the normal error falls from $27^\circ$ to $23^\circ$ (sensor A), $19^\circ$ to $16^\circ$ (sensor B) and $20^\circ$ to $16^\circ$ (additional objects). On sensor B the real-only model is already close and the gain shows at junctions and at the ends of ridges.
 
 \begin{table}[!tbp]
 \centering
