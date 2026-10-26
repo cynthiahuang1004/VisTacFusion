@@ -373,10 +373,10 @@ def fig_labels(out):
         ax.tick_params(labelsize=5.8); ax.set_xlabel("$K$", fontsize=7); ax.set_title(lab, loc="left", fontsize=6.6, pad=3)
     axes[1].set_ylim(0, None); axes[2].set_ylim(0, None)
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, -0.03), columnspacing=1.2, handletextpad=0.4,
-               handlelength=2.0, fontsize=6.5)
-    fig.tight_layout(w_pad=0.6, rect=(0, 0.19, 1, 1))
-    fig.savefig(osp.join(out, "fig_labels.pdf")); plt.close(fig)
+    fig.legend(h, l, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.01), columnspacing=0.9, handletextpad=0.3,
+               handlelength=1.6, fontsize=5.8)
+    fig.tight_layout(w_pad=0.5, rect=(0, 0.09, 1, 1.02))
+    fig.savefig(osp.join(out, "fig_labels.pdf"), bbox_inches="tight", pad_inches=0.01); plt.close(fig)
 
 
 def fig_conv(out):
@@ -405,7 +405,7 @@ def fig_conv(out):
     ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.set_xlabel("Initial rotation error [deg]", fontsize=LB); ax.set_ylabel("Rotation error [deg]", fontsize=LB)
     ax.set_title("(b) After $n$ updates", loc="left", fontsize=TT, pad=3)
     fig.tight_layout(w_pad=1.6)
-    fig.savefig(osp.join(out, "fig_conv.pdf")); plt.close(fig)
+    fig.savefig(osp.join(out, "fig_conv.pdf"), bbox_inches="tight", pad_inches=0.01); plt.close(fig)
 
 
 def fig_poseref(out):
@@ -416,7 +416,7 @@ def fig_poseref(out):
     meth = [("Real only", "T_k{K}_realonly_realonly", "#52514e"), ("AlignTac (ours)", "T_k{K}_rf_realonly", "#8a4fd3")]
     panels = [("rot", "Rotation [deg]", "testA", "session 1"), ("rot", "Rotation [deg]", "session2", "session 2"),
               ("trans", "Translation [mm]", "testA", "session 1"), ("trans", "Translation [mm]", "session2", "session 2")]
-    fig, axes = plt.subplots(2, 2, figsize=(3.45, 1.85)); axes = axes.ravel()
+    fig, axes = plt.subplots(2, 2, figsize=(3.45, 2.05)); axes = axes.ravel()
     w = 0.19; x = np.arange(len(Ks))
     for i, (ax, (key, lab, split, sname)) in enumerate(zip(axes, panels)):
         sc = HALF_MM if key == "trans" else 1.0
@@ -432,9 +432,9 @@ def fig_poseref(out):
         ax.set_title(f"({'abcd'[i]}) {lab}, {sname}", loc="left", fontsize=6.6, pad=3); ax.set_ylim(0, None)
         ax.grid(axis="y", color="#e6e4df", lw=0.5); ax.set_axisbelow(True)
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=2, frameon=False, fontsize=6.5, bbox_to_anchor=(0.5, -0.02), handlelength=1.3, columnspacing=1.0)
-    fig.tight_layout(w_pad=0.5, h_pad=0.6, rect=(0, 0.1, 1, 1))
-    fig.savefig(osp.join(out, "fig_poseref.pdf"), bbox_inches="tight"); plt.close(fig)
+    fig.legend(h, l, loc="lower center", ncol=4, frameon=False, fontsize=5.6, bbox_to_anchor=(0.5, -0.01), handlelength=1.2, columnspacing=0.8, handletextpad=0.4)
+    fig.tight_layout(w_pad=0.5, h_pad=0.3, rect=(0, 0.06, 1, 1.02))
+    fig.savefig(osp.join(out, "fig_poseref.pdf"), bbox_inches="tight", pad_inches=0.01); plt.close(fig)
 
 
 def fig_qual(out):
