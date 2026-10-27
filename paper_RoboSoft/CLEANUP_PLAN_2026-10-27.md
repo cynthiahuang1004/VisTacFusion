@@ -1,0 +1,228 @@
+# Cleanup plan (2026-10-27) — A-tier1 deleted on 2026-10-27 (48 GB); C kept by decision; A-tier2 and B pending
+
+Method: ran build_tables.py and make_paper_figs.py with access logging; a run is *used* if a builder read its history.json or a cached result keyed by its name, or if it feeds the hand-maintained Table III (session-2 runs), Fig. 6 / the video (qual dumps), or the new-object numbers. Families mentioned in the long version's text (classification study `_cls`, rotation coverage `cov1/cov2`) are kept. ICRA outputs, eval_results and outputs/old are never touched. Symlinks into /home/shared/vtf_outputs_T are left alone.
+
+# A. Run directories on /media/hdd2/ihsuan/VisTacFusion_outputs_hdd2 not used by the paper
+
+## tier1  (44.4 GB)
+- pilot150_B_k100_semi  (996 MB)
+- pilot150_B_k100_semi_pseudo  (996 MB)
+- pilot150_B_k10_al2_r2  (996 MB)
+- pilot150_B_k25_al2_r2  (996 MB)
+- pilot150_B_k25_semi  (996 MB)
+- pilot150_B_k25_semi_pseudo  (996 MB)
+- pilot150_P4_k25_realonly_facemin  (1991 MB)
+- pilot150_P4_k25_realonly_seed1_facemin  (1991 MB)
+- pilot150_P4_k25_realonly_seed2_facemin  (1991 MB)
+- pilot150_P4_k25_rf_facemin  (1991 MB)
+- pilot150_P4_k25_rf_seed1_facemin  (1991 MB)
+- pilot150_P4_k25_rf_seed2_facemin  (1991 MB)
+- pilot150_P4_k25_semipm_facemin  (1991 MB)
+- pilot_3dcal_digit_k100  (995 MB)
+- pilot_3dcal_digit_k25  (995 MB)
+- pilot_3dcal_gsmini_k100  (995 MB)
+- pilot_3dcal_gsmini_k25  (995 MB)
+- pilot_A_blender_bgsub  (996 MB)
+- pilot_A_ganloo  (996 MB)
+- pilot_A_ganloo_9obj  (996 MB)
+- pilot_A_ganloo_gr  (996 MB)
+- pilot_A_realonly_bgsub  (996 MB)
+- pilot_B_k25_al2u25  (996 MB)
+- pilot_B_k25_al2u50  (996 MB)
+- pilot_B_k25_rcp00  (996 MB)
+- pilot_B_k25_rcp25  (996 MB)
+- pilot_B_k25_rcp75  (996 MB)
+- pilot_B_k25_realonly_bgsub  (996 MB)
+- pilot_S_k25_mapl_m_bugview  (996 MB)
+- pilot_S_k25_maplnr_m_bugview  (996 MB)
+- pilot_dav2_A_blender  (2586 MB)
+- pilot_dav2_B_k100_gank  (2586 MB)
+- pilot_t3_A_blender  (1720 MB)
+- pilot_t3_B_k100_gank  (1720 MB)
+
+## tier2  (37.0 GB)
+- pilot_A_bgcondloo  (996 MB)
+- pilot_A_blender  (996 MB)
+- pilot_A_dr  (996 MB)
+- pilot_A_ganfull  (996 MB)
+- pilot_A_realonly  (996 MB)
+- pilot_B_k0_ganfull  (996 MB)
+- pilot_B_k100_blender  (996 MB)
+- pilot_B_k100_dr  (996 MB)
+- pilot_B_k100_ganfull  (996 MB)
+- pilot_B_k10_al2  (996 MB)
+- pilot_B_k10_al2_seed1  (996 MB)
+- pilot_B_k10_al2_seed2  (996 MB)
+- pilot_B_k10_blender  (996 MB)
+- pilot_B_k10_gank  (996 MB)
+- pilot_B_k10_gank_seed1  (996 MB)
+- pilot_B_k10_gank_seed2  (996 MB)
+- pilot_B_k10_realonly  (996 MB)
+- pilot_B_k10_realonly_seed1  (996 MB)
+- pilot_B_k10_realonly_seed2  (996 MB)
+- pilot_B_k25_blender  (996 MB)
+- pilot_B_k25_ganfull  (996 MB)
+- pilot_B_k50_al2  (996 MB)
+- pilot_B_k50_al2_seed1  (996 MB)
+- pilot_B_k50_al2_seed2  (996 MB)
+- pilot_B_k50_blender  (996 MB)
+- pilot_B_k50_gank  (996 MB)
+- pilot_B_k50_gank_seed1  (996 MB)
+- pilot_B_k50_gank_seed2  (996 MB)
+- pilot_B_k50_realonly  (996 MB)
+- pilot_B_k50_realonly_seed1  (996 MB)
+- pilot_B_k50_realonly_seed2  (996 MB)
+- pilot_S_k25_gan40_seed1  (996 MB)
+- pilot_S_k25_gan40_seed2  (996 MB)
+- pilot_S_k25_mapl_m_seed1  (1493 MB)
+- pilot_S_k25_mapl_m_seed2  (1493 MB)
+- pilot_S_k25_realonly_seed1  (996 MB)
+- pilot_S_k25_realonly_seed2  (996 MB)
+
+## keep (long version)  (9.9 GB)
+- pilot_A_blender_cls  (1014 MB)
+- pilot_A_blender_cov1  (996 MB)
+- pilot_A_blender_cov2  (996 MB)
+- pilot_A_ganloo_cls  (1014 MB)
+- pilot_A_realonly_cls  (1014 MB)
+- pilot_B_k0_blender_cls  (1014 MB)
+- pilot_B_k100_gank_cls  (1014 MB)
+- pilot_B_k100_realonly_cls  (1014 MB)
+- pilot_B_k25_gank_cls  (1014 MB)
+- pilot_B_k25_realonly_cls  (1014 MB)
+
+## tier1 extras (small)
+- outputs_hdd2 root: chain_*.sh / chain_*.log (8 files)
+- outputs/robosoft_qual/bak/ and qual_P4_facemin.npz
+- outputs/aligner_p4_k25_realonly_facemin/
+- outputs/tactile_gan40m_al_k25_bugview/
+- aligntac_newobj/*facemin* (old-zmap calibration/eval files)
+- gs_blender/real_pseudo_p4_k25_ro_{al,ng}_facemin (2.5 GB)
+- ablation/pilot_robosoft configs of the deleted runs
+
+# B. Pseudo-label sets under gs_blender not referenced by any used run's data yaml (31 sets, ~20 GB; regenerable)
+- real_pseudo_S_k25_m_al_bugview
+- real_pseudo_k100_ng
+- real_pseudo_k100_ro_ng
+- real_pseudo_k10_al_r2
+- real_pseudo_k10_ng
+- real_pseudo_k10_ng2
+- real_pseudo_k10_ro_ng
+- real_pseudo_k25_al_r2
+- real_pseudo_k25_al_u25
+- real_pseudo_k25_al_u50
+- real_pseudo_k25_ng
+- real_pseudo_k25_ng2
+- real_pseudo_k25_rcd
+- real_pseudo_k25_rcp00
+- real_pseudo_k25_rcp25
+- real_pseudo_k25_rcp75
+- real_pseudo_k25_ro_ng
+- real_pseudo_k25_ro_ng_sel1
+- real_pseudo_k25_ro_ng_sel2
+- real_pseudo_k25_s2
+- real_pseudo_k5
+- real_pseudo_k50_ng
+- real_pseudo_k50_ro_ng
+- real_pseudo_k5_ro_al
+- real_pseudo_k5_ro_ng
+- real_pseudo_p4_k25_ro_al_facemin
+- real_pseudo_p4_k25_ro_ng_facemin
+- real_pseudo_s2_k100_al
+- real_pseudo_s2_k100_ng
+- real_pseudo_s2_k25_al
+- real_pseudo_s2_k25_ng
+
+# C. Renderer / aligner model directories under outputs/ not referenced by any used run (92 dirs, ~11 GB; GAN renderers and refiners of ablation variants)
+- aligner_S_k100_m
+- aligner_S_k10_m
+- aligner_S_k25
+- aligner_S_k25_m
+- aligner_S_k50_m
+- aligner_k10
+- aligner_k100
+- aligner_k100_realonly
+- aligner_k10_realonly
+- aligner_k25
+- aligner_k25_r2
+- aligner_k25_r34
+- aligner_k25_r34range2
+- aligner_k25_r50
+- aligner_k25_r50range2
+- aligner_k25_range05
+- aligner_k25_range2
+- aligner_k25_realonly_sel1
+- aligner_k25_realonly_sel2
+- aligner_k25_scratch
+- aligner_k25_simonly
+- aligner_k25_steps20k
+- aligner_k25_steps2k
+- aligner_k50
+- aligner_k50_realonly
+- aligner_k5_realonly
+- aligner_loo
+- aligner_p4_k25_realonly
+- aligner_p4_k25_realonly_facemin
+- tactile_gan
+- tactile_gan40_k10
+- tactile_gan40_k100
+- tactile_gan40_k25
+- tactile_gan40_k50
+- tactile_gan40_pseudo_k25
+- tactile_gan40m_al_k25
+- tactile_gan40m_al_k25_bugview
+- tactile_gan40m_k10
+- tactile_gan40m_k100
+- tactile_gan40m_k25
+- tactile_gan40m_k50
+- tactile_ganT
+- tactile_gan_alT_k10
+- tactile_gan_alT_k100
+- tactile_gan_alT_k25
+- tactile_gan_alT_k50
+- tactile_gan_al_k10
+- tactile_gan_al_k100
+- tactile_gan_al_k10_r2
+- tactile_gan_al_k25
+- tactile_gan_al_k25_r2
+- tactile_gan_al_k50
+- tactile_gan_bgcond_k100
+- tactile_gan_bgcond_k25
+- tactile_gan_bgcond_loo
+- tactile_gan_diff_k10
+- tactile_gan_diff_k100
+- tactile_gan_diff_k25
+- tactile_gan_diff_loo
+- tactile_gan_hyb_k10
+- tactile_gan_hyb_k100
+- tactile_gan_hyb_k25
+- tactile_gan_hyb_loo
+- tactile_gan_k10
+- tactile_gan_k100
+- tactile_gan_k25
+- tactile_gan_k50
+- tactile_gan_loo
+- tactile_gan_ms_sitr
+- tactile_gan_ms_sitr_k25
+- tactile_gan_physbg_k25
+- tactile_gan_physcond_k10
+- tactile_gan_physcond_k25
+- tactile_gan_physres_k25
+- tactile_gan_pseudo_k10
+- tactile_gan_pseudo_k100
+- tactile_gan_pseudo_k100_r2
+- tactile_gan_pseudo_k25
+- tactile_gan_pseudo_k25_r2
+- tactile_gan_pseudo_k50
+- tactile_gan_rc_k25
+- tactile_gan_simpre
+- tactile_gan_v1
+- tactile_gan_v2
+- tactile_refiner_drloo
+- tactile_refiner_k100
+- tactile_refiner_k25
+- tactile_refiner_loo
+- tactile_refiner_loo_diffd
+- tactile_refiner_loo_diffd_reg5
+- tactile_refiner_loo_reg5
+- tactile_refiner_ufull

@@ -18,16 +18,14 @@ norm:
 real:
   augment: false
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
-  oversample: 3
+  oversample: 1
   rgb_subdir: rgb
-  root: /media/hdd2/ihsuan/gs_blender/real_filtered
+  root: /media/hdd2/ihsuan/gs_blender/real_pseudo_S_k50_m
   use_rendered_normals: false
   val_every: 10
-  test_objects:
-  - pattern_04_3_lines_angle_2
-  - pattern_31_rod
-  - pattern_33
-  bg_subtract: real
+  train_samples_per_session: 1000000
+  fixed_crop: 1.0
+  gel_view_m: 0.012
 sim:
   align_real_rotation: true
   gel_view_m: 0.017502
@@ -57,7 +55,8 @@ sim:
   use_rendered_normals: true
   val_every: 20
   train_samples_per_session: 0
-  bg_subtract: sim_samples
+  fixed_crop: 0.6856
+  tactile_subdir: samples_g40_k50
 synthetic:
   num_objects: 8
   num_samples: 256

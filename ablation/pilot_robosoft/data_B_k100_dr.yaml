@@ -18,13 +18,12 @@ norm:
 real:
   augment: false
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
-  oversample: 27
+  oversample: 0
   rgb_subdir: rgb
   root: /media/hdd2/ihsuan/gs_blender/real_filtered
   use_rendered_normals: false
   val_every: 10
-  train_samples_per_session: 25
-  bg_subtract: real
+  train_samples_per_session: 100
 sim:
   align_real_rotation: true
   gel_view_m: 0.017502
@@ -44,7 +43,7 @@ sim:
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   rgb_subdir: rgb
   rgb_zoom: 1.15
-  root: /media/hdd2/ihsuan/gs_blender/renders_v3
+  root: /media/hdd2/ihsuan/gs_blender/renders_v3_dr
   rot_augment: true
   rot_augment_max_deg: 15.0
   rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
@@ -53,8 +52,8 @@ sim:
   use_gt_depth: true
   use_rendered_normals: true
   val_every: 20
-  train_samples_per_session: 0
-  bg_subtract: sim_samples
+  train_samples_per_session: 363
+  tactile_subdir: samples
 synthetic:
   num_objects: 8
   num_samples: 256

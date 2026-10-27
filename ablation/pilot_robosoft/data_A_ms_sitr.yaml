@@ -20,10 +20,13 @@ real:
   mesh_dir: /media/hdd2/ihsuan/gs_blender/meshes
   oversample: 1
   rgb_subdir: rgb
-  root: /media/hdd2/ihsuan/gs_blender/real_pseudo_k25_al_u25
+  root: /media/hdd2/ihsuan/gs_blender/real_filtered
   use_rendered_normals: false
   val_every: 10
-  train_samples_per_session: 1000000
+  test_objects:
+  - pattern_04_3_lines_angle_2
+  - pattern_31_rod
+  - pattern_33
 sim:
   align_real_rotation: true
   gel_view_m: 0.017502
@@ -47,7 +50,7 @@ sim:
   rot_augment: true
   rot_augment_max_deg: 15.0
   rotation_windows: ablation/simqty_filtered/real_rotation_windows.json
-  tactile_subdir: samples_a_k25
+  tactile_subdir: samples_ms_sitr
   translation_bounds: ablation/simqty_filtered/real_translation_bounds.json
   translation_margin: 1.5
   use_gt_depth: true
