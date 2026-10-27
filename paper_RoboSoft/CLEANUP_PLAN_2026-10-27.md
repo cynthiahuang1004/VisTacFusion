@@ -1,4 +1,4 @@
-# Cleanup plan (2026-10-27) — A-tier1 deleted on 2026-10-27 (48 GB); C kept by decision; A-tier2 and B pending
+# Cleanup plan (2026-10-27) — A-tier1 deleted on 2026-10-27 (48 GB); C kept by decision; A-tier2 deleted on 2026-10-27 (37 GB); B kept by decision
 
 Method: ran build_tables.py and make_paper_figs.py with access logging; a run is *used* if a builder read its history.json or a cached result keyed by its name, or if it feeds the hand-maintained Table III (session-2 runs), Fig. 6 / the video (qual dumps), or the new-object numbers. Families mentioned in the long version's text (classification study `_cls`, rotation coverage `cov1/cov2`) are kept. ICRA outputs, eval_results and outputs/old are never touched. Symlinks into /home/shared/vtf_outputs_T are left alone.
 
