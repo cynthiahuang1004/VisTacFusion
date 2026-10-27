@@ -219,12 +219,12 @@ def conv_live(T=6):
 def conv_b():
     d = json.load(open("ablation/pilot_robosoft/aligner_convergence.json")); R = sorted(int(r) for r in d["basin"])
     fig, ax = plt.subplots(figsize=(6.0, 4.2), dpi=DPI)
-    curves = [(0, "#8c8a85", ":"), (1, "#b57bee", "-"), (2, "#8f4fd6", "-"), (3, "#6a2bb8", "-"), (6, "#3d1778", "-")]
+    curves = [(1, "#b57bee", "-"), (2, "#8f4fd6", "-"), (3, "#6a2bb8", "-"), (6, "#3d1778", "-")]      # video: no n = 0 diagonal
     for it, c, ls in curves:
-        y = [max(r, 0.3) for r in R] if it == 0 else [d["basin"][str(r)]["rot"]["mean"][it] for r in R]
-        ax.plot(R, y, color=c, ls=ls, lw=2.0 if it == 0 else 2.8, marker=None if it == 0 else "*", ms=12, mec=BG)
-        ax.text(31.0, y[-1] * (1.25 if it == 3 else 0.8 if it == 6 else 1.0), "n = 0" if it == 0 else f"n = {it}", color=c, fontsize=13, va="center", ha="left", fontweight="bold", clip_on=False)
-    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.text(4, 0.36, "training\nrange", color="#6a2bb8", fontsize=11, ha="center")
+        y = [d["basin"][str(r)]["rot"]["mean"][it] for r in R]
+        ax.plot(R, y, color=c, ls=ls, lw=2.8, marker="*", ms=12, mec=BG)
+        ax.text(31.0, y[-1] * (1.25 if it == 3 else 0.8 if it == 6 else 1.0), f"n = {it}", color=c, fontsize=13, va="center", ha="left", fontweight="bold", clip_on=False)
+    ax.axvspan(0, 8, color="#8a4fd3", alpha=0.08, lw=0); ax.text(4, 33, "training\nrange", color="#6a2bb8", fontsize=11, ha="center", va="top")
     ax.set_yscale("log"); ax.set_ylim(0.3, 40); ax.set_xlim(-0.5, 30.5); ax.set_yticks([0.5, 1, 3, 10, 30]); ax.set_yticklabels(["0.5", "1", "3", "10", "30"]); ax.minorticks_off()
     ax.set_xticks([0, 8, 15, 20, 25, 30]); ax.tick_params(labelsize=13); ax.set_xlabel("initial rotation error [deg]", fontsize=14); ax.set_ylabel("rotation error after n updates [deg]", fontsize=14)
     ax.set_title("From a perturbed GT pose (+ random ±1.5 mm shift)", loc="left", fontsize=14, pad=8)
