@@ -20,7 +20,7 @@ $\Kreal$ & Method & \metrichead{Depth}{MSE} & \metrichead{Contact}{MAE} & \short
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig4_kshot.pdf}
-    \caption{\textbf{Label efficiency on the two GelSlim sensors.} Contact MAE, rotation and translation error versus $K$, the number of labeled contacts per object. Marker-free sensor A: (a--c); dot-marker sensor B: (d--f). Results use each sensor's held-out test frames. PBR and the full-set renderer are reported for sensor A only; PBR is calibrated to its illumination, and the full-set renderer uses additional real training pairs.}
+    \caption{\textbf{Label efficiency on the two GelSlim sensors.} Contact MAE, rotation and translation error versus $K$, the number of labeled contacts per object. Sensor A: (a--c); sensor B: (d--f). Results use each sensor's held-out test frames. PBR and the full-set renderer are reported for sensor A only; PBR is calibrated to its illumination, and the full-set renderer uses additional real training pairs.}
     \label{fig:kshot}
 \end{figure*}
 
@@ -39,7 +39,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
 \tableformat
 \scriptsize
 \setlength{\tabcolsep}{1.8pt}
-\caption{\textbf{Pseudo-label source ablation} (marker-free sensor A, $K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student test accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Normals derive from the depth label in every row; Teacher/Teacher also uses teacher-predicted pose. Highlights mark \ranklegend{} among the displayed configurations per column; ties share a color. \FinalLine{Teacher settings differ as specified in Sec.~\ref{sec:ablation}.}}
+\caption{\textbf{Pseudo-label source ablation} (sensor A, $K=25$). Students share the architecture and training schedule. Left: pseudo-label quality against withheld training GT; right: student test accuracy. L1 search uses mesh depth for the lowest-error half of frames and teacher depth otherwise. Normals derive from the depth label in every row; Teacher/Teacher also uses teacher-predicted pose. Highlights mark \ranklegend{} among the displayed configurations per column; ties share a color. \FinalLine{Teacher settings differ as specified in Sec.~\ref{sec:ablation}.}}
 \label{tab:abl}
 {%
 \begin{tabular}{llrrrr@{\hspace{7pt}}rrrr}
@@ -58,7 +58,7 @@ At $K\le25$, learned-renderer augmentation and self-training lower all-pixel MSE
     \centering
     \vspace{4pt}
     \includegraphics[width=\columnwidth]{figures/fig5_labels.pdf}
-    \caption{\textbf{Pseudo-label quality across label budgets.} Teacher and aligned-mesh targets are compared on the unlabeled training images of GelSlim~5.0 (A) and dot-marker GelSlim~4.0 (B) for $K$ labeled contacts per object. Ground truth is withheld during training and used only for this evaluation. Curves report contact IoU, \FinalLine{contact MAE (mm), and rotation error (deg).}}
+    \caption{\textbf{Pseudo-label quality across label budgets.} Teacher and aligned-mesh targets are compared on the unlabeled training images of GelSlim~5.0 (A) and GelSlim~4.0 (B) for $K$ labeled contacts per object. Ground truth is withheld during training and used only for this evaluation. Curves report contact IoU, \FinalLine{contact MAE (mm), and rotation error (deg).}}
     \label{fig:labels}
     \vspace{2pt}
 \end{figure}
@@ -75,7 +75,7 @@ Under the tested renderer, image similarity can favor an incorrect geometric sta
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/fig6_qual.pdf}
-    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$, held-out test frames). Left: GelSlim~5.0 (sensor A); middle: four additional sensor-A objects (button, hex key, block edge, marble), with models trained on all 16 objects; right: dot-marker GelSlim~4.0 (sensor B). Each row shows the tactile image, the real-only prediction, the AlignTac student $\Student$ prediction and the GT; the first three rows of each group show contact depth (numbers: contact MAE in mm; shared color bar in mm), the last row surface normals \FinalLine{(numbers: mean angular error over the GT contact in degrees).}}
+    \caption{\textbf{Contact-depth predictions learned from aligned geometry} ($K=25$, held-out test frames). Left: GelSlim~5.0 (sensor A); middle: four additional sensor-A objects (button, hex key, block edge, marble), with models trained on all 16 objects; right: GelSlim~4.0 (sensor B). Each row shows the tactile image, the real-only prediction, the AlignTac student $\Student$ prediction and the GT; the first three rows of each group show contact depth (numbers: contact MAE in mm; shared color bar in mm), the last row surface normals \FinalLine{(numbers: mean angular error over the GT contact in degrees).}}
     \label{fig:qual}
 \end{figure*}
 
@@ -83,7 +83,7 @@ Under the tested renderer, image similarity can favor an incorrect geometric sta
 \centering
 \tableformat\scriptsize
 \setlength{\tabcolsep}{2.6pt}
-\caption{\textbf{Second-session results} (marker-free sensor A). Top: trained on session 1 only. Bottom: rows ``+ session 2'' also train on images from half of the session-2 presses, with poses discarded and labels from the session-1 teacher or aligner; tests use the other half. MAE and translation in mm, rotation in degrees. $^{\ast}$Three-seed means. Highlights mark \ranklegend{} per column and block.}
+\caption{\textbf{Second-session results} (sensor A). Top: trained on session 1 only. Bottom: rows ``+ session 2'' also train on images from half of the session-2 presses, with poses discarded and labels from the session-1 teacher or aligner; tests use the other half. MAE and translation in mm, rotation in degrees. $^{\ast}$Three-seed means. Highlights mark \ranklegend{} per column and block.}
 \label{tab:general}
 \begin{tabularx}{\columnwidth}{Xrrrrrrrr}
 \toprule
@@ -113,14 +113,14 @@ Method & MAE$\downarrow$ & IoU$\uparrow$ & Rot.$\downarrow$ & Trans.$\downarrow$
     \centering
     \includegraphics[width=\columnwidth]{figures/fig7_conv.pdf}
     \vspace{-10pt}
-    \caption{\textbf{Aligner convergence} (marker-free sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error versus the number of aligner updates, starting from the teacher's predicted pose; dotted line: the six updates used throughout. (b) Mean rotation error after $n$ updates, starting from the GT state rotated by the given angle plus random translation and indentation offsets (log scale; dotted: no update). \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
+    \caption{\textbf{Aligner convergence} (sensor A, $K=25$, $530$ held-out test frames). (a) Rotation error versus the number of aligner updates, starting from the teacher's predicted pose; dotted line: the six updates used throughout. (b) Mean rotation error after $n$ updates, starting from the GT state rotated by the given angle plus random translation and indentation offsets (log scale; dotted: no update). \FinalLine{Shaded region: training rotation range ($\pm8^\circ$).}}
     \label{fig:conv}
     \vspace{3pt}
 \end{figure}
 
 \subsection{Robustness Across Sessions, Sensors and Objects}
 \label{sec:general}
-We evaluate robustness across capture sessions, sensors and additional objects. First, we test models trained on GelSlim~5.0 (A) on another day's contacts after object re-placement, without retraining and then with unlabeled second-session images (Table~\ref{tab:general}). Second, we retrain each method on the dot-marker GelSlim~4.0 (B) with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f).
+We evaluate robustness across capture sessions, sensors and additional objects. First, we test models trained on GelSlim~5.0 (A) on another day's contacts after object re-placement, without retraining and then with unlabeled second-session images (Table~\ref{tab:general}). Second, we retrain each method on the GelSlim~4.0 (B) with unchanged aligner settings (Fig.~\ref{fig:kshot}d--f).
 
 \noindent\textbf{Zero-shot cross-session transfer.} On sensor A's second session, AlignTac lowers contact MAE by $14$--$21\%$ relative to real-only training and outperforms self-training. Adding synthetic frames provides no MAE improvement at $K=25$, but reduces it to $0.235\,$mm at $K=100$, a $32\%$ reduction from real-only training. Pose error rises for all methods (rotation $10$--$19^\circ$, translation $1.7$--$2.1\,$mm), well above within-session levels.
 
@@ -152,7 +152,7 @@ On GelSlim~5.0 (A), the aligner learned for supervision generation also supports
 \begin{table}[t]
 \centering
 \tableformat\scriptsize
-\caption{\textbf{Renderer baselines on three held-out objects} (marker-free sensor A). Ranked methods exclude these objects' real contacts from training; simulated contacts use their meshes unless stated otherwise. Highlights mark \ranklegend{} per metric within this block. $\dagger$~The gray reference uses additional real training pairs, including pairs from the held-out objects, and is not ranked. No validation or test images are used to fit the renderer.}
+\caption{\textbf{Renderer baselines on three held-out objects} (sensor A). Ranked methods exclude these objects' real contacts from training; simulated contacts use their meshes unless stated otherwise. Highlights mark \ranklegend{} per metric within this block. $\dagger$~The gray reference uses additional real training pairs, including pairs from the held-out objects, and is not ranked. No validation or test images are used to fit the renderer.}
 \label{tab:loo}
 \begin{tabularx}{\columnwidth}{Xrrrr}
 \toprule
