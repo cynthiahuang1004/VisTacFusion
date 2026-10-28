@@ -10,9 +10,9 @@
     \label{fig:aligntac_teaser}
 \end{figure}
 
-Tactile perception provides robots with contact feedback for dexterous manipulation and physical interaction. Vision-based tactile sensors such as GelSight, GelSlim and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} use a soft elastomer membrane to convert fine contact-induced deformations into high-resolution visual signals. Learning to recover contact geometry and pose supports perception through touch, but requires scalable, accurately labeled data. A known object mesh can supply these labels only after its contact state is registered to the image.
+Tactile perception provides robots with contact feedback for dexterous manipulation and physical interaction. Vision-based tactile sensors such as GelSight, GelSlim, and DIGIT~\cite{yuan2017gelsight,donlon2018gelslim,lambeta2020digit} use a soft elastomer membrane to convert fine contact-induced deformations into high-resolution visual signals. Learning to recover contact geometry and pose supports perception through touch, but requires scalable, accurately labeled data. A known object mesh can supply these labels only after its contact state is registered to the image.
 
-As shown in Fig.~\ref{fig:aligntac_teaser}a, real data collection requires each labeled contact to be registered. Submillimeter image--geometry accuracy depends on calibration across the robot, sensor and object frames. Systematic kinematic errors can bias the estimated contact state, including on Franka manipulators~\cite{franzese2025mukca}, while sensor mounting and object placement introduce additional uncertainty. A recorded robot pose thus becomes a label only after calibration and verification, repeated whenever the sensor configuration or object placement changes: tactile images are easier to collect than their labels.
+As shown in Fig.~\ref{fig:aligntac_teaser}a, real data collection requires each labeled contact to be registered. Submillimeter image–geometry accuracy depends on calibration across the robot, sensor, and object frames. Systematic kinematic errors can bias the estimated contact state, including on Franka manipulators~\cite{franzese2025mukca}, while sensor mounting and object placement introduce additional uncertainty. A recorded robot pose thus becomes a label only after calibration and verification, which must be repeated whenever the sensor configuration or object placement changes: tactile images are easier to collect than their labels.
 
 \begin{figure*}[t]
     \centering
@@ -27,10 +27,10 @@ As illustrated in Fig.~\ref{fig:aligntac_teaser}c, our AlignTac combines real ta
 
 AlignTac learns this alignment from a small labeled set (Fig.~\ref{fig:mapl}). We perturb each contact's mesh state while keeping its real image fixed, and train a residual aligner to recover the labeled state. For additional real contacts, teacher $\Teacher$ provides the initial state, the aligner corrects it using the observed image, and the aligned geometry supplies depth, normal and planar-pose pseudo-labels. A student $\Student$ learns from these labels and predicts directly from \FinalLine{the tactile image and object identity.}
 
-We evaluate AlignTac against self-training and synthetic augmentation on two GelSlim~4.0 variants: marker-free (sensor A) and dot-marker (sensor B). Experiments use limited real-label budgets. Our contributions are:
+We evaluate AlignTac against self-training and synthetic augmentation on two GelSlim sensors: the marker-free GelSlim~5.0 (sensor A) and the dot-marker GelSlim~4.0 (sensor B). Experiments use limited real-label budgets. Our contributions are:
 \begin{itemize}
     \item A real-image--geometry alignment framework that learns state corrections from perturbations of a small labeled set and generates dense geometry and pose \FinalLine{supervision using real tactile images.}
-    \item An alignment ablation showing gains in pseudo-label quality and student accuracy, with label efficiency on both sensor variants and zero-shot transfer to a second session.
+    \item An alignment ablation showing gains in pseudo-label quality and student accuracy, with label efficiency on both sensors and zero-shot transfer to a second session.
     \item Label-free adaptation to that session: images captured after re-placement are pseudo-labeled by the same aligner.
     \item A matched-budget renderer study identifying complementary benefits of tactile RGB simulation for held-out-object pose coverage and session changes, while accounting for the real labels used to fit the renderer.
 \end{itemize}
