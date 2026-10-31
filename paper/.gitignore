@@ -1,0 +1,11 @@
+# Local LaTeX build products; the included architecture asset stays tracked.
+*.aux
+*.log
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+/main.pdf
+/architecture_diagram.pdf
+__pycache__/

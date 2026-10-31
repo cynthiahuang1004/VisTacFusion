@@ -1,6 +1,4 @@
-# modality-dropout ablation: 0.70/0.25/0.05 @ inject 0.75 (effective injection 0.525)
-# Same as train.yaml but batch_size=32 for single-GPU with tight VRAM
-
+# modality-dropout: 0.70/0.25/0.05 @ inject 0.75 — SEED 1
 seed: 1
 device: cuda
 amp: true

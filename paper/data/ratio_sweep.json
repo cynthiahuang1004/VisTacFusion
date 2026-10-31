@@ -1,0 +1,150 @@
+{
+  "snapshot_utc": "2026-09-14T19:33:21.232740Z",
+  "selection": "Both-mode minimum depth MSE for geometry; Both-mode minimum angular error for all pose metrics. Epoch indices are zero-based.",
+  "ratio_labels": "Retain the ratio labels used by the supplied figure; category spacing is uniform.",
+  "sweep": [
+    {
+      "run": "ratio_g3s_realonly_transfilt_zoom115_crop816",
+      "ratio_label": "Real only",
+      "sim_per_real": 0,
+      "epochs": 100,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_realonly_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "3f1cf2b20d9ad3e797d416e57bcc0ddfd11441c900683f3a84906eceeea6081f",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 48,
+      "pose_epoch": 99,
+      "depth_mse": 0.007926,
+      "normal_mse": 0.008149,
+      "rot_l1": 0.0145,
+      "rot_deg": 0.72,
+      "trans_l1": 0.0056
+    },
+    {
+      "run": "ratio_g3s_sim34_transfilt_zoom115_crop816",
+      "ratio_label": "1:0.29",
+      "sim_per_real": 0.29,
+      "epochs": 150,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_sim34_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "9386eaf2cc65b9b73d2603c8df25fe49c68ee83ee3efed573b6b08690f424b24",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 100,
+      "pose_epoch": 145,
+      "depth_mse": 0.006922,
+      "normal_mse": 0.007519,
+      "rot_l1": 0.0137,
+      "rot_deg": 0.688,
+      "trans_l1": 0.0055
+    },
+    {
+      "run": "ratio_g3s_sim68_transfilt_zoom115_crop816",
+      "ratio_label": "1:0.58",
+      "sim_per_real": 0.58,
+      "epochs": 150,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_sim68_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "07da451f8e473265d4d1e99a12410295a94a2e3624895be65bc200015da0f32d",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 138,
+      "pose_epoch": 149,
+      "depth_mse": 0.007072,
+      "normal_mse": 0.007771,
+      "rot_l1": 0.0141,
+      "rot_deg": 0.707,
+      "trans_l1": 0.0055
+    },
+    {
+      "run": "ratio_g3s_sim120_transfilt_zoom115_crop816",
+      "ratio_label": "1:1.03",
+      "sim_per_real": 1.03,
+      "epochs": 150,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_sim120_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "5d3c8d1fa984a8498acd48049d2f34494108d1377dfab8a9a13b17dae529e77e",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 97,
+      "pose_epoch": 137,
+      "depth_mse": 0.006656,
+      "normal_mse": 0.00741,
+      "rot_l1": 0.0133,
+      "rot_deg": 0.668,
+      "trans_l1": 0.0054
+    },
+    {
+      "run": "ratio_g3s_sim148_transfilt_zoom115_crop816",
+      "ratio_label": "1:1.27",
+      "sim_per_real": 1.27,
+      "epochs": 150,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_sim148_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "d9fc6b3744e0e8f25b00e9b8b8c7a52b4e6c3ed4a4e716c1d1c86f03887ff6d0",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 118,
+      "pose_epoch": 148,
+      "depth_mse": 0.006612,
+      "normal_mse": 0.007517,
+      "rot_l1": 0.0138,
+      "rot_deg": 0.693,
+      "trans_l1": 0.0054
+    },
+    {
+      "run": "ratio_g3s_sim190_transfilt_zoom115_crop816",
+      "ratio_label": "1:1.63",
+      "sim_per_real": 1.63,
+      "epochs": 150,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_sim190_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "bef540e624aef0d2375a84f7f747f12543e0f3ae1f61bfaa574cbaf6f429309b",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 126,
+      "pose_epoch": 145,
+      "depth_mse": 0.006612,
+      "normal_mse": 0.007439,
+      "rot_l1": 0.0132,
+      "rot_deg": 0.668,
+      "trans_l1": 0.0054
+    },
+    {
+      "run": "ratio_g3s_sim229_transfilt_zoom115_crop816",
+      "ratio_label": "1:1.96",
+      "sim_per_real": 1.96,
+      "epochs": 150,
+      "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ratio_g3s_sim229_transfilt_zoom115_crop816/history.json",
+      "history_sha256": "30b685d714ff844de5576c5365760227cb37c28d2bf859f63c7baaf7043e0e2d",
+      "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+      "depth_epoch": 116,
+      "pose_epoch": 145,
+      "depth_mse": 0.006898,
+      "normal_mse": 0.007567,
+      "rot_l1": 0.0131,
+      "rot_deg": 0.659,
+      "trans_l1": 0.0054
+    }
+  ],
+  "main_reference": {
+    "run": "ablation_c816_sim148_sitr_mae_md_b70_inj075",
+    "ratio_label": "1:1.27",
+    "sim_per_real": 1.27,
+    "epochs": 150,
+    "history_path": "/media/hdd2/ihsuan/VisTacFusion/outputs/ICRA2027/ablation_c816_sim148_sitr_mae_md_b70_inj075/history.json",
+    "history_sha256": "5e6b20d9cf16395878f0893ff43ef3185b39c4feb9098606a0d78927e1823b72",
+    "train_config_sha256": "dd7b0a743ca0fcf34042642bb38b6ee5647c317fc0694b034a5e9ad123b2ec51",
+    "depth_epoch": 118,
+    "pose_epoch": 143,
+    "depth_mse": 0.006591,
+    "normal_mse": 0.00738,
+    "rot_l1": 0.0129,
+    "rot_deg": 0.652,
+    "trans_l1": 0.0053
+  },
+  "excluded": [
+    {
+      "run": "ratio_g3s_sim348_transfilt_zoom115_crop816",
+      "reason": "Incomplete: 96/150 epochs at audit."
+    },
+    {
+      "run": "ratio_g3s_sim570_transfilt_zoom115_crop816",
+      "reason": "No history.json at audit; old figure point cannot be recovered from this run."
+    },
+    {
+      "run": "ratio_g3s_sim760_transfilt_zoom115_crop816",
+      "reason": "Directory is being rerun; only 24/150 epochs at audit, so the old completed point cannot be recovered."
+    }
+  ],
+  "plotting_policy": "Use main_reference for the 1:1.27 plotted point, as requested by the author; retain the independent ratio-sweep run in this snapshot for provenance only. Plot all other completed configurations from sweep. Do not include unfinished or missing runs."
+}

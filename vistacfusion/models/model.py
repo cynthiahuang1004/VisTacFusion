@@ -480,6 +480,14 @@ class SingleEncoderModel(nn.Module):
             rot_num_bins=cfg.heads.pose.get("rot_num_bins", 72),
             use_spatial_pool=cfg.heads.pose.get("use_spatial_pool", True),
         )
+        # Optional object-classification head (heads.classify.num_classes > 0): LN + MLP on the
+        # CLS token concatenated with the mean patch token. Only meaningful with object_embedding: false.
+        ncls = cfg.heads.get("classify", {}).get("num_classes", 0) if hasattr(cfg.heads, "get") else 0
+        self.class_head = None
+        if ncls:
+            self.class_head = nn.Sequential(
+                nn.LayerNorm(2 * self.enc_dim), nn.Linear(2 * self.enc_dim, 512), nn.GELU(),
+                nn.Dropout(cfg.heads.pose.dropout), nn.Linear(512, ncls))
 
     @property
     def tactile_encoder(self):
@@ -521,6 +529,8 @@ class SingleEncoderModel(nn.Module):
         if getattr(self.dpt, "last_mask_logits", None) is not None:
             out["mask_logits"] = self.dpt.last_mask_logits
         out.update(pose)
+        if self.class_head is not None:
+            out["class_logits"] = self.class_head(torch.cat([tac_cls.squeeze(1), tac_patch.mean(1)], dim=-1))
         return out
 
 

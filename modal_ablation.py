@@ -31,7 +31,7 @@ import modal
 
 VOLUME_NAME = "vistacfusion-data"
 RESULTS_VOLUME = "vistacfusion-results"
-GPU_TYPE = "A100"          # A100-40GB: ~$3/hr, A10G: ~$1.10/hr
+GPU_TYPE = "L4"            # L4-24GB: ~$0.80/hr
 TIMEOUT_HOURS = 24
 REPO_URL = "https://github.com/cynthiahuang1004/VisTacFusion.git"
 REPO_BRANCH = "VisTacFusion-v2"
@@ -85,6 +85,10 @@ image = image.add_local_dir(
 image = image.add_local_dir(
     "/media/hdd2/ihsuan/SparshXTwoStreamFusion", remote_path="/sparshx",
     ignore=["outputs/", ".git/", "weights/", "*.pyc", "__pycache__/"],
+)
+# tactile_ssl from sparsh repo (needed by sparshx encoder)
+image = image.add_local_dir(
+    "/media/hdd2/ihsuan/sparsh/tactile_ssl", remote_path="/workspace/tactile_ssl",
 )
 
 # ============================================================
@@ -171,6 +175,8 @@ def do_upload():
              "/weights/sparsh_mae_base.ckpt"),
             ("/media/hdd2/ihsuan/gsrl/datasets/checkpoints/SITR_B18.pth",
              "/weights/SITR_B18.pth"),
+            ("/media/hdd/ihsuan/sparshx_gelsight/checkpoints/sparshx_img_base_gelsight.ckpt",
+             "/weights/sparshx_img_base_gelsight.ckpt"),
         ]
         for local, remote in WEIGHTS:
             if os.path.exists(local):
@@ -204,6 +210,7 @@ CKPT_REMAP = {
     "/media/hdd2/ihsuan/sparsh/weights/sparsh/mae_vitbase.ckpt": "/data/weights/sparsh_mae_base.safetensors",
     "/media/hdd2/ihsuan/gsrl/datasets/checkpoints/SITR_B18.pth": "/data/weights/SITR_B18.pth",
     "pretrained_encoders/tvl_enc_vitb.pth": "/data/weights/tvl_enc_vitb.pth",
+    "/media/hdd/ihsuan/sparshx_gelsight/checkpoints/sparshx_img_base_gelsight.ckpt": "/data/weights/sparshx_img_base_gelsight.ckpt",
 }
 
 SITR_CAL_DIR_MODAL = "/data/sim/pattern_01_2_lines_angle_1_2/session_000/sensor_0000/calibration"
@@ -507,9 +514,10 @@ def train_ratio_ladder(names: str):
 
 
 @app.local_entrypoint()
-def train_ablation_c816(ratio: str = "sim148", combos: str = ""):
+def train_ablation_c816(ratio: str = "sim148", combos: str = "", train_cfg: str = ""):
     """Encoder ablation at one crop-0.816 ratio point. MAE-RGB combos are spawned first so
     they occupy the first GPU slots. combos: optional 'tac:rgb,tac:rgb' subset.
+    train_cfg: override train config (e.g. ablation/moddrop/train_bs32_md_b70_inj075.yaml).
     modal run modal_ablation.py::train_ablation_c816 --ratio sim148"""
     if combos:
         pairs = [tuple(c.split(":")) for c in combos.split(",") if c.strip()]
@@ -517,13 +525,35 @@ def train_ablation_c816(ratio: str = "sim148", combos: str = ""):
         pairs = [(t, "mae") for t in TACTILE_KEYS] + \
                 [(t, r) for r in RGB_KEYS if r != "mae" for t in TACTILE_KEYS]
     print(f"Launching {len(pairs)} ablation runs at {ratio}: {pairs}", flush=True)
-    handles = [(t, r, train_ratio_one.spawn(ratio, t, r)) for t, r in pairs]
+    handles = [(t, r, train_ratio_one.spawn(ratio, t, r, train_cfg=train_cfg or None))
+               for t, r in pairs]
     for t, r, h in handles:
         try:
             res = h.get()
             print(f"  {res['run_name']}: {'OK' if res['returncode'] == 0 else 'FAIL'}", flush=True)
         except Exception as e:
             print(f"  {ratio_run_name(ratio, t, r)}: ERROR - {e}", flush=True)
+
+
+@app.local_entrypoint()
+def train_encoder_ablation_newdropout(ratio: str = "sim148"):
+    """Re-run ALL encoder combos (6×4 + tvl + sparshx = 26) with the new dropout setting
+    (0.70/0.25/0.05 @ inject 0.75). Up to 10 L4 GPUs in parallel.
+    modal run modal_ablation.py::train_encoder_ablation_newdropout"""
+    new_train = "ablation/moddrop/train_bs32_md_b70_inj075.yaml"
+    pairs = ([(t, "mae") for t in TACTILE_KEYS] +
+             [(t, r) for r in RGB_KEYS if r != "mae" for t in TACTILE_KEYS] +
+             [("tvl", "mae"), ("sparshx", "mae")])
+    print(f"Launching {len(pairs)} runs with new dropout @ {ratio}", flush=True)
+    handles = [(t, r, train_ratio_one.spawn(ratio, t, r, train_cfg=new_train))
+               for t, r in pairs]
+    for t, r, h in handles:
+        rn = ratio_run_name(ratio, t, r)
+        try:
+            res = h.get()
+            print(f"  {res['run_name']}: {'OK' if res['returncode'] == 0 else 'FAIL'}", flush=True)
+        except Exception as e:
+            print(f"  {rn}: ERROR - {e}", flush=True)
 
 
 @app.local_entrypoint()
