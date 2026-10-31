@@ -95,7 +95,7 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
 
     acc = {c: {"depth_mse": 0.0, "normal_mse": 0.0,
                "pose_rot": 0.0, "pose_rot_l1": 0.0, "pose_trans": 0.0,
-               "rot_deg": 0.0, "class_correct": 0.0, "n": 0} for c in configs}
+               "rot_deg": 0.0, "n": 0} for c in configs}
 
     sample_idx = 0
     for batch in loader:
@@ -142,9 +142,6 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
                 dcos = (cos_p * cos_gt + sin_p * sin_gt).clamp(-1 + 1e-6, 1 - 1e-6)
                 a["rot_deg"] += (torch.acos(dcos).mean().item() * 180.0 / math.pi) * bs
 
-            if "class_logits" in out and batch.get("object") is not None:
-                a["class_correct"] += (out["class_logits"].argmax(-1) == batch["object"]).float().sum().item()
-
             a["n"] += bs
 
     report = {}
@@ -157,6 +154,5 @@ def evaluate(model, loader, cfg, device, configs=CONFIGS, encoder_cache=None):
             "pose_rot_l1": round(a["pose_rot_l1"] / n, 4),
             "pose_trans": round(a["pose_trans"] / n, 4),
             "pose_rot_deg": round(a["rot_deg"] / n, 3),
-            "class_acc": round(a["class_correct"] / n, 4),
         }
     return report
